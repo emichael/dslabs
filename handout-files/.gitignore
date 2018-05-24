@@ -1,0 +1,23 @@
+# Compiled Java
+out/
+
+
+# IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+.idea-out
+
+
+# Common OS/Editor files
+*~
+._*
+
+.DS_Store
+.DS_Store?
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# analytics
+.usage-database.db

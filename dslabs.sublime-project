@@ -1,0 +1,25 @@
+{
+  "folders":
+  [
+    {
+      "path": "./",
+      "folder_exclude_patterns": [
+        ".out-ant",
+        ".out-idea",
+        ".idea",
+        "handout",
+        "doc",
+        "libs",
+        "jars",
+      ],
+      "name": "Distributed Systems Labs",
+      "file_exclude_patterns": [
+        "handout.tar.gz",
+        "dviz.jar",
+        "*.sublime-workspace",
+        "*.sublime-project",
+        "*.iml",
+      ]
+    }
+  ]
+}

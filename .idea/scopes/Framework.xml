@@ -1,0 +1,3 @@
+<component name="DependencyValidationManager">
+  <scope name="Framework" pattern="file[dslabs]:framework//*" />
+</component>

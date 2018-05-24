@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="Distributed Systems Labs" default="all" xmlns:ivy="antlib:org.apache.ivy.ant">
+
+
+
+<!-- Properties -->
+<property name="dirs.lib" location="libs"/>
+<property name="dirs.lib-compile" location="${dirs.lib}/compile"/>
+<property name="dirs.lib-runtime" location="${dirs.lib}/runtime"/>
+<property name="dirs.lib-test" location="${dirs.lib}/test"/>
+
+<property name="dirs.dst" location="jars"/>
+<property name="dirs.out" location=".out-ant"/>
+<property name="dirs.doc" location="doc"/>
+
+<property name="dirs.src.framework" location="framework/src"/>
+<property name="dirs.tst.framework" location="framework/tst"/>
+
+<property name="dirs.out.framework-src" location="${dirs.out}/framework/src"/>
+<property name="dirs.out.framework-tst" location="${dirs.out}/framework/tst"/>
+
+<property name="jar.framework" location="${dirs.dst}/framework.jar"/>
+<property name="jar.framework-sources" location="${dirs.dst}/framework-sources.jar"/>
+<property name="jar.framework-compile" location="${dirs.dst}/framework-compile.jar"/>
+
+
+
+<!-- Ivy automatic installation and configuration -->
+<property name="ivy.install.version" value="2.4.0" />
+<condition property="ivy.home" value="${env.IVY_HOME}">
+  <isset property="env.IVY_HOME" />
+</condition>
+<property name="ivy.home" value="${user.home}/.ant" />
+<property name="ivy.jar.dir" value="${ivy.home}/lib" />
+<property name="ivy.jar.file" value="${ivy.jar.dir}/ivy.jar" />
+
+<target name="download-ivy" unless="offline">
+  <echo message="Downloading ivy to ${ivy.jar.dir}..."/>
+  <mkdir dir="${ivy.jar.dir}"/>
+  <get src="http://repo2.maven.org/maven2/org/apache/ivy/ivy/${ivy.install.version}/ivy-${ivy.install.version}.jar" dest="${ivy.jar.file}" usetimestamp="true"/>
+</target>
+
+<target name="init-ivy" depends="download-ivy">
+  <path id="ivy.lib.path">
+    <fileset dir="${ivy.jar.dir}" includes="*.jar"/>
+  </path>
+  <taskdef resource="org/apache/ivy/ant/antlib.xml" uri="antlib:org.apache.ivy.ant" classpathref="ivy.lib.path"/>
+</target>
+
+
+
+<!-- Ivy dependencies -->
+<target name="download-libs" depends="init-ivy">
+  <mkdir dir="${dirs.lib}"/>
+
+  <ivy:retrieve sync="true" pattern="${dirs.lib}/[conf]/[artifact]-[revision](-[classifier]).[ext]"/>
+
+  <!-- Classpaths -->
+  <ivy:cachepath pathid="classpath.compile" conf="compile"/>
+  <ivy:cachepath pathid="classpath.runtime" conf="runtime"/>
+  <ivy:cachepath pathid="classpath.test" conf="test"/>
+</target>
+
+
+
+<!-- Presets -->
+<presetdef name="myjavac">
+  <javac includeantruntime="false" source="1.8" debug="true"/>
+</presetdef>
+
+
+
+<!-- Building -->
+<target name="all" depends="jar-framework, jar-framework-sources, jar-framework-compile, compile-framework-src, compile-framework-tst, javadoc"/>
+
+
+<target name="compile-framework-src" depends="download-libs">
+  <mkdir dir="${dirs.out.framework-src}"/>
+  <myjavac srcdir="${dirs.src.framework}" destdir="${dirs.out.framework-src}" classpathref="classpath.compile"/>
+</target>
+
+<target name="compile-framework-tst" depends="download-libs, compile-framework-src">
+  <mkdir dir="${dirs.out.framework-tst}"/>
+  <myjavac srcdir="${dirs.tst.framework}" destdir="${dirs.out.framework-tst}">
+    <classpath>
+      <path refid="classpath.test"/>
+      <pathelement path="${dirs.out.framework-src}"/>
+    </classpath>
+  </myjavac>
+</target>
+
+
+<target name="jar-framework" depends="compile-framework-src, compile-framework-tst">
+  <mkdir dir="${dirs.dst}"/>
+  <jar destfile="${jar.framework}">
+    <fileset dir="${dirs.out.framework-src}"/>
+    <fileset dir="${dirs.out.framework-tst}"/>
+    <zipgroupfileset dir="${dirs.lib-test}" includes="**/*.jar" excludes="**/*-sources.jar" />
+  </jar>
+</target>
+
+<target name="jar-framework-sources" depends="download-libs">
+  <mkdir dir="${dirs.dst}"/>
+  <jar destfile="${jar.framework-sources}">
+    <fileset dir="${dirs.src.framework}"/>
+    <fileset dir="${dirs.tst.framework}"/>
+    <zipgroupfileset dir="${dirs.lib-test}" includes="**/*-sources.jar" />
+  </jar>
+</target>
+
+<target name="jar-framework-compile" depends="compile-framework-src">
+  <mkdir dir="${dirs.dst}"/>
+  <jar destfile="${jar.framework-compile}">
+    <fileset dir="${dirs.out.framework-src}"/>
+    <zipgroupfileset dir="${dirs.lib-compile}" includes="**/*.jar" excludes="**/*-sources.jar" />
+  </jar>
+</target>
+
+
+<target name="javadoc" depends="download-libs">
+  <javadoc windowtitle="Distributed Systems Labs Framework"
+           doctitle="Distributed Systems Labs Framework"
+           classpathref="classpath.compile"
+           source="1.8"
+           additionalparam="-notimestamp"
+           destdir="${dirs.doc}"
+           sourcepath="${dirs.src.framework}"/>
+</target>
+
+
+
+<!-- Cleaning -->
+<target name="clean">
+  <delete dir="${dirs.dst}"/>
+  <delete dir="${dirs.out}"/>
+  <delete dir="${dirs.doc}"/>
+</target>
+
+<target name="clean-libs">
+  <delete dir="${dirs.lib}"/>
+</target>
+
+<target name="clean-all" depends="clean, clean-libs"></target>
+</project>

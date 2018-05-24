@@ -1,0 +1,40 @@
+# Project build files
+.out-ant/
+.out-idea/
+libs/
+jars/
+doc/
+handout/
+handout.tar.gz
+dviz.jar
+
+
+# Sublime files
+*.sublime-workspace
+
+
+# IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries/
+.idea/copyright/
+
+
+# Python
+*.pyc
+
+
+# Common OS/Editor files
+*~
+._*
+
+.DS_Store
+.DS_Store?
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+
+# Vim files
+*.swp
