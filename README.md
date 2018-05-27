@@ -86,18 +86,19 @@ at the University of Washington.
 - `labs/` contains a subdirectory for each lab. The lab directories each have a
   `src/` directory initialized with skeleton code where students write their
   code, as well as a `tst/` directory containing the tests for that lab.
+- `handout-files/` contains files to be directly copied into the student
+  handout, including the main `README` and `run-tests.py`.
 
-This repository is not setup to be distributed to students as-is. The `Makefile`
-has targets to build the `handout` directory and `handout.tar.gz`, which contain
-a single JAR with the compiled framework, testing infrastructure, and all
-dependencies.
+The `master` branch of this repository is not setup to be distributed to
+students as-is. The `Makefile` has targets to build the `handout` directory and
+`handout.tar.gz`, which contain a single JAR with the compiled framework,
+testing infrastructure, and all dependencies. The `handout` branch of this
+repository is an auto-built version of the handout.
 
-- `handout-files/` contains files to be directly copied into handout, including
-  the main `README` and `run-tests.py`.
 
 ## Contributing
 The framework and assignments are ready to be used, but they are also works in
-progress. I have more features planned, and I welcome pull requests.
+progress. There are more features planned, and we welcome pull requests.
 
 
 ## Contact
