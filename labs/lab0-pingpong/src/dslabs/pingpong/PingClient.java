@@ -47,7 +47,7 @@ class PingClient extends Node implements Client {
         pong = null;
 
         send(new PingRequest(p), serverAddress);
-        set(new PingTimeout());
+        set(new PingTimeout(p));
     }
 
     @Override
@@ -78,7 +78,7 @@ class PingClient extends Node implements Client {
         Timeout Handlers
        -----------------------------------------------------------------------*/
     private synchronized void onPingTimeout(PingTimeout t) {
-        if (ping != null && pong == null) {
+        if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
             send(new PingRequest(ping), serverAddress);
             set(t);
         }

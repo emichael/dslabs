@@ -7,33 +7,33 @@ ping that server.
 
 ## Dramatis Personae
 Let's start with the `PingApplication`. `Application`s in this framework are
-state machines. They consume `Command`s, update internal state, and return
-`Result`s. The `PingApplication` is quite a simple one.
+simple state machines. They consume `Command`s, update internal state, and
+return `Result`s. The `PingApplication` is quite a simple one.
 
 ```java
 @ToString
 @EqualsAndHashCode
 public class PingApplication implements Application {
-  @Data
-  public static final class Ping implements Command {
-    @NonNull private final String value;
-  }
-
-  @Data
-  public static final class Pong implements Result {
-    @NonNull private final String value;
-  }
-
-  @Override
-  public Pong execute(Command command) {
-    if (!(command instanceof Ping)) {
-      throw new IllegalArgumentException();
+    @Data
+    public static final class Ping implements Command {
+        @NonNull private final String value;
     }
 
-    Ping p = (Ping) command;
+    @Data
+    public static final class Pong implements Result {
+        @NonNull private final String value;
+    }
 
-    return new Pong(p.value());
-  }
+    @Override
+    public Pong execute(Command command) {
+        if (!(command instanceof Ping)) {
+            throw new IllegalArgumentException();
+        }
+
+        Ping p = (Ping) command;
+
+        return new Pong(p.value());
+    }
 }
 ```
 
@@ -45,27 +45,27 @@ the `PingServer`.
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class PingServer extends Node {
-  private PingApplication app = new PingApplication();
+    private final PingApplication app = new PingApplication();
 
-  /* -------------------------------------------------------------------------
-    Construction and Initialization
-     -----------------------------------------------------------------------*/
-  public PingServer(Address address) {
-    super(address);
-  }
+    /* -------------------------------------------------------------------------
+        Construction and Initialization
+       -----------------------------------------------------------------------*/
+    public PingServer(Address address) {
+        super(address);
+    }
 
-  @Override
-  public void init() {
-    // No initialization necessary
-  }
+    @Override
+    public void init() {
+        // No initialization necessary
+    }
 
-  /* -------------------------------------------------------------------------
-    Message Handlers
-     -----------------------------------------------------------------------*/
-  private void handlePingRequest(PingRequest m, Address sender) {
-    Pong p = app.execute(m.ping());
-    send(new PongReply(p), sender);
-  }
+    /* -------------------------------------------------------------------------
+        Message Handlers
+       -----------------------------------------------------------------------*/
+    private void handlePingRequest(PingRequest m, Address sender) {
+        Pong p = app.execute(m.ping());
+        send(new PongReply(p), sender);
+    }
 }
 ```
 
@@ -83,12 +83,12 @@ has two. They're pretty self-explanatory.
 ```java
 @Data
 class PingRequest implements Message {
-  private final Ping ping;
+    private final Ping ping;
 }
 
 @Data
 class PongReply implements Message {
-  private final Pong pong;
+    private final Pong pong;
 }
 ```
 
@@ -100,75 +100,75 @@ use of our system.
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 class PingClient extends Node implements Client {
-  private final Address serverAddress;
+    private final Address serverAddress;
 
-  private Ping ping;
-  private Pong pong;
+    private Ping ping;
+    private Pong pong;
 
-  /* -------------------------------------------------------------------------
-    Construction and Initialization
-     -----------------------------------------------------------------------*/
-  public PingClient(Address address, Address serverAddress) {
-    super(address);
-    this.serverAddress = serverAddress;
-  }
-
-  @Override
-  public void init() {
-    // No initialization necessary
-  }
-
-  /* -------------------------------------------------------------------------
-    Client Methods
-     -----------------------------------------------------------------------*/
-  @Override
-  public synchronized void sendCommand(Command command) {
-    if (!(command instanceof Ping)) {
-      throw new IllegalArgumentException();
+    /* -------------------------------------------------------------------------
+        Construction and Initialization
+       -----------------------------------------------------------------------*/
+    public PingClient(Address address, Address serverAddress) {
+        super(address);
+        this.serverAddress = serverAddress;
     }
 
-    Ping p = (Ping) command;
-
-    ping = p;
-    pong = null;
-
-    send(new PingRequest(p), serverAddress);
-    set(new PingTimeout());
-  }
-
-  @Override
-  public synchronized boolean hasResult() {
-    return pong != null;
-  }
-
-  @Override
-  public synchronized Result getResult() throws InterruptedException {
-    while (pong == null) {
-      wait();
+    @Override
+    public synchronized void init() {
+        // No initialization necessary
     }
 
-    return pong;
-  }
+    /* -------------------------------------------------------------------------
+        Client Methods
+       -----------------------------------------------------------------------*/
+    @Override
+    public synchronized void sendCommand(Command command) {
+        if (!(command instanceof Ping)) {
+            throw new IllegalArgumentException();
+        }
 
-  /* -------------------------------------------------------------------------
-    Message Handlers
-     -----------------------------------------------------------------------*/
-  private synchronized void handlePongReply(PongReply m, Address sender) {
-    if (Objects.equal(ping.value(), m.pong().value())) {
-      pong = m.pong();
-      notify();
-    }
-  }
+        Ping p = (Ping) command;
 
-  /* -------------------------------------------------------------------------
-    Timeout Handlers
-     -----------------------------------------------------------------------*/
-  private synchronized void onPingTimeout(PingTimeout t) {
-    if (ping != null && pong == null) {
-      send(new PingRequest(ping), serverAddress);
-      set(t);
+        ping = p;
+        pong = null;
+
+        send(new PingRequest(p), serverAddress);
+        set(new PingTimeout(p));
     }
-  }
+
+    @Override
+    public synchronized boolean hasResult() {
+        return pong != null;
+    }
+
+    @Override
+    public synchronized Result getResult() throws InterruptedException {
+        while (pong == null) {
+            wait();
+        }
+
+        return pong;
+    }
+
+    /* -------------------------------------------------------------------------
+        Message Handlers
+       -----------------------------------------------------------------------*/
+    private synchronized void handlePongReply(PongReply m, Address sender) {
+        if (Objects.equal(ping.value(), m.pong().value())) {
+            pong = m.pong();
+            notify();
+        }
+    }
+
+    /* -------------------------------------------------------------------------
+        Timeout Handlers
+       -----------------------------------------------------------------------*/
+    private synchronized void onPingTimeout(PingTimeout t) {
+        if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
+            send(new PingRequest(ping), serverAddress);
+            set(t);
+        }
+    }
 }
 ```
 
@@ -183,12 +183,14 @@ result and notifies the calling code which may be waiting. Like all timeouts
 ```java
 @Data
 final class PingTimeout implements Timeout {
-  private static final int PING_TIMEOUT_MILLIS = 10;
+    private static final int PING_TIMEOUT_MILLIS = 10;
 
-  @Override
-  public int timeoutLengthMillis() {
-    return PING_TIMEOUT_MILLIS;
-  }
+    private final Ping ping;
+
+    @Override
+    public int timeoutLengthMillis() {
+        return PING_TIMEOUT_MILLIS;
+    }
 }
 ```
 
@@ -313,12 +315,12 @@ a crucial line in `PingClient`. Without re-setting the timeout, if one of the
 messages gets dropped in the network *again*, the system will be stuck.
 
 ```java
-  private synchronized void onPingTimeout(PingTimeout t) {
-    if (ping != null && pong == null) {
-      send(new PingRequest(ping), serverAddress);
-      // set(t);
+private synchronized void onPingTimeout(PingTimeout t) {
+    if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
+        send(new PingRequest(ping), serverAddress);
+        // set(t);
     }
-  }
+}
 ```
 
 And now let's re-run test 3.
@@ -348,12 +350,12 @@ What's that you say? Liveness isn't interesting? You want to violate a safety
 property? Okay. Let's get rid of the other crucial check in `PingClient`.
 
 ```java
-  private synchronized void handlePongReply(PongReply m, Address sender) {
+private synchronized void handlePongReply(PongReply m, Address sender) {
     // if (Objects.equal(ping.value(), m.pong().value())) {
-      pong = m.pong();
-      notify();
+        pong = m.pong();
+        notify();
     // }
-  }
+}
 ```
 
 Now, if the client gets an old `Pong` (with an incorrect value), it will
@@ -372,79 +374,74 @@ TEST 4: Single client repeatedly pings [SEARCH] (0pts)
 Checking that the client can finish all pings
 Starting breadth-first search...
   Explored: 0, Depth exploring: 0 (0.00s, 0.00K states/s)
-  Explored: 8353, Depth exploring: 11 (0.79s, 10.60K states/s)
+  Explored: 19038, Depth exploring: 11 (1.10s, 17.34K states/s)
 Search finished.
 
 Checking that all of the returned pongs match pings
 Starting breadth-first search...
-  Explored: 0, Depth exploring: 0 (0.01s, 0.00K states/s)
-  Explored: 4, Depth exploring: 3 (0.01s, 0.80K states/s)
+  Explored: 0, Depth exploring: 0 (0.00s, 0.00K states/s)
+  Explored: 5, Depth exploring: 4 (0.00s, 5.00K states/s)
 Search finished.
 
 State(nodes={pingserver=PingServer(super=Node(subNodes={}),
 app=PingApplication()),
 client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-1), pong=null),
-results=[])}, network=[MessageEnvelope(from=client1, to=pingserver,
-message=PingRequest(ping=PingApplication.Ping(value=ping-1)))],
-timeouts={pingserver=[], client1=[TimeoutEnvelope(to=client1,
-timeout=PingTimeout())]})
+results=[])}, network=[Message(client1 -> pingserver,
+PingRequest(ping=PingApplication.Ping(value=ping-1)))], timeouts={pingserver=[],
+client1=[Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-1)))]})
 
-  Message: client1 -> pingserver :
-  PingRequest(ping=PingApplication.Ping(value=ping-1))
+  Message(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=ping-1)))
 
 State(nodes={pingserver=PingServer(super=Node(subNodes={}),
 app=PingApplication()),
 client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-1), pong=null),
-results=[])}, network=[MessageEnvelope(from=client1, to=pingserver,
-message=PingRequest(ping=PingApplication.Ping(value=ping-1))),
-MessageEnvelope(from=pingserver, to=client1,
-message=PongReply(pong=PingApplication.Pong(value=ping-1)))],
-timeouts={pingserver=[], client1=[TimeoutEnvelope(to=client1,
-timeout=PingTimeout())]})
+results=[])}, network=[Message(client1 -> pingserver,
+PingRequest(ping=PingApplication.Ping(value=ping-1))), Message(pingserver ->
+client1, PongReply(pong=PingApplication.Pong(value=ping-1)))],
+timeouts={pingserver=[], client1=[Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-1)))]})
 
-  Message: pingserver -> client1 :
-  PongReply(pong=PingApplication.Pong(value=ping-1))
+  Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
 
 State(nodes={pingserver=PingServer(super=Node(subNodes={}),
 app=PingApplication()),
 client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-2), pong=null),
-results=[PingApplication.Pong(value=ping-1)])},
-network=[MessageEnvelope(from=client1, to=pingserver,
-message=PingRequest(ping=PingApplication.Ping(value=ping-2))),
-MessageEnvelope(from=client1, to=pingserver,
-message=PingRequest(ping=PingApplication.Ping(value=ping-1))),
-MessageEnvelope(from=pingserver, to=client1,
-message=PongReply(pong=PingApplication.Pong(value=ping-1)))],
-timeouts={pingserver=[], client1=[TimeoutEnvelope(to=client1,
-timeout=PingTimeout()), TimeoutEnvelope(to=client1, timeout=PingTimeout())]})
+results=[PingApplication.Pong(value=ping-1)])}, network=[Message(client1 ->
+pingserver, PingRequest(ping=PingApplication.Ping(value=ping-2))),
+Message(client1 -> pingserver,
+PingRequest(ping=PingApplication.Ping(value=ping-1))), Message(pingserver ->
+client1, PongReply(pong=PingApplication.Pong(value=ping-1)))],
+timeouts={pingserver=[], client1=[Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-1))), Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-2)))]})
 
-  Message: pingserver -> client1 : PongReply(pong=PingApplication.Pong(value=ping-1))
+  Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
 
 State(nodes={pingserver=PingServer(super=Node(subNodes={}),
 app=PingApplication()),
 client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-3), pong=null),
 results=[PingApplication.Pong(value=ping-1),
-PingApplication.Pong(value=ping-1)])}, network=[MessageEnvelope(from=client1,
-to=pingserver, message=PingRequest(ping=PingApplication.Ping(value=ping-2))),
-MessageEnvelope(from=client1, to=pingserver,
-message=PingRequest(ping=PingApplication.Ping(value=ping-1))),
-MessageEnvelope(from=pingserver, to=client1,
-message=PongReply(pong=PingApplication.Pong(value=ping-1))),
-MessageEnvelope(from=client1, to=pingserver,
-message=PingRequest(ping=PingApplication.Ping(value=ping-3)))],
-timeouts={pingserver=[], client1=[TimeoutEnvelope(to=client1,
-timeout=PingTimeout()), TimeoutEnvelope(to=client1, timeout=PingTimeout()),
-TimeoutEnvelope(to=client1, timeout=PingTimeout())]})
+PingApplication.Pong(value=ping-1)])}, network=[Message(client1 -> pingserver,
+PingRequest(ping=PingApplication.Ping(value=ping-2))), Message(client1 ->
+pingserver, PingRequest(ping=PingApplication.Ping(value=ping-1))),
+Message(pingserver -> client1,
+PongReply(pong=PingApplication.Pong(value=ping-1))), Message(client1 ->
+pingserver, PingRequest(ping=PingApplication.Ping(value=ping-3)))],
+timeouts={pingserver=[], client1=[Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-1))), Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-2))), Timeout(-> client1,
+PingTimeout(ping=PingApplication.Ping(value=ping-3)))]})
 
 dslabs.framework.testing.junit.InvariantViolationError: State violates "Clients got expected results"
 Error info: client1 got PingApplication.Pong(value=ping-1), expected PingApplication.Pong(value=ping-2)
 See above trace.
 
-  at dslabs.framework.testing.junit.BaseJUnitTest.invariantViolated(BaseJUnitTest.java:191)
+  at dslabs.framework.testing.junit.BaseJUnitTest.invariantViolated(BaseJUnitTest.java:270)
   ...
 
 ...FAIL (1.727s)
