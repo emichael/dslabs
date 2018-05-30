@@ -1,5 +1,5 @@
 # Lab 2: Primary-Backup Service
-*Based in part on the [MIT 6.824
+*Adapted from the [MIT 6.824
 Labs](http://nil.csail.mit.edu/6.824/2015/labs/lab-2.html)*
 
 
