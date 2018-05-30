@@ -25,6 +25,7 @@ package dslabs.framework.testing.junit;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Command;
+import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
@@ -35,6 +36,7 @@ import dslabs.framework.testing.search.SearchResults;
 import dslabs.framework.testing.search.SearchResults.EndCondition;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
+import dslabs.framework.testing.utils.Cloning;
 import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.visualization.VizClient;
 import java.io.IOException;
@@ -314,6 +316,15 @@ public abstract class BaseJUnitTest {
     }
 
     /* Utils */
+    protected long nodesSize() {
+        int total = 0;
+        for (Node node : runState.nodes()) {
+            total += Cloning.size(node);
+        }
+        return total;
+    }
+
+
     public static String readableSize(long size) {
         // Taken from: https://stackoverflow.com/a/5599842
         if (size <= 0) {

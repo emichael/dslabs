@@ -3,7 +3,6 @@ package dslabs.paxos;
 import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
-import dslabs.framework.Node;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.Workload;
@@ -17,7 +16,6 @@ import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.Search;
 import dslabs.framework.testing.search.SearchResults;
 import dslabs.framework.testing.search.SearchState;
-import dslabs.framework.testing.utils.Cloning;
 import dslabs.kvstore.KVStore;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.ArrayList;
@@ -96,15 +94,6 @@ public class PaxosTest extends BaseJUnitTest {
         }
     }
 
-    /* Run Test Helper Methods */
-
-    private long nodesSize() {
-        int total = 0;
-        for (Node node : runState.nodes()) {
-            total += Cloning.size(node);
-        }
-        return total;
-    }
 
     /* Tests */
 

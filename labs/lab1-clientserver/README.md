@@ -25,9 +25,9 @@ understanding of distributed systems.
 ## Part 1: A Key-Value Store
 First, you should implement the application interface in `KVStore.java`. This is
 the application that we'll use throughout the labs. By isolating it into a class
-with a standard command-driven interface, the rest of the code you write will be
-application-agnostic, and so can be used for any underlying application (for
-example, a network file system).
+with a standard command-driven interface, the majority of the code you write
+will be application-agnostic, and so can be used for any underlying application
+(for example, a network file system).
 
 Your key-value store should support three commands: `Get`, `Put`, and `Append`.
 Get returns the value of the key in a `GetResult`, if the key exists; otherwise
@@ -103,7 +103,19 @@ messages and set timeouts, respectively. The server's address is available via
 Our solution to part 2 took approximately 40 lines of code.
 
 You should pass the part 2 tests; execute them with `run-tests.py --lab 1 --part
-2`.
+2`. If your implementation finishes all tests but sometimes returns incorrect
+results (because appends are executed more than once), you should continue on to
+part 3. Part 2 of this lab is just intended as a stepping stone to part 3; the
+bug should become apparent later.
+
+
+### A Note About Integers
+The code above uses integers as sequence numbers. You might be wondering about
+integer overflow. This is an important concern! However, for simplicity in these
+labs, you can assume that the number of commands sent in each test is much
+smaller than `2^31 - 1`. In practice, we could use a larger fixed size value
+(128 bits should be sufficient) or an arbitrary-precision value (e.g.,
+`BigInteger` in Java).
 
 
 ## Part 3: Once and Only Once
@@ -116,7 +128,7 @@ However, we recommend doing so via adding a shim layer to an Application that
 ensures that each unique command is executed at most once. (Along with your at
 least once code from Part 2, that provides exactly once.) The reason is that we
 will want at most once semantics in later labs, and this will keep you from
-having to reimplement the functionality for Lab2 and Lab 3 and Lab 4.
+having to reimplement the functionality for Labs 2, 3, and 4.
 
 We've started you in the right direction by providing the `atmostonce` package.
 You will need to implement the classes in this package and possibly modify the
@@ -127,7 +139,7 @@ The `AMOApplication` is an `Application` that takes any `Application` and turns
 it into an `Application` capable of guaranteeing at-most-once execution of
 `AMOCommand`s. As the provided code indicates, it should reject any `Command`s
 that are not `AMOCommand`s (though, `executeReadOnly` allows callers to
-optionally execute non-AMO reads, which you might find useful in later labs).
+optionally execute non-AMO reads, which you will find useful in later labs).
 
 Some steps that may be needed: wrap the provided `Application` in the
 constructor in an `AMOApplication` (and perhaps changing the corresponding
@@ -137,6 +149,58 @@ similarly simple. Your modifications to `Request`, `Reply`, and `ClientTimeout`
 should only take a couple lines each; the metadata you added in part 2 can
 probably be removed (it should have been subsumed by metadata kept in
 `AMOCommand` and `AMOResult`).
+
+
+### Garbage Collection
+The test suite ensures that old commands are garbage collected properly from all
+of your nodes' data structures. In particular, you will need to ensure that your
+`AMOApplication` does not store unnecessary information. Remember, clients in
+this framework only have one outstanding `Request` at a time. The test
+infrastructure will never call `sendCommand` twice in a row without getting the
+result for the first command.
+
+
+### Designing with Timeouts
+The test suite also makes sure that your clients and server continue to perform
+well when the system has been running for a while. One important thing to note
+is that the event loop delivering messages and timeouts to your nodes
+prioritizes timeouts that are due. If a node sets too many timeouts and every
+time a timeout fires, it resets that timeout, it might eventually get into a
+state where its timeout queue is so long that the node only processes those
+timeouts and never does anything else!
+
+The workloads your clients are running in this long test continuously send new
+commands as soon as they receive the result for the previous one, so your
+`SimpleClient` might be susceptible to this problem with `ClientTimeout`s.
+
+There are two important protocol design patterns you should know:
+1. **The Resend/Discard Pattern:** Nodes set timeouts when they need responses
+   to the messages they send. If that timeout fires before the required response
+   is received, the node resends the message and resets the timeout.
+   Importantly, *if the timeout fires after the required response is received,
+   the node should drop the timeout (i.e., not reset it).* Otherwise, your
+   system could run into the problem described above. This pattern usually
+   requires the timeout itself having enough state to describe the response
+   needed.
+2. **The Tick Pattern:** Nodes set a single timeout on `init`. Then, every time
+   that timeout fires, the node resends any messages necessary (because the node
+   is awaiting response messages from other nodes) and also resets the timeout.
+   Thus, there is always exactly one timeout of that type in the node's queue,
+   which fires every `timeoutLengthMillis` (every "tick").
+
+There are trade-offs to make with both of these patterns, and you should think
+about their relative performance implementations. The tick pattern is often
+simpler and more conducive to exploratory model-checking, but it sometimes
+results in sending of unnecessary messages.
+
+One last note on timeouts, which is important for both of the above patterns:
+when a node resets a timeout inside a timeout handler, it is often best practice
+to wait until the very end of the timeout handler to reset it, so that the node
+doesn't get into an infinite loop by taking too long in the rest of the method.
+
+
+---
+
 
 **Hint:** for part 3, `Request` and `Reply` should probably be defined as
 follows.
