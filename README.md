@@ -41,7 +41,7 @@ of distributed computation, it enables a more thorough form of testing –
 First, the initial state of the system is configured. Then, we say that one
 state of the system, s₂, (consisting of the internal state of all nodes, the
 state of their timeout queues, and the state of the network) is the successor of
-another state s₁ if it can be obtained from s₁ be delivering a single message or
+another state s₁ if it can be obtained from s₁ by delivering a single message or
 timeout that is pending in s₁. A state might have multiple successor states.
 Model-checking is the systematic exploration of this state graph, the simplest
 approach being breadth-first search. The DSLabs model-checker lets us define
