@@ -113,7 +113,7 @@ bug should become apparent later.
 The code above uses integers as sequence numbers. You might be wondering about
 integer overflow. This is an important concern! However, for simplicity in these
 labs, you can assume that the number of commands sent in each test is much
-smaller than `2^31 - 1`. In practice, we could use a larger fixed size value
+smaller than `2^31 - 1`. In practice, you could use a larger fixed size value
 (128 bits should be sufficient) or an arbitrary-precision value (e.g.,
 `BigInteger` in Java).
 
@@ -197,6 +197,21 @@ One last note on timeouts, which is important for both of the above patterns:
 when a node resets a timeout inside a timeout handler, it is often best practice
 to wait until the very end of the timeout handler to reset it, so that the node
 doesn't get into an infinite loop by taking too long in the rest of the method.
+
+
+### Lab 1 Search Tests
+The state space search tests in this lab assert something stronger than in later
+labs. These tests assert that they can exhaust the state space entirely, rather
+than simply not finding an invariant-violating state in a certain amount of
+time. This means that for a given configuration (i.e., how many clients there
+are and which commands those clients will send), your state space should be
+finite. In particular, you should not increment sequence numbers unnecessarily.
+This comes with two benefits: (1) it's good practice to number the commands
+sequentially rather than simply monotonically, and (2) the search test will
+guarantee that for a given configuration *all possible executions* preserve
+linearizability! Because the tests are configured with fairly representative
+workloads, this is strong evidence that your system will preserve
+linearizability for all possible executions of all possible configurations.
 
 
 ---
