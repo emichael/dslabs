@@ -162,6 +162,8 @@ You should pass the lab 3 tests; execute them with `./run-tests.py --lab 3`.
   labs; it should be able to handle duplicates of the same `Command` in the
   Paxos log. (Though you might want to try to keep them out as a performance
   optimization.)
+* The easiest way for a client to send requests to the system is by broadcasting
+  them to all servers.
 * Your implementation needs to be able to handle "holes" in the Paxos log. That
   is, when completing the first phase of Paxos, a server might see previously
   accepted values for a slot but not previous slots. Your implementation should

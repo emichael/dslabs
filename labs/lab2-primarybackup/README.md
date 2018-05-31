@@ -226,6 +226,8 @@ structures for this part of the lab. Your `ViewServer` should have handlers for
 `GetView` simply returns the current view without the sender "pinging") and
 should handle and set `PingCheckTimeout`s.
 
+Our solution took approximately 100 lines of code.
+
 You should pass the part 1 tests before moving on to part 2; execute them with
 `run-tests.py --lab 2 --part 1`.
 
@@ -302,6 +304,8 @@ from the primary. However, you will need to keep some state on the primary to
 ensure that the backup processes operations in the correct order.
 
 You will have to define your own messages and timeouts for this part of the lab.
+
+Our solution took approximately 200 lines of code.
 
 You should pass the part 2 tests; execute them with `run-tests.py --lab 2 --part
 2`.
