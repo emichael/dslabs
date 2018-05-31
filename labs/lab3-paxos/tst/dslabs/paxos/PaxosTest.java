@@ -35,6 +35,7 @@ import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
 import static dslabs.kvstore.KVStoreWorkload.append;
+import static dslabs.kvstore.KVStoreWorkload.appendDifferentKeyWorkload;
 import static dslabs.kvstore.KVStoreWorkload.appendResult;
 import static dslabs.kvstore.KVStoreWorkload.appendSameKeyWorkload;
 import static dslabs.kvstore.KVStoreWorkload.differentKeysInfiniteWorkload;
@@ -434,7 +435,7 @@ public class PaxosTest extends BaseJUnitTest {
             partition.add(client(i));
         }
         runSettings.partition(partition);
-        Thread.sleep(5000);
+        Thread.sleep(1000);
         assertRunInvariantsHold();
 
         // Heal the partition
@@ -450,25 +451,102 @@ public class PaxosTest extends BaseJUnitTest {
         assertMaxFinishTimeLessThan(3000, startTime, finishTime);
     }
 
-    @Test(timeout = 55 * 1000)
-    @PrettyTestName("Constant repartitioning")
+    @Test(timeout = 35 * 1000)
+    @PrettyTestName("Constant repartitioning, check maximum wait time")
     @Category(RunTests.class)
     @TestPointValue(20)
     public void test17ConstantRepartition() throws InterruptedException {
-        final int nClients = 5, nServers = 5, testLengthSecs = 50;
+        final int nClients = 5, nServers = 5, testLengthSecs = 30;
 
+        // Startup the clients with 10ms inter-request delay
         setupStates(nServers);
-        runState.start(runSettings);
-
-        // Startup the clients
         for (int i = 1; i <= nClients; i++) {
-            runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
-                    false, true);
+            runState.addClientWorker(client(i),
+                    differentKeysInfiniteWorkload(10), false, true);
         }
 
         long startTime = System.currentTimeMillis();
 
-        // Re-partition -> sleep 5s -> Re-partition -> 1s -> unpartition -> 4s
+        // Re-partition -> 2s -> re-partition -> 2s -> heal -> 2s
+        Thread partition = new Thread(() -> {
+            List<Address> clients = new ArrayList<>();
+            for (int i = 1; i <= nClients; i++) {
+                clients.add(client(i));
+            }
+
+            List<Address> servers = new ArrayList<>();
+            for (Address server : runState.serverAddresses()) {
+                servers.add(server);
+            }
+
+            try {
+                while (!Thread.interrupted()) {
+                    for (int i = 0; i < 2; i++) {
+                        List<Address> newPartition = new LinkedList<>();
+                        newPartition.addAll(clients);
+                        Collections.shuffle(servers);
+
+                        // Grab a majority
+                        for (int j = 0; j * 2 <= nServers; j++) {
+                            newPartition.add(servers.get(j));
+                        }
+
+                        runSettings.reconnect().partition(newPartition);
+                        Thread.sleep(2000);
+                    }
+
+                    runSettings.reconnect();
+                    Thread.sleep(2000);
+                }
+            } catch (InterruptedException ignored) {
+            }
+        }, "Repartition system");
+        startedThreads.add(partition);
+        partition.start();
+
+        // Let the clients run
+        runState.start(runSettings);
+        Thread.sleep(testLengthSecs * 1000);
+
+        // Shut the clients down
+        long endTime = System.currentTimeMillis();
+        shutdownStartedThreads();
+        runState.stop();
+
+        runSettings.addInvariant(RESULTS_OK);
+        assertRunInvariantsHold();
+
+        // Make sure maximum wait is below 2s (should be much less)
+        assertMaxFinishTimeLessThan(2000, startTime, endTime);
+    }
+
+    @Test(timeout = 35 * 1000)
+    @PrettyTestName("Constant repartitioning, check maximum wait time")
+    @Category({RunTests.class, UnreliableTests.class})
+    @TestPointValue(30)
+    public void test18ConstantRepartitionUnreliable()
+            throws InterruptedException {
+        runSettings.networkDeliverRate(0.8);
+        test17ConstantRepartition();
+    }
+
+    @Test(timeout = 70 * 1000)
+    @PrettyTestName("Constant repartitioning, full throughput")
+    @Category({RunTests.class, UnreliableTests.class})
+    @TestPointValue(30)
+    public void test19RepartitionFullThroughput() throws InterruptedException {
+        final int nClients = 2, nServers = 5, testLengthSecs = 50, nRounds = 10;
+
+        runSettings.networkDeliverRate(0.8);
+
+        // Setup servers and clients
+        setupStates(nServers);
+        for (int i = 1; i <= nClients; i++) {
+            runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
+                    false, false);
+        }
+
+        // Re-partition -> 5s -> re-partition -> 1s -> heal -> 5s
         Thread partition = new Thread(() -> {
             List<Address> clients = new ArrayList<>();
             for (int i = 1; i <= nClients; i++) {
@@ -502,7 +580,7 @@ public class PaxosTest extends BaseJUnitTest {
                     }
 
                     runSettings.reconnect();
-                    Thread.sleep(4000);
+                    Thread.sleep(5000);
                 }
             } catch (InterruptedException ignored) {
             }
@@ -511,34 +589,36 @@ public class PaxosTest extends BaseJUnitTest {
         partition.start();
 
         // Let the clients run
+        runState.start(runSettings);
         Thread.sleep(testLengthSecs * 1000);
-
-        long endTime = System.currentTimeMillis();
 
         // Shut the clients down
         shutdownStartedThreads();
         runState.stop();
 
+        // Make sure that all clients got the correct results
         runSettings.addInvariant(RESULTS_OK);
         assertRunInvariantsHold();
-        assertMaxFinishTimeLessThan(5000, startTime, endTime);
+
+        // Kill the old clients and add a new batch
+        for (int i = 1; i <= nClients; i++) {
+            runState.removeNode(client(i));
+            runState.addClientWorker(client(i + nClients),
+                    appendDifferentKeyWorkload(nRounds));
+        }
+
+        // Run the new batch of clients to make sure we're not in deadlock
+        runSettings.reconnect();
+        runState.run(runSettings);
+        assertRunInvariantsHold();
     }
 
-    @Test(timeout = 55 * 1000)
-    @PrettyTestName("Constant repartitioning")
-    @Category({RunTests.class, UnreliableTests.class})
-    @TestPointValue(30)
-    public void test18ConstantRepartitionUnreliable()
-            throws InterruptedException {
-        runSettings.networkDeliverRate(0.8);
-        test17ConstantRepartition();
-    }
 
     @Test
     @PrettyTestName("Single client, simple operations")
     @Category(SearchTests.class)
     @TestPointValue(20)
-    public void test19basicSearch() {
+    public void test20basicSearch() {
         setupStates(3);
         initSearchState.addClientWorker(client(1), putGetWorkload);
 
@@ -570,7 +650,7 @@ public class PaxosTest extends BaseJUnitTest {
     @PrettyTestName("Single client, no progress in minority")
     @Category(SearchTests.class)
     @TestPointValue(15)
-    public void test20NoProgressInMinoritySearch() {
+    public void test21NoProgressInMinoritySearch() {
         setupStates(5);
 
         initSearchState.addClientWorker(client(1), putWorkload);
@@ -591,7 +671,7 @@ public class PaxosTest extends BaseJUnitTest {
     @PrettyTestName("Two clients, sequential appends visible")
     @Category(SearchTests.class)
     @TestPointValue(30)
-    public void test21TwoClientsSearch() {
+    public void test22TwoClientsSearch() {
         setupStates(3);
 
         initSearchState.addClientWorker(client(1),

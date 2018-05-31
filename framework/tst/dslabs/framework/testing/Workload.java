@@ -75,6 +75,14 @@ public abstract class Workload implements Serializable {
         throw new UnsupportedOperationException();
     }
 
+    public int millisBetweenRequests() {
+        return 0;
+    }
+
+    public final boolean isRateLimited() {
+        return millisBetweenRequests() > 0;
+    }
+
     public abstract void reset();
 
     /**

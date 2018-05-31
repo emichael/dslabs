@@ -301,15 +301,16 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
             joinGroup(g, numServersPerGroup);
         }
 
-        // Startup the clients
+        // Startup the clients with 10ms inter-request delay
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i),
-                    KVStoreWorkload.differentKeysInfiniteWorkload, false, true);
+                    KVStoreWorkload.differentKeysInfiniteWorkload(10), false,
+                    true);
         }
 
         long startTime = System.currentTimeMillis();
 
-        // Re-partition -> 5s -> unpartition -> 5s
+        // Re-partition -> 2s -> unpartition -> 2s
         Thread partition = new Thread(() -> {
             try {
                 while (!Thread.interrupted()) {
@@ -329,10 +330,10 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                             runSettings.nodeActive(servers.get(j), false);
                         }
                     }
+                    Thread.sleep(2000);
 
-                    Thread.sleep(5000);
                     runSettings.reconnect();
-                    Thread.sleep(5000);
+                    Thread.sleep(2000);
                 }
             } catch (InterruptedException ignored) {
             }
@@ -351,7 +352,9 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         runSettings.addInvariant(RESULTS_OK);
         assertRunInvariantsHold();
-        assertMaxFinishTimeLessThan(4000, startTime, finishTime);
+
+        // Make sure maximum wait is below 2s (should be much less)
+        assertMaxFinishTimeLessThan(2000, startTime, finishTime);
     }
 
     @Test(timeout = 60 * 1000)

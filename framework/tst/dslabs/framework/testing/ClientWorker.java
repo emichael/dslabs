@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -46,19 +47,29 @@ import org.apache.commons.lang3.tuple.Triple;
 @EqualsAndHashCode(of = {"client", "results"}, callSuper = false)
 @ToString(of = {"client", "results"})
 public final class ClientWorker extends Node {
+
+    @Data
+    private static class InterRequestTimeout implements Timeout {
+        private final int timeoutLengthMillis;
+    }
+
+    // Defaults
     private static final boolean DEFAULT_RECORD_RESULTS = true,
             DEFAULT_RECORD_FINISH_TIMES = false;
 
+    // Configuration
     private final Client client;
     @JsonIgnore private final Workload workload;
 
     // Properties
     @JsonIgnore @Getter private final boolean recordResults;
+    // TODO: don't record finish times, record what we care about
     @JsonIgnore @Getter private final boolean recordFinishTimes;
 
     // Mutable state
     @JsonIgnore private boolean initialized = false;
     @JsonIgnore private boolean waitingOnResult = false;
+    @JsonIgnore private boolean waitingToSend = false;
     @JsonIgnore private Result expectedResult = null;
 
     // Resulting state
@@ -147,22 +158,20 @@ public final class ClientWorker extends Node {
                 expectedResult = null;
             }
 
-            // If we can send a command, send it
-            if (!waitingOnResult && workload.hasNext()) {
-                if (workload.hasResults()) {
-                    Pair<Command, Result> commandAndResult =
-                            workload.nextCommandAndResult(
-                                    clientNode().address());
-                    expectedResult = commandAndResult.getRight();
-                    client.sendCommand(commandAndResult.getLeft());
-                } else {
-                    client.sendCommand(
-                            workload.nextCommand(clientNode().address()));
-                }
-                waitingOnResult = true;
-            } else {
+            // Check if there's a next command to send
+            if (waitingOnResult || waitingToSend || !workload.hasNext()) {
                 break;
             }
+
+
+            // If the workload is rate-limited, start the timeout
+            if (workload.isRateLimited()) {
+                set(new InterRequestTimeout(workload.millisBetweenRequests()));
+                waitingToSend = true;
+                break;
+            }
+
+            sendNextCommand();
 
             // Make sure we haven't been interrupted
             if (Thread.currentThread().isInterrupted()) {
@@ -174,6 +183,20 @@ public final class ClientWorker extends Node {
         if (done()) {
             notifyAll();
         }
+    }
+
+    private void sendNextCommand() {
+        if (workload.hasResults()) {
+            Pair<Command, Result> commandAndResult =
+                    workload.nextCommandAndResult(clientNode().address());
+            expectedResult = commandAndResult.getRight();
+            client.sendCommand(commandAndResult.getLeft());
+        } else {
+            client.sendCommand(workload.nextCommand(clientNode().address()));
+        }
+
+        waitingToSend = false;
+        waitingOnResult = true;
     }
 
     public synchronized boolean done() {
@@ -223,7 +246,11 @@ public final class ClientWorker extends Node {
     @Override
     public final synchronized void onTimeout(Timeout timeout,
                                              Address destination) {
-        clientNode().onTimeout(timeout, destination);
+        if (timeout instanceof InterRequestTimeout) {
+            sendNextCommand();
+        } else {
+            clientNode().onTimeout(timeout, destination);
+        }
         sendNextCommandWhilePossible();
     }
 
@@ -232,6 +259,8 @@ public final class ClientWorker extends Node {
             Consumer<Triple<Address, Address, Message>> messageAdder,
             Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
             Consumer<Pair<Address, Timeout>> timeoutAdder) {
+        // TODO: make sure there's no overhead for having the config both places
+        super.config(messageAdder, batchMessageAdder, timeoutAdder);
         clientNode().config(messageAdder, batchMessageAdder, timeoutAdder);
     }
 }

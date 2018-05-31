@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import lombok.Getter;
 import lombok.NonNull;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -199,6 +200,16 @@ public abstract class KVStoreWorkload extends Workload {
         private boolean lastWasGet = true;
         private String lastPutKey = null;
 
+        @Getter private final int millisBetweenRequests;
+
+        DifferentKeysInfiniteWorkload(int millisBetweenRequests) {
+            this.millisBetweenRequests = millisBetweenRequests;
+        }
+
+        DifferentKeysInfiniteWorkload() {
+            this(0);
+        }
+
         @Override
         public Pair<Command, Result> nextCommandAndResult(
                 Address clientAddress) {
@@ -234,6 +245,11 @@ public abstract class KVStoreWorkload extends Workload {
     // TODO: make anonymous class just because
     public static final Workload differentKeysInfiniteWorkload =
             new DifferentKeysInfiniteWorkload();
+
+    public static Workload differentKeysInfiniteWorkload(
+            int millisBetweenRequests) {
+        return new DifferentKeysInfiniteWorkload(millisBetweenRequests);
+    }
 
 
     /* KVStore-specific predicates */
