@@ -183,10 +183,10 @@ There are two important protocol design patterns you should know:
    requires the timeout itself having enough state to describe the response
    needed.
 2. **The Tick Pattern:** Nodes set a single timeout on `init`. Then, every time
-   that timeout fires, the node resends any messages necessary (because the node
-   is awaiting response messages from other nodes) and also resets the timeout.
-   Thus, there is always exactly one timeout of that type in the node's queue,
-   which fires every `timeoutLengthMillis` (every "tick").
+   that timeout fires, the node takes some action (e.g., resends messages
+   awaiting responses) and also resets the timeout. Thus, there is always
+   exactly one timeout of that type in the node's queue, which fires every
+   `timeoutLengthMillis` (every "tick").
 
 There are trade-offs to make with both of these patterns, and you should think
 about their relative performance implementations. The tick pattern is often
