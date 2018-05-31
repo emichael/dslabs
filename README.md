@@ -9,7 +9,7 @@ THIS REPOSITORY WITH SOLUTION CODE PRIVATE.**
 
 
 DSLabs is a new framework for creating, testing, model-checking, visualizing,
-and debugging distributed systems lab assignments. The framework is based around
+and debugging distributed systems lab assignments. The framework is built around
 message-passing state machines (also known as I/O automata or distributed
 actors), which we call *nodes*. These basic units of a distributed system
 consist of a set of message and timeout handlers; these handlers define how the
