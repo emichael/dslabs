@@ -18,8 +18,8 @@ using Paxos to agree on the order. Paxos will get the agreement right even if
 some of the replicas are unavailable, or have unreliable network connections, or
 even if subsets of the replicas are isolated in their own network partitions. As
 long as Paxos can assemble a majority of replicas, it can process client
-operations. Replicas that were not in the majority can catch up later by asking
-Paxos for operations that they missed.
+operations. Replicas that were not in the majority can catch up later, getting
+the operations that they missed.
 
 
 ## Overview
@@ -32,12 +32,12 @@ the rest of the messages and timeouts your implementation uses.
 Your system should guarantee *linearizability* of clients' commands. That is,
 from the perspective of the callers of clients' functions and the results they
 see, your implementation should be indistinguishable from a single, correct
-entity processing clients' commands in sequence. Furthermore, your
-implementation should be able to process incoming commands and return results as
-long as a majority of servers can communicate with each other with "reasonable"
-message delay (and as long as the client can send a command to these servers).
-This means that it should be robust to dropped messages, as long as network
-connectivity is eventually restored.
+entity processing clients' commands in sequence (e.g., your `SimpleServer` from
+lab 1). Furthermore, your implementation should be able to process incoming
+commands and return results as long as a majority of servers can communicate
+with each other with "reasonable" message delay (and as long as the client can
+send a command to these servers). This means that it should be robust to dropped
+messages, as long as network connectivity is eventually restored.
 
 You should achieve this by implementing the multi-instance Paxos algorithm.
 Multi-instance Paxos can be viewed as a way for servers to agree on a shared log
@@ -61,78 +61,84 @@ crashes, since it stores neither the key/value database nor the Paxos state on
 disk. Also, It requires the set of servers to be fixed, so one cannot replace
 old servers. These problems can be fixed.
 
-You should consult the Paxos lecture notes, [Paxos Made
+You might find the Paxos lecture notes, [Paxos Made
 Simple](https://lamport.azurewebsites.net/pubs/paxos-simple.pdf), and [Paxos
 Made Moderately
 Complex](http://www.cs.cornell.edu/courses/cs7412/2011sp/paxos.pdf), and
-[Viewstamped Replication](https://dl.acm.org/citation.cfm?id=62549). However,
-you should note that in many presentations, nodes in Paxos are divided into
-different "roles" (e.g., proposer, acceptor); your implementation only has one
+[Viewstamped Replication](https://dl.acm.org/citation.cfm?id=62549) useful.
+
+We suggest you follow the Paxos Made Moderately Complex (PMMC) protocol.
+However, you should note that in PMMC, nodes in Paxos are divided into different
+"roles" (e.g., replica, acceptor, leader); your implementation only has one
 role, `PaxosServer`, which will play all of the aforementioned roles
 simultaneously. This could be done by keeping all of the state for each sub-role
 entirely separate, but you'll find that there are opportunities for optimization
-on the naive approach.
+on the naive approach. You should not try to "spawn" scouts or commanders;
+instead, simply keep the necessary state on your `PaxosServer`.
+
+
+## Stable Leaders
+In addition to the base PMMC protocol, you should implement a mechanism to find
+a stable leader (sometimes called the distinguished proposer). When a leader is
+preempted (receives a ballot larger than its own), instead of immediately
+starting phase 1 of Paxos (spawning a scout) again, it should transition to
+"follower mode" and stay inactive.
+
+Every `PaxosServer` should have a `HeartbeatCheckTimeout` which ticks, firing
+periodically, exactly like the `PingCheckTimeout` in lab 2. While in follower
+mode, if a node sees two of these timeouts in a row without receiving a message
+from the node it thinks is the active leader (the one with the largest ballot
+it's seen), it should then attempt to become active and start phase 1 of Paxos.
+
+To prevent itself from being preempted unnecessarily, while an active leader, a
+`PaxosServer` should periodically broadcast `Heartbeat` messages to the other
+nodes. Simply have another timeout which fires periodically.
+
+While you can use the AIMD (additive increase, multiplicative decrease) like the
+one described in section 3 of the PMMC paper, we recommend keeping the timeout
+lengths fixed for simplicity. The timeout lengths from lab 2 are a good starting
+point, but you are free to tune them as you see fit.
+
+One important note: this approach to leader election should only be seen as a
+performance optimization. There could still be nodes which simultaneously
+believe themselves to be an active leader – who believe their ballot is
+acceptable to a majority. The Paxos protocol ensures safety in this case.
 
 
 ## Garbage Collection
-A long-running Paxos-based server must forget about log slots that are no longer
-needed and free the memory storing information about those slots. A command in a
-log slot is needed if it has not been processed on all servers; it is not okay
-to delete commands as soon as they are processed on the local server. In order
-to implement this log compaction, each server will have to inform the other
-servers about the latest point in its own log that is "stable." It is okay for
-you to piggyback this information in the agreement protocol messages or periodic
-heartbeat messages. However, these messages should forward the log compaction
-bookkeeping information for *all* servers, supporting a one–all–one
-communication pattern.
+A long-running Paxos deployment must forget about log slots that are no longer
+needed and free the memory storing information about those slots. While PMMC
+proposes one mechanism for garbage collection, for this lab we will do something
+slightly simpler.
 
-If one of your servers falls behind (i.e. did not receive the decision for some
-instance), it will later need to find out what (if anything) was agreed to.
-There are several ways to do this. If you are using "durable leadership" (see
-below), a reasonable way to do this would be to have the current leader send any
-decisions it doesn't know that other servers know to those servers.
+For our purposes, we will say that a command in a log slot is needed if it has
+not been processed on all servers; it is not okay to delete commands as soon as
+they are processed on the local server. In order to implement this log
+compaction, each server will have to inform the other servers about the latest
+point in its own log that is "stable." The easiest approach is to piggyback this
+information on the periodic heartbeat protocol. Each follower server responds to
+heartbeats with a message containing the latest slot they have executed
+(`slot_out` in PMMC terms). Then, the active leader should be able to figure out
+the latest log slot which has been executed on all nodes; it can then include
+that information in subsequent heartbeats. Once a node learns that all nodes
+have executed all slots up to some slot `i`, it can then safely discard all
+information for slots less than or equal to `i`.
 
-One utility function you'll likely want to implement on `PaxosServer` is
-`maxDone()`:
-
-```java
-/**
- * Locally computes the maximum slot number which the server knows has been
- * executed on all PaxosServers.
- */
-private int maxDone() {
-}
-```
-
-Commands in log slots less than or equal to this value can be safely discarded.
-You can then use the test `slot <= maxDone()` throughout your server code.
+If one of your servers falls behind (i.e. does not receive the decision for some
+instance), it will later need to find out what (if anything) was agreed to. A
+simple way to bring a follower node up to date is by having the active leader
+send it missing decisions when the follower sends its latest executed slot in
+the above protocol.
 
 Your garbage collection mechanism should be able to free memory from old log
 slots when all Paxos servers can communicate with each other; it does not need
-to make progress when only a majority can communicate.
-
-
-## Leadership
-One of the biggest design decisions you'll have to make when implementing your
-replicated state machine is when your servers will execute the first phase of
-Paxos. Each server should initiate this first phase on startup, but what happens
-once a node is preempted while proposing a value? It could immediately restart
-the first Paxos phase. Or, it could instead assume that the preempting node is
-now the "distinguished proposer" and wait until that node appears to be
-unavailable (e.g., because it has not received a heartbeat/ping response/other
-message from that node recently) before attempting to execute the first Paxos
-phase again.
-
-Note that in both cases, your system will still have to cope with multiple nodes
-proposing values simultaneously. However, in the "durable leadership" case
-(sometimes called Multi-Paxos), you're trying to make that less likely.
-
-Both options are viable, though different in terms of efficiency, and this
-choice will have ramifications for the rest of your implementation. For
-instance, the case where you have a distinguished proposer is more amenable to
-the common optimization wherein nodes execute the first Paxos phase for *all*
-log slots simultaneously (instead of each log slot being managed completely
-independently).
+to make progress when only a majority can communicate. This is one weakness of
+the simplified approach we describe. It is possible to do garbage collection of
+slots that only a majority have executed and discovered the values for. In that
+case, however, bringing lagging nodes up-to-date requires a complete *state
+transfer*, which can get tricky. Additionally, doing state transfer is not as
+modular; you will see what we mean by that when you use Paxos as a part of a
+larger protocol in lab 4.
 
 
 ---
@@ -153,18 +159,24 @@ You should pass the lab 3 tests; execute them with `./run-tests.py --lab 3`.
   long as it is not preempted by another server and can communicate with a
   quorum, that value is eventually decided in that slot.
 * Your implementation should make use of the `atmostonce` package as in previous
-  labs.
-* In order to implement log compaction properly, you might need to adjust the
-  way your `AMOApplication` works. Remember, clients only have one outstanding
-  `Request` at a time.
+  labs; it should be able to handle duplicates of the same `Command` in the
+  Paxos log. (Though you might want to try to keep them out as a performance
+  optimization.)
 * Your implementation needs to be able to handle "holes" in the Paxos log. That
-  is, at certain points, a server might see agreement being reached on a slot
-  but not previous slots. Your implementation should still make progress in this
-  case.
+  is, when completing the first phase of Paxos, a server might see previously
+  accepted values for a slot but not previous slots. Your implementation should
+  still make progress in this case.
 * Figure out the minimum number of messages Paxos should use when reaching
   agreement in non-failure cases and make your implementation use that minimum.
 * The search tests in this lab are rather minimal because the state space for
   most implementations of Paxos explodes quickly. You should take their passing
   with a grain of salt.
 * You'll want to use the fact that the `Address` interface extends
-  `Comparable<Address>`.
+  `Comparable<Address>` to implement ballots.
+* One benefit of colocating all PMMC roles in the `PaxosServer` is that your
+  "acceptor" knows both the accepted and decided values; you need not ever store
+  more than one value for each slot on each node. You can then include both the
+  accepted and decided values in P1B messages, speeding up the leader election
+  process.
+* You might find the `Multimap` classes from Guava useful for storing P2B
+  messages for each slot.
