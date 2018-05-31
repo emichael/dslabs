@@ -110,7 +110,7 @@ bug should become apparent later.
 
 
 ### A Note About Integers
-The code above uses integers as sequence numbers. You might be wondering about
+The code above uses `int`s as sequence numbers. You might be wondering about
 integer overflow. This is an important concern! However, for simplicity in these
 labs, you can assume that the number of commands sent in each test is much
 smaller than `2^31 - 1`. In practice, you could use a larger fixed size value
