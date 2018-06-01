@@ -34,12 +34,11 @@ which systematically explore the state-space of students' implementations. These
 tests are much more likely to catch many common distributed systems bugs,
 especially bugs which rely on precise orderings of messages. Moreover, when a
 bug is found, these search-based tests output a trace which generates the issue,
-making debugging dramatically simpler.
-
-Finally, DSLabs is integrated with a tool for [visualizing executions of
-distributed systems](https://github.com/uwplse/dviz), which allows students to
-graphically explore executions of their systems and visualize
-invariant-violating traces found by the model-checker.
+making debugging dramatically simpler. Finally, DSLabs is integrated with a tool
+for [visualizing executions of distributed
+systems](https://github.com/uwplse/dviz), which allows students to graphically
+explore executions of their systems and visualize invariant-violating traces
+found by the model-checker.
 
 
 ## Overview
