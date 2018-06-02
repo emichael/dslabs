@@ -8,7 +8,7 @@ THIS REPOSITORY WITH SOLUTION CODE PRIVATE.**
 *University of Washington*
 
 
-DSLabs is a new framework for creating, testing, model-checking, visualizing,
+DSLabs is a new framework for creating, testing, model checking, visualizing,
 and debugging distributed systems lab assignments.
 
 The best way to understand distributed systems is by implementing them. And as
@@ -29,7 +29,7 @@ and does not provide the immediate feedback of automated tests.
 
 The DSLabs framework and labs are engineered around the goal of helping students
 understand and correctly implement distributed systems. The framework provides a
-suite of tools for creating automated tests, including model-checking tests
+suite of tools for creating automated tests, including model checking tests
 which systematically explore the state-space of students' implementations. These
 tests are much more likely to catch many common distributed systems bugs,
 especially bugs which rely on precise orderings of messages. Moreover, when a
@@ -41,7 +41,7 @@ explore executions of their systems and visualize invariant-violating traces
 found by the model-checker.
 
 
-## Overview
+### Programming Model
 The DSLabs framework is built around message-passing state machines (also known
 as I/O automata or distributed actors), which we call *nodes*. These basic units
 of a distributed system consist of a set of message and timeout handlers; these
@@ -57,6 +57,8 @@ framework is that by creating for students a programming environment which
 mirrors the mathematical model distributed protocols are described in, we put
 them on the best footing to be able to reason about their own implementations.
 
+
+### Testing and Model Checking
 The lab infrastructure has a suite of tools for creating automated test cases
 for distributed systems. These tools make it easy to express the scenarios the
 system should be tested against (e.g., varying client workloads, network
@@ -69,20 +71,32 @@ implementations, it is difficult to test all possible scenarios that might
 occur. Moreover, once these tests uncover a problem, it is a challenge to
 discover its root cause. Because the DSLabs framework has its node-centric view
 of distributed computation, it enables a more thorough form of testing –
-*model-checking*. Model-checking a distributed system is conceptually simple.
-First, the initial state of the system is configured. Then, we say that one
-state of the system, s₂, (consisting of the internal state of all nodes, the
-state of their timeout queues, and the state of the network) is the successor of
-another state s₁ if it can be obtained from s₁ by delivering a single message or
-timeout that is pending in s₁. A state might have multiple successor states.
-Model-checking is the systematic exploration of this state graph, the simplest
-approach being breadth-first search. The DSLabs model-checker lets us define
-*invariants* that should be preserved (e.g. linearizability) and then search
-though all possible ordering of events to make sure those invariants are
-preserved in students' implementations. When an invariant violation is found,
-the model-checker can produce a *minimal trace* which leads to the invariant
-violation.
+*model checking*.
 
+Model checking a distributed system is conceptually simple. First, the initial
+state of the system is configured. Then, we say that one state of the system,
+s₂, (consisting of the internal state of all nodes, the state of their timeout
+queues, and the state of the network) is the successor of another state s₁ if it
+can be obtained from s₁ by delivering a single message or timeout that is
+pending in s₁. A state might have multiple successor states. Model checking is
+the systematic exploration of this state graph, the simplest approach being
+breadth-first search. The DSLabs model-checker lets us define *invariants* that
+should be preserved (e.g. linearizability) and then search though all possible
+ordering of events to make sure those invariants are preserved in students'
+implementations. When an invariant violation is found, the model-checker can
+produce a *minimal trace* which leads to the invariant violation.
+
+While model checking distributed systems is useful and has been used extensively
+in industry and academia to find bugs in distributed systems, exploration of the
+state graph is still a fundamentally hard problem – the size of the graph is
+typically exponential as a function of depth. To extend the usefulness of model
+checking even further, the test infrastructure lets us prune the portion of the
+state graph we explore for an individual test, guiding the search towards common
+problems while still exploring all possible executions in the remaining portion
+of the state space.
+
+
+### Visualization
 This framework is integrated with the [DViz](https://github.com/uwplse/dviz)
 distributed systems visualization tool, created by [Doug
 Woos](https://www.dougwoos.com/). This tool allows students to interactively
@@ -92,6 +106,7 @@ hypotheses about how their nodes should behave, helping them discover bugs in
 their protocols and gain a deeper understanding for the way their systems work.
 Additionally, the tool is used to visualize the invariant-violating traces
 produced by the model-checker.
+
 
 ## Assignments
 We currently have four individual assignments in this framework. In these
@@ -117,11 +132,12 @@ at the University of Washington.
 
 
 ## Directory Overview
-- `framework/` contains the interface students program against in `src/` and the
-  testing infrastructure in `tst/`.
+- `framework/src` contains the interface students program against.
+- `framework/tst` contains in the testing infrastructure.
 - `labs/` contains a subdirectory for each lab. The lab directories each have a
   `src/` directory initialized with skeleton code where students write their
-  code, as well as a `tst/` directory containing the tests for that lab.
+  implementations, as well as a `tst/` directory containing the tests for that
+  lab.
 - `handout-files/` contains files to be directly copied into the student
   handout, including the main `README` and `run-tests.py`.
 
