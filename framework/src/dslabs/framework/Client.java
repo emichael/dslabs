@@ -46,8 +46,8 @@ public interface Client {
 
     /**
      * Send a {@link Command} to the system with the given operation. Should
-     * send immediately regardless of whether or not a {@link Result} was
-     * received for the previous operation.
+     * send the {@link Command} and return immediately without blocking,
+     * sleeping, or starting other threads.
      *
      * @param command
      *         the {@link Application} command to send
@@ -56,7 +56,8 @@ public interface Client {
 
     /**
      * Whether or not a {@link Result} was received for the previously sent
-     * {@link Command}. Should return immediately.
+     * {@link Command}. Should return immediately without blocking, sleeping, or
+     * starting other threads.
      *
      * @return whether the {@link Result} has been received
      */
