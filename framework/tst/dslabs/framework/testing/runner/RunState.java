@@ -199,8 +199,8 @@ public class RunState extends AbstractState {
     }
 
     private long timeLeftMillis() {
-        return System.currentTimeMillis() -
-                (startTimeMillis + settings.maxTimeSecs() * 1000);
+        return (startTimeMillis + settings.maxTimeSecs() * 1000) -
+                System.currentTimeMillis();
     }
 
     public void run(RunSettings settings) throws InterruptedException {
