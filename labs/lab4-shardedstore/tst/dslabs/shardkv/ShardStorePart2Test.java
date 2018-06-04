@@ -176,10 +176,8 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         // Startup the clients
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i), TransactionalKVStoreWorkload
-                    .differentKeysInfiniteWorkload(numShards), false, true);
+                    .differentKeysInfiniteWorkload(numShards), false);
         }
-
-        long startTime = System.currentTimeMillis();
 
         if (moveShards) {
             Thread t = moveShards(numGroups, numShards);
@@ -189,15 +187,13 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
 
         Thread.sleep(testLengthSecs * 1000);
 
-        long finishTime = System.currentTimeMillis();
-
         // Shut everything down
         shutdownStartedThreads();
         runState.stop();
 
         runSettings.addInvariant(RESULTS_OK);
         assertRunInvariantsHold();
-        assertMaxFinishTimeLessThan(4000, startTime, finishTime);
+        assertMaxWaitTimeLessThan(4000);
     }
 
     @Test(timeout = 60 * 1000)

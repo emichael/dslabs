@@ -646,15 +646,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         for (int i = 0; i < nClients; i++) {
             runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
-                    false, true);
+                    false);
         }
-
-        long startTime = System.currentTimeMillis();
 
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
-
-        long finishTime = System.currentTimeMillis();
 
         // Shut the clients down
         shutdownStartedThreads();
@@ -665,7 +661,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         assertRunInvariantsHold();
 
         // Reference implementation just over 1 sec
-        assertMaxFinishTimeLessThan(5000, startTime, finishTime);
+        assertMaxWaitTimeLessThan(5000);
     }
 
     @Test(timeout = 50 * 1000)

@@ -154,10 +154,6 @@ public final class SearchState extends AbstractState
                 throw new RuntimeException(
                         "Cannot add a ClientWorker that does not store results to SearchState.");
             }
-            if (((ClientWorker) node).recordFinishTimes()) {
-                LOG.warning(
-                        "Should not add a ClientWorker that stores finish times to SearchState.");
-            }
         }
 
         timeouts.put(address, new TimeoutQueue());

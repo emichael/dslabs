@@ -304,11 +304,8 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         // Startup the clients with 10ms inter-request delay
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i),
-                    KVStoreWorkload.differentKeysInfiniteWorkload(10), false,
-                    true);
+                    KVStoreWorkload.differentKeysInfiniteWorkload(10), false);
         }
-
-        long startTime = System.currentTimeMillis();
 
         // Re-partition -> 2s -> unpartition -> 2s
         Thread partition = new Thread(() -> {
@@ -344,8 +341,6 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
 
-        long finishTime = System.currentTimeMillis();
-
         // Shut the clients down
         shutdownStartedThreads();
         runState.stop();
@@ -354,7 +349,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         assertRunInvariantsHold();
 
         // Make sure maximum wait is below 2s (should be much less)
-        assertMaxFinishTimeLessThan(2000, startTime, finishTime);
+        assertMaxWaitTimeLessThan(2000);
     }
 
     @Test(timeout = 60 * 1000)
@@ -376,10 +371,8 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         // Startup the clients
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i),
-                    KVStoreWorkload.differentKeysInfiniteWorkload, false, true);
+                    KVStoreWorkload.differentKeysInfiniteWorkload, false);
         }
-
-        long startTime = System.currentTimeMillis();
 
         // Constantly move shards around
         Thread t = moveShards(numGroups, numShards);
@@ -389,15 +382,13 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
 
-        long finishTime = System.currentTimeMillis();
-
         // Shut the clients down
         shutdownStartedThreads();
         runState.stop();
 
         runSettings.addInvariant(RESULTS_OK);
         assertRunInvariantsHold();
-        assertMaxFinishTimeLessThan(4000, startTime, finishTime);
+        assertMaxWaitTimeLessThan(4000);
     }
 
     @Test(timeout = 40 * 1000)

@@ -175,9 +175,12 @@ public abstract class AbstractState implements Serializable {
                 Collectors.toMap(Entry::getKey, e -> e.getValue().results()));
     }
 
-    public synchronized Map<Address, List<Long>> finishTimes() {
-        return clientWorkers.entrySet().stream().collect(Collectors
-                .toMap(Entry::getKey, e -> e.getValue().finishTimes()));
+    public synchronized long maxWaitTimeMillis() {
+        // TODO: Maybe relocate this method to RunState or override and block in
+        //       SearchState. Doesn't make sense in SearchState
+        return clientWorkers.values().stream()
+                            .mapToLong(ClientWorker::maxWaitTimeMilis).max()
+                            .orElse(0);
     }
 
     public synchronized Iterable<Node> nodes() {
@@ -231,14 +234,12 @@ public abstract class AbstractState implements Serializable {
     }
 
     public synchronized void addClientWorker(Address address,
-                                             boolean recordResults,
-                                             boolean recordFinishTimes) {
+                                             boolean recordResults) {
         if (hasNode(address)) {
             LOG.severe("Re-adding an existing address to state");
             return;
         }
-        clientWorkers.put(address,
-                gen.clientWorker(address, recordResults, recordFinishTimes));
+        clientWorkers.put(address, gen.clientWorker(address, recordResults));
         setupNode(address);
     }
 
@@ -253,15 +254,13 @@ public abstract class AbstractState implements Serializable {
     }
 
     public synchronized void addClientWorker(Address address, Workload workload,
-                                             boolean recordResults,
-                                             boolean recordFinishTimes) {
+                                             boolean recordResults) {
         if (hasNode(address)) {
             LOG.severe("Re-adding an existing address to state");
             return;
         }
         clientWorkers.put(address,
-                gen.clientWorker(address, workload, recordResults,
-                        recordFinishTimes));
+                gen.clientWorker(address, workload, recordResults));
         setupNode(address);
     }
 

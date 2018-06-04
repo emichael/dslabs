@@ -172,24 +172,19 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
 
         for (int i = 1; i <= numClients; i++) {
             runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
-                    false, true);
+                    false);
         }
 
-        long startTime = System.currentTimeMillis();
-        runState.start(runSettings);
-
         // Let the clients run
-        Thread.sleep(testLengthSecs * 1000);
-
-        long finishTime = System.currentTimeMillis();
-        runState.stop();
+        runSettings.maxTimeSecs(testLengthSecs);
+        runState.run(runSettings);
 
         // Check if all the results were right
         runSettings.addInvariant(RESULTS_OK);
         assertRunInvariantsHold();
 
         // No client should wait more than 1 second (it should be much less)
-        assertMaxFinishTimeLessThan(1000, startTime, finishTime);
+        assertMaxWaitTimeLessThan(1000);
     }
 
     @Test

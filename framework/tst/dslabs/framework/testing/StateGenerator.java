@@ -67,11 +67,9 @@ public class StateGenerator {
 
     @SuppressWarnings("unchecked")
     public <C extends Node & Client> ClientWorker clientWorker(Address address,
-                                                               boolean recordResults,
-                                                               boolean recordFinishTimes) {
+                                                               boolean recordResults) {
         return new ClientWorker((C) clientSupplier.apply(address),
-                workloadSupplier.apply(address), recordResults,
-                recordFinishTimes);
+                workloadSupplier.apply(address), recordResults);
     }
 
     public ClientWorker clientWorker(Address address, Workload workload) {
@@ -80,10 +78,9 @@ public class StateGenerator {
     }
 
     public ClientWorker clientWorker(Address address, Workload workload,
-                                     boolean recordResults,
-                                     boolean recordFinishTimes) {
+                                     boolean recordResults) {
         return new ClientWorker((Node & Client) clientSupplier.apply(address),
-                workload, recordResults, recordFinishTimes);
+                workload, recordResults);
     }
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses) {
@@ -93,12 +90,10 @@ public class StateGenerator {
     }
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
-                                                    boolean recordResults,
-                                                    boolean recordFinishTimes) {
+                                                    boolean recordResults) {
         return addresses.stream().collect(Collectors.toMap(Function.identity(),
                 a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workloadSupplier.apply(a), recordResults,
-                        recordFinishTimes)));
+                        workloadSupplier.apply(a), recordResults)));
     }
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
@@ -110,11 +105,10 @@ public class StateGenerator {
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
                                                     Workload workload,
-                                                    boolean recordResults,
-                                                    boolean recordFinishTimes) {
+                                                    boolean recordResults) {
         return addresses.stream().collect(Collectors.toMap(Function.identity(),
                 a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workload, recordResults, recordFinishTimes)));
+                        workload, recordResults)));
     }
 
     public static class StateGeneratorBuilder {

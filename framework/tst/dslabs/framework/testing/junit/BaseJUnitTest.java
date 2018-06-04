@@ -43,7 +43,6 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Set;
 import org.junit.After;
@@ -281,37 +280,18 @@ public abstract class BaseJUnitTest {
         assertEquals(expectedResult, result);
     }
 
-    protected void assertMaxFinishTimeLessThan(long allowedMillis,
-                                               long startTimeMillis,
-                                               long endTimeMillis) {
+    protected void assertMaxWaitTimeLessThan(long allowedMillis) {
         // TODO: maybe shut the runstate and threads down here
 
-        // TODO: maybe record start and finish times in ClientWorker
-        List<List<Long>> modified = new LinkedList<>();
-        for (List<Long> fts : runState.finishTimes().values()) {
-            LinkedList<Long> m = new LinkedList<>(fts);
-            m.addFirst(startTimeMillis);
-            m.addLast(endTimeMillis);
-            modified.add(m);
-        }
+        long maxWaitTimeMillis = runState.maxWaitTimeMillis();
 
-        long maxWaitTime = 0;
-        for (List<Long> fts : modified) {
-            Long previous = null;
-            for (long current : fts) {
-                maxWaitTime = Long.max(maxWaitTime,
-                        previous == null ? 0 : current - previous);
-                previous = current;
-            }
-        }
-
-        if (maxWaitTime > allowedMillis) {
-            fail("Client waited too long, " + maxWaitTime + " ms (" +
-                    allowedMillis + " ms allowed)");
+        if (maxWaitTimeMillis > allowedMillis) {
+            fail(String.format("Client waited too long, %s ms (%s ms allowed)",
+                    maxWaitTimeMillis, allowedMillis));
         } else {
-            System.out.println(
-                    "Maximum client wait time " + maxWaitTime + " ms (" +
-                            allowedMillis + " ms allowed)");
+            System.out.println(String.format(
+                    "Maximum client wait time %s ms (%s ms allowed)",
+                    maxWaitTimeMillis, allowedMillis));
         }
     }
 

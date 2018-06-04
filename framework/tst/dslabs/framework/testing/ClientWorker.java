@@ -44,6 +44,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
+import static org.apache.commons.lang3.math.NumberUtils.max;
+
 @EqualsAndHashCode(of = {"client", "results"}, callSuper = false)
 @ToString(of = {"client", "results"})
 public final class ClientWorker extends Node {
@@ -54,41 +56,36 @@ public final class ClientWorker extends Node {
     }
 
     // Defaults
-    private static final boolean DEFAULT_RECORD_RESULTS = true,
-            DEFAULT_RECORD_FINISH_TIMES = false;
+    private static final boolean DEFAULT_RECORD_RESULTS = true;
 
     // Configuration
     private final Client client;
     @JsonIgnore private final Workload workload;
 
     // Properties
+    // TODO: move this to Workload
     @JsonIgnore @Getter private final boolean recordResults;
-    // TODO: don't record finish times, record what we care about
-    @JsonIgnore @Getter private final boolean recordFinishTimes;
 
     // Mutable state
     @JsonIgnore private boolean initialized = false;
     @JsonIgnore private boolean waitingOnResult = false;
     @JsonIgnore private boolean waitingToSend = false;
     @JsonIgnore private Result expectedResult = null;
+    @JsonIgnore private long lastSendTimeMillis;
 
     // Resulting state
     @Getter private final List<Result> results = new ArrayList<>();
-    @Getter @JsonIgnore private final List<Long> finishTimes =
-            new ArrayList<>();
     @Getter @JsonIgnore private boolean resultsOk = true;
     @Getter @JsonIgnore private Pair<Result, Result> expectedAndReceived = null;
+    @JsonIgnore private long maxWaitTimeMillis = 0;
 
-    // TODO: log start time
 
     public <C extends Node & Client> ClientWorker(@NonNull C client,
                                                   @NonNull Workload workload,
-                                                  boolean recordResults,
-                                                  boolean recordFinishTimes) {
+                                                  boolean recordResults) {
         super(client.address());
         this.client = client;
         this.recordResults = recordResults;
-        this.recordFinishTimes = recordFinishTimes;
 
         // Clone operations on creation and reset it to completely avoid sharing
         this.workload = Cloning.clone(workload);
@@ -96,8 +93,7 @@ public final class ClientWorker extends Node {
     }
 
     public <C extends Node & Client> ClientWorker(C client, Workload workload) {
-        this(client, workload, DEFAULT_RECORD_RESULTS,
-                DEFAULT_RECORD_FINISH_TIMES);
+        this(client, workload, DEFAULT_RECORD_RESULTS);
     }
 
     public synchronized void addCommand(Command command) {
@@ -118,6 +114,14 @@ public final class ClientWorker extends Node {
     public synchronized void addCommand(String command, String result) {
         workload.add(command, result);
         sendNextCommandWhilePossible();
+    }
+
+    public synchronized long maxWaitTimeMilis() {
+        if (waitingOnResult) {
+            return max(maxWaitTimeMillis,
+                    System.currentTimeMillis() - lastSendTimeMillis);
+        }
+        return maxWaitTimeMillis;
     }
 
     private void sendNextCommandWhilePossible() {
@@ -141,9 +145,8 @@ public final class ClientWorker extends Node {
                     results.add(result);
                 }
 
-                if (recordFinishTimes) {
-                    finishTimes.add(System.currentTimeMillis());
-                }
+                maxWaitTimeMillis = max(maxWaitTimeMillis,
+                        lastSendTimeMillis - System.currentTimeMillis());
 
                 if (workload.hasResults() &&
                         !Objects.equals(expectedResult, result)) {
@@ -162,7 +165,6 @@ public final class ClientWorker extends Node {
             if (waitingOnResult || waitingToSend || !workload.hasNext()) {
                 break;
             }
-
 
             // If the workload is rate-limited, start the timeout
             if (workload.isRateLimited()) {
@@ -197,6 +199,7 @@ public final class ClientWorker extends Node {
 
         waitingToSend = false;
         waitingOnResult = true;
+        lastSendTimeMillis = System.currentTimeMillis();
     }
 
     public synchronized boolean done() {

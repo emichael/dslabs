@@ -420,10 +420,8 @@ public class PaxosTest extends BaseJUnitTest {
         // Startup the clients
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
-                    false, true);
+                    false);
         }
-
-        long startTime = System.currentTimeMillis();
 
         Thread.sleep(5000);
         assertRunInvariantsHold();
@@ -442,13 +440,11 @@ public class PaxosTest extends BaseJUnitTest {
         runSettings.reconnect();
         Thread.sleep(5000);
 
-        long finishTime = System.currentTimeMillis();
-
         // Shut the clients down
         runState.stop();
 
         assertRunInvariantsHold();
-        assertMaxFinishTimeLessThan(3000, startTime, finishTime);
+        assertMaxWaitTimeLessThan(3000);
     }
 
     @Test(timeout = 35 * 1000)
@@ -462,10 +458,8 @@ public class PaxosTest extends BaseJUnitTest {
         setupStates(nServers);
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i),
-                    differentKeysInfiniteWorkload(10), false, true);
+                    differentKeysInfiniteWorkload(10), false);
         }
-
-        long startTime = System.currentTimeMillis();
 
         // Re-partition -> 2s -> re-partition -> 2s -> heal -> 2s
         Thread partition = new Thread(() -> {
@@ -509,7 +503,6 @@ public class PaxosTest extends BaseJUnitTest {
         Thread.sleep(testLengthSecs * 1000);
 
         // Shut the clients down
-        long endTime = System.currentTimeMillis();
         shutdownStartedThreads();
         runState.stop();
 
@@ -517,7 +510,7 @@ public class PaxosTest extends BaseJUnitTest {
         assertRunInvariantsHold();
 
         // Make sure maximum wait is below 2s (should be much less)
-        assertMaxFinishTimeLessThan(2000, startTime, endTime);
+        assertMaxWaitTimeLessThan(2000);
     }
 
     @Test(timeout = 35 * 1000)
@@ -543,7 +536,7 @@ public class PaxosTest extends BaseJUnitTest {
         setupStates(nServers);
         for (int i = 1; i <= nClients; i++) {
             runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
-                    false, false);
+                    false);
         }
 
         // Re-partition -> 5s -> re-partition -> 1s -> heal -> 5s
