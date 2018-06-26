@@ -28,8 +28,10 @@ if not all(field in smtpconfig for field in fields):
 	print("SMTP configuration requires: " + ", ".join(fields))
 	sys.exit(1)
 
+# Change to your domain if not at UW
 student_email_domain = "@uw.edu"
 s = smtplib.SMTP(smtpconfig['domain'], 587)
+
 s.ehlo()
 s.starttls()
 
