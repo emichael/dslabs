@@ -12,7 +12,8 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 @RequiredArgsConstructor
-public final class AMOApplication<T extends Application> implements Application {
+public final class AMOApplication<T extends Application>
+        implements Application {
     @Getter @NonNull private final T application;
 
     // Your code here...

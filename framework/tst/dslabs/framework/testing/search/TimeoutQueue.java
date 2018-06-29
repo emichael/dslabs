@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.NoSuchElementException;
+import javax.annotation.Nonnull;
 import lombok.EqualsAndHashCode;
 
 /**
@@ -47,9 +48,6 @@ import lombok.EqualsAndHashCode;
  * case, but probably not. There might exist some relatively simple algorithm
  * for doing it, and since the timeout queues are relatively small, it might be
  * worth it. Anything that can reduce the branching factor of the BFS is good.
- *
- *
- * TODO: add unit tests
  */
 @EqualsAndHashCode
 class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
@@ -68,22 +66,23 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
         this.timeouts = new LinkedList<>(other.timeouts);
     }
 
-    boolean add(TimeoutEnvelope timeoutEnvelope) {
-        return timeouts.add(timeoutEnvelope);
+    void add(TimeoutEnvelope timeoutEnvelope) {
+        timeouts.add(timeoutEnvelope);
     }
 
     Iterable<TimeoutEnvelope> deliverable() {
         return new Iterable<TimeoutEnvelope>() {
             @Override
+            @Nonnull
             public Iterator<TimeoutEnvelope> iterator() {
                 return new Iterator<TimeoutEnvelope>() {
-                    Integer minTime = null;
+                    Integer minMaxTime = null;
                     int i = 0;
 
                     private void skip() {
-                        while (i < timeouts.size() && minTime != null &&
-                                timeouts.get(i).timeoutLengthMillis() >=
-                                        minTime) {
+                        while (i < timeouts.size() && minMaxTime != null &&
+                                timeouts.get(i).minTimeoutLengthMillis() >=
+                                        minMaxTime) {
                             i++;
                         }
                     }
@@ -99,9 +98,10 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
                         if (hasNext()) {
                             TimeoutEnvelope next = timeouts.get(i);
                             i++;
-                            if (minTime == null ||
-                                    next.timeoutLengthMillis() < minTime) {
-                                minTime = next.timeoutLengthMillis();
+                            if (minMaxTime == null ||
+                                    next.maxTimeoutLengthMillis() <
+                                            minMaxTime) {
+                                minMaxTime = next.maxTimeoutLengthMillis();
                             }
                             skip();
                             return next;
@@ -119,8 +119,8 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
             if (te.equals(timeoutEnvelope)) {
                 return true;
             }
-            if (te.timeoutLengthMillis() <=
-                    timeoutEnvelope.timeoutLengthMillis()) {
+            if (timeoutEnvelope.minTimeoutLengthMillis() >=
+                    te.maxTimeoutLengthMillis()) {
                 return false;
             }
         }
@@ -133,6 +133,7 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
     }
 
     @Override
+    @Nonnull
     public Iterator<TimeoutEnvelope> iterator() {
         return timeouts.iterator();
     }

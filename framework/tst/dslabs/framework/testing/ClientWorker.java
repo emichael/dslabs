@@ -52,7 +52,6 @@ public final class ClientWorker extends Node {
 
     @Data
     private static class InterRequestTimeout implements Timeout {
-        private final int timeoutLengthMillis;
     }
 
     // Defaults
@@ -168,7 +167,8 @@ public final class ClientWorker extends Node {
 
             // If the workload is rate-limited, start the timeout
             if (workload.isRateLimited()) {
-                set(new InterRequestTimeout(workload.millisBetweenRequests()));
+                set(new InterRequestTimeout(),
+                        workload.millisBetweenRequests());
                 waitingToSend = true;
                 break;
             }
@@ -261,7 +261,7 @@ public final class ClientWorker extends Node {
     public final void config(
             Consumer<Triple<Address, Address, Message>> messageAdder,
             Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-            Consumer<Pair<Address, Timeout>> timeoutAdder) {
+            Consumer<Triple<Address, Timeout, Pair<Integer, Integer>>> timeoutAdder) {
         // TODO: make sure there's no overhead for having the config both places
         super.config(messageAdder, batchMessageAdder, timeoutAdder);
         clientNode().config(messageAdder, batchMessageAdder, timeoutAdder);

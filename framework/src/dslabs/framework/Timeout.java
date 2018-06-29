@@ -29,7 +29,7 @@ import java.io.Serializable;
  * <p>Base interface for all timeouts in the system. You will need to create
  * implementers of Timeout to define various types of timeouts in your system.
  *
- * <p>After being set ({@link Node#set(Timeout)}), Timeouts sleep for an
+ * <p>After being set ({@link Node#set}), Timeouts sleep for an
  * interval of time and will then be re-delivered to the {@link Node}. Once set,
  * re-delivery will always happen.
  *
@@ -37,11 +37,4 @@ import java.io.Serializable;
  * {@link Object#hashCode()}, and {@link Object#toString()}.
  */
 public interface Timeout extends Serializable {
-    /**
-     * How many milliseconds the timeout should sleep after being set before
-     * being re-delivered.
-     *
-     * @return the number of milliseconds
-     */
-    int timeoutLengthMillis();
 }

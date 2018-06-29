@@ -32,5 +32,4 @@ import java.io.Serializable;
  * {@link Object#hashCode()}, and {@link Object#toString()}.
  */
 public interface Message extends Serializable {
-
 }

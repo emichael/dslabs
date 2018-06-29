@@ -53,6 +53,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Log
 @EqualsAndHashCode(callSuper = true)
@@ -191,9 +192,11 @@ public final class SearchState extends AbstractState
             }
         }, te -> {
             // Clone on timeout set
-            Timeout t = Cloning.clone(te.getRight());
+            Timeout t = Cloning.clone(te.getMiddle());
+            Pair<Integer, Integer> bounds = te.getRight();
             TimeoutEnvelope timeoutEnvelope =
-                    new TimeoutEnvelope(te.getLeft(), t);
+                    new TimeoutEnvelope(te.getLeft(), t, bounds.getLeft(),
+                            bounds.getRight());
             timeouts.get(timeoutEnvelope.to().rootAddress())
                     .add(timeoutEnvelope);
             newTimeouts.add(timeoutEnvelope);

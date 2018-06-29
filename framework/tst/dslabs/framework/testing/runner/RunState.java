@@ -43,6 +43,7 @@ import java.util.Set;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.java.Log;
+import org.apache.commons.lang3.tuple.Pair;
 
 @Log
 @ToString(callSuper = true)
@@ -88,8 +89,10 @@ public class RunState extends AbstractState {
             network.send(new MessageEnvelope(me.getLeft(), me.getMiddle(), m));
         }, null, te -> {
             // Clone timeout on set
-            Timeout t = Cloning.clone(te.getRight());
-            inbox.set(new TimeoutEnvelope(te.getLeft(), t));
+            Timeout t = Cloning.clone(te.getMiddle());
+            Pair<Integer, Integer> bounds = te.getRight();
+            inbox.set(new TimeoutEnvelope(te.getLeft(), t, bounds.getLeft(),
+                    bounds.getRight()));
         });
         node.init();
 

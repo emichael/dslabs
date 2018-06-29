@@ -11,6 +11,8 @@ import dslabs.pingpong.PingApplication.Pong;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
+import static dslabs.pingpong.PingTimeout.RETRY_MILLIS;
+
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 class PingClient extends Node implements Client {
@@ -47,7 +49,7 @@ class PingClient extends Node implements Client {
         pong = null;
 
         send(new PingRequest(p), serverAddress);
-        set(new PingTimeout(p));
+        set(new PingTimeout(p), RETRY_MILLIS);
     }
 
     @Override
@@ -80,7 +82,7 @@ class PingClient extends Node implements Client {
     private synchronized void onPingTimeout(PingTimeout t) {
         if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
             send(new PingRequest(ping), serverAddress);
-            set(t);
+            set(t, RETRY_MILLIS);
         }
     }
 }

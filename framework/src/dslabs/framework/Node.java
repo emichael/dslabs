@@ -114,7 +114,8 @@ public abstract class Node implements Serializable {
     transient private Consumer<Triple<Address, Address, Message>> messageAdder;
     transient private Consumer<Triple<Address, Address[], Message>>
             batchMessageAdder;
-    transient private Consumer<Pair<Address, Timeout>> timeoutAdder;
+    transient private Consumer<Triple<Address, Timeout, Pair<Integer, Integer>>>
+            timeoutAdder;
 
     @JsonIgnore private Node parentNode;
 
@@ -213,15 +214,47 @@ public abstract class Node implements Serializable {
 
     /**
      * Sets a {@link Timeout} to be tracked by the environment. The Timeout will
-     * be re-delivered to the setting {@link Node} when the timeout's waiting
-     * time elapses. Timeouts may be cloned by the testing infrastructure before
+     * be re-delivered to the setting {@link Node} after timeoutLengthMillis
+     * milliseconds. Timeouts may be cloned by the testing infrastructure before
      * being re-delivered.
      *
      * @param timeout
      *         the timeout to set
+     * @param timeoutLengthMillis
+     *         the timeout duration
      */
-    protected void set(Timeout timeout) {
-        set(timeout, address);
+    protected void set(Timeout timeout, int timeoutLengthMillis) {
+        set(timeout, timeoutLengthMillis, timeoutLengthMillis, address);
+    }
+
+    /**
+     * Sets a {@link Timeout} to be tracked by the environment. The Timeout will
+     * be re-delivered to the setting {@link Node} between
+     * minTimeoutLengthMillis and maxTimeoutLengthMillis, inclusive, chosen
+     * uniformly at random. Timeouts may be cloned by the testing infrastructure
+     * before being re-delivered.
+     *
+     * @param timeout
+     *         the timeout to set
+     * @param minTimeoutLengthMillis
+     *         the minimum timeout duration
+     * @param maxTimeoutLengthMillis
+     *         the maximum timeout duration
+     */
+    protected void set(Timeout timeout, int minTimeoutLengthMillis,
+                       int maxTimeoutLengthMillis) {
+        if (minTimeoutLengthMillis > maxTimeoutLengthMillis) {
+            throw new IllegalArgumentException(
+                    "Minimum timeout length greater than maximum timeout length");
+        }
+
+        // TODO: test this in TimeoutEnvelope too? What about Message Envelope?
+
+        if (minTimeoutLengthMillis < 1) {
+            throw new IllegalArgumentException("Minimum timeout length < 1ms");
+        }
+
+        set(timeout, minTimeoutLengthMillis, maxTimeoutLengthMillis, address);
     }
 
     private void send(Message message, Address from, Address to) {
@@ -286,7 +319,8 @@ public abstract class Node implements Serializable {
         }
     }
 
-    private void set(Timeout timeout, Address from) {
+    private void set(Timeout timeout, int minTimeoutLengthMillis,
+                     int maxTimeoutLengthMillis, Address from) {
         if (timeout == null) {
             LOG.severe(String.format(
                     "Attempting to set null timeout for %s, not setting",
@@ -295,9 +329,12 @@ public abstract class Node implements Serializable {
         }
 
         if (timeoutAdder != null) {
-            timeoutAdder.accept(new ImmutablePair<>(from, timeout));
+            timeoutAdder.accept(new ImmutableTriple<>(from, timeout,
+                    new ImmutablePair<>(minTimeoutLengthMillis,
+                            maxTimeoutLengthMillis)));
         } else if (parentNode != null) {
-            parentNode.set(timeout, from);
+            parentNode.set(timeout, minTimeoutLengthMillis,
+                    maxTimeoutLengthMillis, from);
         } else {
             LOG.severe(String.format(
                     "Attempting to set %s from %s before node configured, not setting",
@@ -480,7 +517,7 @@ public abstract class Node implements Serializable {
      */
     public void config(Consumer<Triple<Address, Address, Message>> messageAdder,
                        Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-                       Consumer<Pair<Address, Timeout>> timeoutAdder) {
+                       Consumer<Triple<Address, Timeout, Pair<Integer, Integer>>> timeoutAdder) {
         if (parentNode != null) {
             LOG.severe("Cannot configure Node already configured as sub-Node.");
         }

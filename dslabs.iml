@@ -14,6 +14,7 @@
       <sourceFolder url="file://$MODULE_DIR$/labs/lab4-shardedstore/tst" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/labs/lab0-pingpong/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/labs/lab0-pingpong/tst" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/framework/tst-self" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/.out-ant" />
       <excludeFolder url="file://$MODULE_DIR$/doc" />
       <excludeFolder url="file://$MODULE_DIR$/handout" />

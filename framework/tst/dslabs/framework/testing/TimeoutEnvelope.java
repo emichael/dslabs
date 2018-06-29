@@ -25,6 +25,7 @@ package dslabs.framework.testing;
 import dslabs.framework.Address;
 import dslabs.framework.Timeout;
 import java.io.Serializable;
+import java.util.Random;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -32,21 +33,41 @@ import lombok.EqualsAndHashCode;
  * Note: this class has a natural ordering that is inconsistent with equals.
  */
 @Data
-@EqualsAndHashCode(of = {"to", "timeout"})
+@EqualsAndHashCode(of = {"to", "timeout", "minTimeoutLengthMillis",
+        "maxTimeoutLengthMillis"})
 public final class TimeoutEnvelope
         implements Serializable, Comparable<TimeoutEnvelope> {
+    private static final Random rand = new Random();
+
     private final Address to;
     private final Timeout timeout;
+
+    private final int minTimeoutLengthMillis, maxTimeoutLengthMillis,
+            timeoutLengthMillis;
+
     private final long startTimeNanos;
 
-    public TimeoutEnvelope(Address to, Timeout timeout) {
+    public TimeoutEnvelope(Address to, Timeout timeout,
+                           int minTimeoutLengthMillis,
+                           int maxTimeoutLengthMillis) {
         this.to = to;
         this.timeout = timeout;
-        this.startTimeNanos = System.nanoTime();
-    }
+        this.minTimeoutLengthMillis = minTimeoutLengthMillis;
+        this.maxTimeoutLengthMillis = maxTimeoutLengthMillis;
 
-    public int timeoutLengthMillis() {
-        return timeout.timeoutLengthMillis();
+        if (minTimeoutLengthMillis > maxTimeoutLengthMillis) {
+            throw new IllegalArgumentException(
+                    "Minimum timeout length greater than maximum timeout length");
+        }
+
+        if (minTimeoutLengthMillis == maxTimeoutLengthMillis) {
+            this.timeoutLengthMillis = minTimeoutLengthMillis;
+        } else {
+            this.timeoutLengthMillis = minTimeoutLengthMillis + rand.nextInt(
+                    1 + maxTimeoutLengthMillis - minTimeoutLengthMillis);
+        }
+
+        this.startTimeNanos = System.nanoTime();
     }
 
     public long endTimeNanos() {

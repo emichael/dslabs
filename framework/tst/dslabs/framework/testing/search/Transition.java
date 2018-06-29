@@ -28,6 +28,8 @@ import dslabs.framework.testing.TimeoutEnvelope;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
+// TODO: rename to Event
+
 @Getter
 @EqualsAndHashCode
 public class Transition {

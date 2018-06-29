@@ -2,8 +2,6 @@ package dslabs.primarybackup;
 
 import dslabs.framework.Address;
 import dslabs.framework.Message;
-import dslabs.framework.Node;
-import dslabs.framework.Timeout;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimeoutEnvelope;
@@ -12,11 +10,7 @@ import dslabs.framework.testing.junit.PrettyTestName;
 import dslabs.framework.testing.junit.TestPointValue;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.LinkedList;
-import java.util.function.Consumer;
-import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -56,16 +50,13 @@ public class ViewServerTest extends BaseJUnitTest {
         messages = new LinkedList<>();
         timeouts = new LinkedList<>();
 
-        Method method = Node.class
-                .getDeclaredMethod("config", Consumer.class, Consumer.class,
-                        Consumer.class);
-        method.setAccessible(true);
-        method.invoke(vs,
-                (Consumer<Triple<Address, Address, Message>>) me -> messages
-                        .add(new MessageEnvelope(me.getLeft(), me.getMiddle(),
-                                me.getRight())), null,
-                (Consumer<Pair<Address, Timeout>>) te -> timeouts
-                        .add(new TimeoutEnvelope(te.getLeft(), te.getRight())));
+        // TODO: clone messages and timers!!!
+
+        vs.config(me -> messages
+                .add(new MessageEnvelope(me.getLeft(), me.getMiddle(),
+                        me.getRight())), null, te -> timeouts
+                .add(new TimeoutEnvelope(te.getLeft(), te.getMiddle(),
+                        te.getRight().getLeft(), te.getRight().getRight())));
 
         vs.init();
     }

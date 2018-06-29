@@ -64,8 +64,8 @@ import static dslabs.kvstore.KVStoreWorkload.putAppendGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putOk;
 import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
-import static dslabs.primarybackup.PingCheckTimeout.PING_CHECK_INTERVAL_MILLIS;
-import static dslabs.primarybackup.PingTimeout.PING_INTERVAL_MILLIS;
+import static dslabs.primarybackup.PingCheckTimeout.PING_CHECK_MILLIS;
+import static dslabs.primarybackup.PingTimeout.PING_MILLIS;
 import static dslabs.primarybackup.ViewServerTest.INITIAL_VIEWNUM;
 import static dslabs.primarybackup.ViewServerTest.ta;
 import static dslabs.primarybackup.ViewServerTest.vsa;
@@ -250,7 +250,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                     Objects.equals(backup, v.backup())) {
                 return;
             }
-            Thread.sleep(PING_CHECK_INTERVAL_MILLIS);
+            Thread.sleep(PING_CHECK_MILLIS);
         }
 
         View v = getView();
@@ -281,7 +281,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             waitForView(primary, backup);
         }
         // Sleep to make sure the view has started and been ack'd
-        Thread.sleep(PING_CHECK_INTERVAL_MILLIS * 4);
+        Thread.sleep(PING_CHECK_MILLIS * 4);
         runState.stop();
     }
 
@@ -352,14 +352,14 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         for (int i = 0; i < 500; i++) {
             sendCommandAndCheck(client, put("xk" + i, i), putOk());
             sendCommandAndCheck(client, get("xk" + i), getResult(i));
-            Thread.sleep(PING_INTERVAL_MILLIS / 10);
+            Thread.sleep(PING_MILLIS / 10);
         }
 
         long t2 = System.currentTimeMillis();
         int received = runState.network().numMessagesSentTo(vsa);
 
-        double allowed = ((double) (t2 - t1)) / PING_INTERVAL_MILLIS *
-                runState.numNodes() * 2;
+        double allowed =
+                ((double) (t2 - t1)) / PING_MILLIS * runState.numNodes() * 2;
 
         if (received > allowed) {
             fail("Too many ViewServer messages: " + received + " (expected <=" +
@@ -381,7 +381,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         runState.addServer(server(2));
         waitForView(server(1), server(2));
-        Thread.sleep(PING_CHECK_INTERVAL_MILLIS * 4);
+        Thread.sleep(PING_CHECK_MILLIS * 4);
 
         sendCommandAndCheck(client, put("foo2", "bar2"), putOk());
 
@@ -416,7 +416,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Try to send an operation, shouldn't return
         client.sendCommand(get("foo"));
 
-        Thread.sleep(PING_CHECK_INTERVAL_MILLIS * 4);
+        Thread.sleep(PING_CHECK_MILLIS * 4);
 
         assertFalse(client.hasResult());
     }
@@ -463,7 +463,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         sendCommandAndCheck(client, put("a", "aaa"), putOk());
         sendCommandAndCheck(client, get("a"), getResult("aaa"));
         waitForView(server(1), server(3));
-        Thread.sleep(PING_CHECK_INTERVAL_MILLIS * 4);
+        Thread.sleep(PING_CHECK_MILLIS * 4);
         sendCommandAndCheck(client, get("a"), getResult("aaa"));
 
         // Kill the primary
@@ -622,10 +622,10 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             int totalServers = nServers;
 
             try {
-                Thread.sleep(PING_CHECK_INTERVAL_MILLIS * 10);
+                Thread.sleep(PING_CHECK_MILLIS * 10);
 
                 while (!Thread.interrupted()) {
-                    Thread.sleep(PING_CHECK_INTERVAL_MILLIS * 10);
+                    Thread.sleep(PING_CHECK_MILLIS * 10);
 
                     Address toKill = servers.get(rand.nextInt(servers.size()));
 

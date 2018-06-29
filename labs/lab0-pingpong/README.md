@@ -133,7 +133,7 @@ class PingClient extends Node implements Client {
         pong = null;
 
         send(new PingRequest(p), serverAddress);
-        set(new PingTimeout(p));
+        set(new PingTimeout(p), RETRY_MILLIS);
     }
 
     @Override
@@ -166,7 +166,7 @@ class PingClient extends Node implements Client {
     private synchronized void onPingTimeout(PingTimeout t) {
         if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
             send(new PingRequest(ping), serverAddress);
-            set(t);
+            set(t, RETRY_MILLIS);
         }
     }
 }
@@ -183,14 +183,8 @@ result and notifies the calling code which may be waiting. Like all timeouts
 ```java
 @Data
 final class PingTimeout implements Timeout {
-    private static final int PING_TIMEOUT_MILLIS = 10;
-
+    static final int RETRY_MILLIS = 10;
     private final Ping ping;
-
-    @Override
-    public int timeoutLengthMillis() {
-        return PING_TIMEOUT_MILLIS;
-    }
 }
 ```
 
@@ -318,7 +312,7 @@ messages gets dropped in the network *again*, the system will be stuck.
 private synchronized void onPingTimeout(PingTimeout t) {
     if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
         send(new PingRequest(ping), serverAddress);
-        // set(t);
+        // set(t, RETRY_MILLIS);
     }
 }
 ```

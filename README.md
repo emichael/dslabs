@@ -134,6 +134,8 @@ at the University of Washington.
 ## Directory Overview
 - `framework/src` contains the interface students program against.
 - `framework/tst` contains in the testing infrastructure.
+- `framework/tst-self` contains the tests for the for the interface and testing
+  infrastructure.
 - `labs/` contains a subdirectory for each lab. The lab directories each have a
   `src/` directory initialized with skeleton code where students write their
   implementations, as well as a `tst/` directory containing the tests for that
