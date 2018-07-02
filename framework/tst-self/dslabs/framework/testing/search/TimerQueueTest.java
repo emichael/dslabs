@@ -64,7 +64,7 @@ public class TimerQueueTest {
     }
 
     @Test
-    public void testEquals() {
+    public void equality() {
         assertEquals(te(1, 1), te(1, 1));
         assertEquals(te(1, 1), te(1, 1, 1));
 
@@ -76,18 +76,18 @@ public class TimerQueueTest {
     }
 
     @Test
-    public void testNotAddedNotDeliverable() {
+    public void notAddedNotDeliverable() {
         assertNotDeliverable(te(1, 1));
     }
 
     @Test
-    public void testBasicAdd() {
+    public void basicAdd() {
         tq.add(te(1, 1));
         assertDeliverable(te(1, 1));
     }
 
     @Test
-    public void testSameLengthNotDeliverable() {
+    public void sameLengthNotDeliverable() {
         tq.add(te(1, 1));
         tq.add(te(2, 1));
 
@@ -96,7 +96,7 @@ public class TimerQueueTest {
     }
 
     @Test
-    public void testShorterFirstNotDeliverable() {
+    public void shorterFirstNotDeliverable() {
         tq.add(te(1, 1));
         tq.add(te(2, 2));
 
@@ -105,7 +105,7 @@ public class TimerQueueTest {
     }
 
     @Test
-    public void testLongerFirstDeliverable() {
+    public void longerFirstDeliverable() {
         tq.add(te(1, 2));
         tq.add(te(2, 1));
 
@@ -113,7 +113,7 @@ public class TimerQueueTest {
     }
 
     @Test
-    public void testAddRemoveGet() {
+    public void addRemoveGet() {
         tq.add(te(1, 1));
         tq.add(te(2, 2));
 
@@ -127,12 +127,12 @@ public class TimerQueueTest {
     }
 
     @Test
-    public void testCanRemoveNonexistent() {
+    public void canRemoveNonexistent() {
         tq.remove(te(1, 1));
     }
 
     @Test
-    public void testRandomTimers() {
+    public void randomTimers() {
         for (int i = 1; i <= 4; i++) {
             for (int j = i; j <= 4; j++) {
                 for (int k = 1; k <= 4; k++) {

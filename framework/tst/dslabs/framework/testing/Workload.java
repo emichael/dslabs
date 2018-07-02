@@ -97,8 +97,6 @@ public abstract class Workload implements Serializable {
      * <p>The same random strings will be used in both the operation and result
      * as long as the exact same identifiers are used.
      *
-     * TODO: add tests for this method
-     *
      * TODO: add javadoc to workload, try to import the javadoc for this
      * method?
      *
@@ -184,8 +182,8 @@ public abstract class Workload implements Serializable {
 
                     if (randomString == null) {
                         int upperBound;
-                        if (!matcher.group(1).isEmpty()) {
-                            upperBound = Integer.parseInt(matcher.group(1));
+                        if (matcher.group(2) != null && !matcher.group(2).isEmpty()) {
+                            upperBound = Integer.parseInt(matcher.group(2));
                         } else {
                             upperBound = 100;
                         }
