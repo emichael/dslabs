@@ -15,7 +15,7 @@ before_install:
 
 install: ant download-libs
 
-script: make
+script: make handout/ test
 
 after_success:
   - DIR="`mktemp -d`"

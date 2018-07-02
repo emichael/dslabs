@@ -1,4 +1,4 @@
-.PHONY: all clean clean-all
+.PHONY: all test clean clean-all
 
 DVIZ_URL = https://github.com/uwplse/dviz/releases/download/v0.26a/dviz.jar
 
@@ -48,6 +48,8 @@ handout/: $(LAB_FILES) $(JAR_FILES) $(HANDOUT_FILES) $(OTHER_FILES)
 handout.tar.gz: handout/
 	$(TAR) -czf $@ --transform "s/^handout/dslabs/" $^
 
+test:
+	ant self-test
 
 clean:
 	ant clean

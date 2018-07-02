@@ -15,9 +15,11 @@
 
 <property name="dirs.src.framework" location="framework/src"/>
 <property name="dirs.tst.framework" location="framework/tst"/>
+<property name="dirs.tst-self.framework" location="framework/tst-self"/>
 
 <property name="dirs.out.framework-src" location="${dirs.out}/framework/src"/>
 <property name="dirs.out.framework-tst" location="${dirs.out}/framework/tst"/>
+<property name="dirs.out.framework-tst-self" location="${dirs.out}/framework/tst-self"/>
 
 <property name="jar.framework" location="${dirs.dst}/framework.jar"/>
 <property name="jar.framework-sources" location="${dirs.dst}/framework-sources.jar"/>
@@ -89,6 +91,16 @@
   </myjavac>
 </target>
 
+<target name="compile-framework-tst-self" depends="download-libs, compile-framework-tst">
+  <mkdir dir="${dirs.out.framework-tst-self}"/>
+  <myjavac srcdir="${dirs.tst-self.framework}" destdir="${dirs.out.framework-tst-self}">
+    <classpath>
+      <path refid="classpath.test"/>
+      <pathelement path="${dirs.out.framework-src}"/>
+      <pathelement path="${dirs.out.framework-tst}"/>
+    </classpath>
+  </myjavac>
+</target>
 
 <target name="jar-framework" depends="compile-framework-src, compile-framework-tst">
   <mkdir dir="${dirs.dst}"/>
@@ -125,6 +137,28 @@
            additionalparam="-notimestamp"
            destdir="${dirs.doc}"
            sourcepath="${dirs.src.framework}"/>
+</target>
+
+
+
+<!-- Testing -->
+<target name="self-test" depends="compile-framework-tst-self">
+  <junit fork="true" failureproperty="test.failed">
+    <classpath>
+      <path refid="classpath.test"/>
+      <pathelement path="${dirs.out.framework-src}"/>
+      <pathelement path="${dirs.out.framework-tst}"/>
+      <pathelement path="${dirs.out.framework-tst-self}"/>
+    </classpath>
+    <batchtest>
+      <fileset dir="${dirs.tst-self.framework}">
+        <include name="**/*.java" />
+        <containsregexp expression="@Test"/>
+      </fileset>
+    </batchtest>
+    <formatter type="brief" usefile="false"/>
+  </junit>
+  <fail message="Tests failed." if="test.failed" />
 </target>
 
 
