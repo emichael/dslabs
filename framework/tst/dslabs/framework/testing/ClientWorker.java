@@ -29,7 +29,7 @@ import dslabs.framework.Command;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import dslabs.framework.testing.utils.Cloning;
 import java.util.ArrayList;
 import java.util.List;
@@ -51,7 +51,7 @@ import static org.apache.commons.lang3.math.NumberUtils.max;
 public final class ClientWorker extends Node {
 
     @Data
-    private static class InterRequestTimeout implements Timeout {
+    private static class InterRequestTimer implements Timer {
     }
 
     // Defaults
@@ -165,10 +165,9 @@ public final class ClientWorker extends Node {
                 break;
             }
 
-            // If the workload is rate-limited, start the timeout
+            // If the workload is rate-limited, start the timer
             if (workload.isRateLimited()) {
-                set(new InterRequestTimeout(),
-                        workload.millisBetweenRequests());
+                set(new InterRequestTimer(), workload.millisBetweenRequests());
                 waitingToSend = true;
                 break;
             }
@@ -247,12 +246,11 @@ public final class ClientWorker extends Node {
     }
 
     @Override
-    public final synchronized void onTimeout(Timeout timeout,
-                                             Address destination) {
-        if (timeout instanceof InterRequestTimeout) {
+    public final synchronized void onTimer(Timer timer, Address destination) {
+        if (timer instanceof InterRequestTimer) {
             sendNextCommand();
         } else {
-            clientNode().onTimeout(timeout, destination);
+            clientNode().onTimer(timer, destination);
         }
         sendNextCommandWhilePossible();
     }
@@ -261,9 +259,9 @@ public final class ClientWorker extends Node {
     public final void config(
             Consumer<Triple<Address, Address, Message>> messageAdder,
             Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-            Consumer<Triple<Address, Timeout, Pair<Integer, Integer>>> timeoutAdder) {
+            Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder) {
         // TODO: make sure there's no overhead for having the config both places
-        super.config(messageAdder, batchMessageAdder, timeoutAdder);
-        clientNode().config(messageAdder, batchMessageAdder, timeoutAdder);
+        super.config(messageAdder, batchMessageAdder, timerAdder);
+        clientNode().config(messageAdder, batchMessageAdder, timerAdder);
     }
 }

@@ -24,7 +24,7 @@ package dslabs.framework.testing.runner;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.utils.Either;
 import java.util.Collection;
 import java.util.Iterator;
@@ -49,7 +49,7 @@ public class Network implements Iterable<MessageEnvelope> {
 
         private final Queue<MessageEnvelope> messages =
                 new ConcurrentLinkedQueue<>();
-        private final Queue<TimeoutEnvelope> timeouts =
+        private final Queue<TimerEnvelope> timers =
                 new PriorityBlockingQueue<>();
 
         // Reader thread state
@@ -58,7 +58,7 @@ public class Network implements Iterable<MessageEnvelope> {
 
         // Writer thread state
         private volatile boolean newMessageAvailable = false;
-        private final AtomicLong newTimeoutEndTime =
+        private final AtomicLong newTimerEndTime =
                 new AtomicLong(Long.MAX_VALUE);
 
         private final AtomicInteger numMessagesReceived = new AtomicInteger();
@@ -76,12 +76,12 @@ public class Network implements Iterable<MessageEnvelope> {
             }
         }
 
-        void set(TimeoutEnvelope t) {
-            timeouts.add(t);
+        void set(TimerEnvelope t) {
+            timers.add(t);
 
             long endTime = t.endTimeNanos();
 
-            newTimeoutEndTime.accumulateAndGet(endTime, Long::min);
+            newTimerEndTime.accumulateAndGet(endTime, Long::min);
             if (waiting && endTime < waitingEndTime) {
                 waiting = false;
                 synchronized (this) {
@@ -94,21 +94,21 @@ public class Network implements Iterable<MessageEnvelope> {
             return messages.poll();
         }
 
-        TimeoutEnvelope pollTimeout() {
-            TimeoutEnvelope te = timeouts.peek();
+        TimerEnvelope pollTimer() {
+            TimerEnvelope te = timers.peek();
             if (te == null || !te.isDue()) {
                 return null;
             }
-            return timeouts.poll();
+            return timers.poll();
         }
 
-        Either<MessageEnvelope, TimeoutEnvelope> take()
+        Either<MessageEnvelope, TimerEnvelope> take()
                 throws InterruptedException {
             while (true) {
-                newTimeoutEndTime.set(Long.MAX_VALUE);
-                TimeoutEnvelope te = timeouts.peek();
+                newTimerEndTime.set(Long.MAX_VALUE);
+                TimerEnvelope te = timers.peek();
                 if (te != null && te.isDue()) {
-                    return Either.right(timeouts.poll());
+                    return Either.right(timers.poll());
                 }
 
                 newMessageAvailable = false;
@@ -117,13 +117,13 @@ public class Network implements Iterable<MessageEnvelope> {
                     return Either.left(me);
                 }
 
-                // Wait for new message or timeout
+                // Wait for new message or timer
                 if (te == null) {
                     synchronized (this) {
                         waiting = true;
                         try {
                             if (!newMessageAvailable &&
-                                    newTimeoutEndTime.get() >= waitingEndTime) {
+                                    newTimerEndTime.get() >= waitingEndTime) {
                                 wait();
                             }
                         } finally {
@@ -132,11 +132,11 @@ public class Network implements Iterable<MessageEnvelope> {
                     }
 
                 } else {
-                    // Deliver timeouts if they're close to being done
+                    // Deliver timers if they're close to being done
                     long endTime = te.endTimeNanos();
                     long waitTime = endTime - System.nanoTime();
                     if (waitTime <= MIN_WAIT_TIME_NANOS) {
-                        return Either.right(timeouts.poll());
+                        return Either.right(timers.poll());
                     }
 
                     synchronized (this) {
@@ -144,7 +144,7 @@ public class Network implements Iterable<MessageEnvelope> {
                         waitingEndTime = endTime;
                         try {
                             if (!newMessageAvailable &&
-                                    newTimeoutEndTime.get() >= waitingEndTime) {
+                                    newTimerEndTime.get() >= waitingEndTime) {
                                 wait(waitTime / 1000000,
                                         (int) (waitTime % 1000000));
                             }
@@ -166,8 +166,8 @@ public class Network implements Iterable<MessageEnvelope> {
             return new LinkedList<>(messages);
         }
 
-        Collection<TimeoutEnvelope> timeouts() {
-            return new LinkedList<>(timeouts);
+        Collection<TimerEnvelope> timers() {
+            return new LinkedList<>(timers);
         }
     }
 
@@ -204,7 +204,7 @@ public class Network implements Iterable<MessageEnvelope> {
         return messages.iterator();
     }
 
-    public Either<MessageEnvelope, TimeoutEnvelope> take(Address address)
+    public Either<MessageEnvelope, TimerEnvelope> take(Address address)
             throws InterruptedException {
         return inbox(address.rootAddress()).take();
     }

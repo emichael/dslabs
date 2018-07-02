@@ -628,13 +628,13 @@ public class PaxosTest extends BaseJUnitTest {
         assertEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(results.invariantViolatingState(), searchSettings));
 
-        // Check that linearizability is preserved (with and without timeouts)
+        // Check that linearizability is preserved (with and without timers)
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
                       .addPrune(CLIENTS_DONE).maxTimeSecs(30);
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(results.invariantViolatingState(), searchSettings));
 
-        searchSettings.deliverTimeouts(false);
+        searchSettings.deliverTimers(false);
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(results.invariantViolatingState(), searchSettings));
     }
@@ -654,7 +654,7 @@ public class PaxosTest extends BaseJUnitTest {
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(initSearchState, searchSettings));
 
-        searchSettings.deliverTimeouts(false);
+        searchSettings.deliverTimers(false);
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(initSearchState, searchSettings));
 
@@ -706,8 +706,8 @@ public class PaxosTest extends BaseJUnitTest {
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(firstAppendSent, searchSettings));
 
-        // Same checks but without timeouts (not necessarily useful)
-        searchSettings.deliverTimeouts(false).resetNetwork()
+        // Same checks but without timers (not necessarily useful)
+        searchSettings.deliverTimers(false).resetNetwork()
                       .partition(server(1), server(3), client(2));
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(firstAppendSent, searchSettings));

@@ -57,9 +57,9 @@ public class ShardStoreClient extends ShardStoreNode implements Client {
     // Your code here...
 
     /* -------------------------------------------------------------------------
-        Timeout Handlers
+        Timer Handlers
        -----------------------------------------------------------------------*/
-    private synchronized void onClientTimeout(ClientTimeout t) {
+    private synchronized void onClientTimer(ClientTimer t) {
         // Your code here...
     }
 

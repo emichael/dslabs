@@ -51,7 +51,7 @@ import dslabs.framework.Command;
 import dslabs.framework.Result;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StatePredicate;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.search.SearchState;
 import java.io.IOException;
 import java.util.HashSet;
@@ -62,7 +62,7 @@ import lombok.SneakyThrows;
 import static dslabs.framework.testing.utils.Json.TYPE_FIELD_NAME;
 
 public abstract class Json {
-    public static final String MESSAGE_PREFIX = "m", TIMEOUT_PREFIX = "t",
+    public static final String MESSAGE_PREFIX = "m", TIMER_PREFIX = "t",
             STATE_PREFIX = "s";
     public static final String ID_FIELD_NAME = "@id";
     public static final String TYPE_FIELD_NAME = "@type";
@@ -71,7 +71,7 @@ public abstract class Json {
 
     private static final BiMap<MessageEnvelope, String> messageIDs =
             HashBiMap.create();
-    private static final BiMap<TimeoutEnvelope, String> timeoutIDs =
+    private static final BiMap<TimerEnvelope, String> timerIDs =
             HashBiMap.create();
     private static final BiMap<SearchState, String> stateIDs =
             HashBiMap.create();
@@ -111,15 +111,15 @@ public abstract class Json {
         return messageIDs.inverse().get(id);
     }
 
-    public static String getTimeoutId(TimeoutEnvelope te) {
-        if (!timeoutIDs.containsKey(te)) {
-            timeoutIDs.put(te, TIMEOUT_PREFIX + timeoutIDs.size());
+    public static String getTimerId(TimerEnvelope te) {
+        if (!timerIDs.containsKey(te)) {
+            timerIDs.put(te, TIMER_PREFIX + timerIDs.size());
         }
-        return timeoutIDs.get(te);
+        return timerIDs.get(te);
     }
 
-    public static TimeoutEnvelope getTimeout(String id) {
-        return timeoutIDs.inverse().get(id);
+    public static TimerEnvelope getTimer(String id) {
+        return timerIDs.inverse().get(id);
     }
 
     public static String getStateId(SearchState s) {
@@ -182,13 +182,13 @@ class SingleStateSerializer extends JsonSerializer<SearchState> {
         gen.writeEndObject();
     }
 
-    private void serializeTimeout(TimeoutEnvelope te, JsonGenerator gen,
-                                  SerializerProvider ser) throws IOException {
+    private void serializeTimer(TimerEnvelope te, JsonGenerator gen,
+                                SerializerProvider ser) throws IOException {
         gen.writeStartObject();
-        gen.writeStringField(Json.ID_FIELD_NAME, Json.getTimeoutId(te));
+        gen.writeStringField(Json.ID_FIELD_NAME, Json.getTimerId(te));
         gen.writeStringField("to", te.to().rootAddress().toString());
-        gen.writeStringField("type", te.timeout().getClass().getSimpleName());
-        gen.writeObjectField("body", te.timeout());
+        gen.writeStringField("type", te.timer().getClass().getSimpleName());
+        gen.writeObjectField("body", te.timer());
         gen.writeEndObject();
     }
 
@@ -215,20 +215,20 @@ class SingleStateSerializer extends JsonSerializer<SearchState> {
             serializeMessage(s.transitionFromPrevious().message(), gen, ser);
 
         } else if (s.transitionFromPrevious() != null &&
-                s.transitionFromPrevious().isTimeout()) {
-            TimeoutEnvelope te = s.transitionFromPrevious().timeout();
+                s.transitionFromPrevious().isTimer()) {
+            TimerEnvelope te = s.transitionFromPrevious().timer();
 
             gen.writeFieldName("deliver-timeout");
-            serializeTimeout(te, gen, ser);
+            serializeTimer(te, gen, ser);
 
-            // By default, delivered timeouts are also cleared (could change)
+            // By default, delivered timers are also cleared (could change)
             gen.writeFieldName("cleared-timeouts");
             gen.writeStartArray();
-            serializeTimeout(te, gen, ser);
+            serializeTimer(te, gen, ser);
             gen.writeEndArray();
         }
 
-        // Write out the sent messages and set timeouts
+        // Write out the sent messages and set timers
         if (!s.newMessages().isEmpty()) {
             gen.writeFieldName("send-messages");
             gen.writeStartArray();
@@ -237,11 +237,11 @@ class SingleStateSerializer extends JsonSerializer<SearchState> {
             }
             gen.writeEndArray();
         }
-        if (!s.newTimeouts().isEmpty()) {
+        if (!s.newTimers().isEmpty()) {
             gen.writeFieldName("set-timeouts");
             gen.writeStartArray();
-            for (TimeoutEnvelope te : s.newTimeouts()) {
-                serializeTimeout(te, gen, ser);
+            for (TimerEnvelope te : s.newTimers()) {
+                serializeTimer(te, gen, ser);
             }
             gen.writeEndArray();
         }

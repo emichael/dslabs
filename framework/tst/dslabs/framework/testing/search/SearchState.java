@@ -28,12 +28,12 @@ import com.google.common.collect.Streams;
 import dslabs.framework.Address;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.utils.Cloning;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -60,7 +60,7 @@ import org.apache.commons.lang3.tuple.Pair;
 public final class SearchState extends AbstractState
         implements Serializable, Cloneable {
     private final Set<MessageEnvelope> network;
-    private final Map<Address, TimeoutQueue> timeouts;
+    private final Map<Address, TimerQueue> timers;
 
     @Getter private final transient SearchState previous;
     @Getter private final transient Transition transitionFromPrevious;
@@ -68,19 +68,19 @@ public final class SearchState extends AbstractState
 
     // TODO: only return iterable for these in getter?
     @Getter private final transient Set<MessageEnvelope> newMessages;
-    @Getter private final transient Set<TimeoutEnvelope> newTimeouts;
+    @Getter private final transient Set<TimerEnvelope> newTimers;
 
     public SearchState(Set<Address> servers, Set<Address> clientWorkers,
                        StateGenerator stateGenerator) {
         super(servers, clientWorkers, Collections.emptySet(), stateGenerator);
 
         this.network = new HashSet<>();
-        this.timeouts = new HashMap<>();
+        this.timers = new HashMap<>();
         this.previous = null;
         this.transitionFromPrevious = null;
         this.depth = 0;
         this.newMessages = new HashSet<>();
-        this.newTimeouts = new HashSet<>();
+        this.newTimers = new HashSet<>();
     }
 
     public SearchState(StateGenerator stateGenerator) {
@@ -89,7 +89,7 @@ public final class SearchState extends AbstractState
 
     /**
      * Creates a successor state, only actually cloning the Node specified by
-     * address. Only that node's TimeoutQueue is cloned. Only that node is
+     * address. Only that node's TimerQueue is cloned. Only that node is
      * configured.
      */
     private SearchState(SearchState previous, Address addressToClone,
@@ -97,32 +97,31 @@ public final class SearchState extends AbstractState
         super(previous, addressToClone);
 
         network = new HashSet<>(previous.network);
-        timeouts = new HashMap<>(previous.timeouts);
+        timers = new HashMap<>(previous.timers);
         this.previous = previous;
         this.transitionFromPrevious = transitionFromPrevious;
         depth = previous.depth + 1;
         newMessages = new HashSet<>();
-        newTimeouts = new HashSet<>();
+        newTimers = new HashSet<>();
 
-        timeouts.put(addressToClone,
-                new TimeoutQueue(timeouts.get(addressToClone)));
+        timers.put(addressToClone, new TimerQueue(timers.get(addressToClone)));
         configNode(addressToClone);
     }
 
     /**
      * Creates a shallow clone of this state. Does not actually clone any nodes,
-     * messages, timeouts, etc.
+     * messages, timers, etc.
      */
     private SearchState(SearchState source) {
         super(source, null);
 
         network = new HashSet<>(source.network);
-        timeouts = new HashMap<>(source.timeouts);
+        timers = new HashMap<>(source.timers);
         this.previous = source.previous;
         this.transitionFromPrevious = source.transitionFromPrevious;
         depth = source.depth;
         newMessages = new HashSet<>(source.newMessages);
-        newTimeouts = new HashSet<>(source.newTimeouts);
+        newTimers = new HashSet<>(source.newTimers);
     }
 
     /**
@@ -143,8 +142,8 @@ public final class SearchState extends AbstractState
     }
 
     @Override
-    public Iterable<TimeoutEnvelope> timeouts(Address address) {
-        return timeouts.get(address);
+    public Iterable<TimerEnvelope> timers(Address address) {
+        return timers.get(address);
     }
 
     @Override
@@ -157,7 +156,7 @@ public final class SearchState extends AbstractState
             }
         }
 
-        timeouts.put(address, new TimeoutQueue());
+        timers.put(address, new TimerQueue());
         configNode(address);
         node(address).init();
     }
@@ -191,15 +190,14 @@ public final class SearchState extends AbstractState
                 newMessages.add(messageEnvelope);
             }
         }, te -> {
-            // Clone on timeout set
-            Timeout t = Cloning.clone(te.getMiddle());
+            // Clone on timer set
+            Timer t = Cloning.clone(te.getMiddle());
             Pair<Integer, Integer> bounds = te.getRight();
-            TimeoutEnvelope timeoutEnvelope =
-                    new TimeoutEnvelope(te.getLeft(), t, bounds.getLeft(),
+            TimerEnvelope timerEnvelope =
+                    new TimerEnvelope(te.getLeft(), t, bounds.getLeft(),
                             bounds.getRight());
-            timeouts.get(timeoutEnvelope.to().rootAddress())
-                    .add(timeoutEnvelope);
-            newTimeouts.add(timeoutEnvelope);
+            timers.get(timerEnvelope.to().rootAddress()).add(timerEnvelope);
+            newTimers.add(timerEnvelope);
         });
     }
 
@@ -220,12 +218,11 @@ public final class SearchState extends AbstractState
             }
         }
 
-        if (settings.deliverTimeouts()) {
-            // Deliver all possible timeouts
+        if (settings.deliverTimers()) {
+            // Deliver all possible timers
             for (Address address : addresses()) {
-                for (TimeoutEnvelope timeout : timeouts.get(address)
-                                                       .deliverable()) {
-                    transitions.add(new Transition(timeout));
+                for (TimerEnvelope timer : timers.get(address).deliverable()) {
+                    transitions.add(new Transition(timer));
                 }
             }
         }
@@ -235,7 +232,7 @@ public final class SearchState extends AbstractState
 
     /**
      * Take all possible steps by delivering all possible messages in the
-     * network and all possible timeouts.
+     * network and all possible timers.
      *
      * @return the (possible empty) set of new states
      */
@@ -262,8 +259,8 @@ public final class SearchState extends AbstractState
         if (transition.isMessage()) {
             return stepMessage(transition.message(), settings, skipChecks);
         }
-        if (transition.isTimeout()) {
-            return stepTimeout(transition.timeout(), settings, skipChecks);
+        if (transition.isTimer()) {
+            return stepTimer(transition.timer(), settings, skipChecks);
         }
 
         return null;
@@ -295,28 +292,27 @@ public final class SearchState extends AbstractState
         return ns;
     }
 
-    public SearchState stepTimeout(TimeoutEnvelope timeout,
-                                   SearchSettings settings,
-                                   boolean skipChecks) {
+    public SearchState stepTimer(TimerEnvelope timer, SearchSettings settings,
+                                 boolean skipChecks) {
         if (settings == null) {
             settings = new SearchSettings();
         }
 
-        Address toAddress = timeout.to().rootAddress();
+        Address toAddress = timer.to().rootAddress();
 
-        if (!hasNode(timeout.to().rootAddress()) || (!skipChecks &&
-                !(settings.deliverTimeouts() &&
-                        timeouts.get(toAddress).isDeliverable(timeout)))) {
+        if (!hasNode(timer.to().rootAddress()) || (!skipChecks &&
+                !(settings.deliverTimers() &&
+                        timers.get(toAddress).isDeliverable(timer)))) {
             return null;
         }
 
         SearchState ns =
-                new SearchState(this, toAddress, new Transition(timeout));
-        Timeout nt = Cloning.clone(timeout.timeout());
+                new SearchState(this, toAddress, new Transition(timer));
+        Timer nt = Cloning.clone(timer.timer());
         Node n = ns.node(toAddress);
 
-        n.onTimeout(nt, timeout.to());
-        ns.timeouts.get(toAddress).remove(timeout);
+        n.onTimer(nt, timer.to());
+        ns.timers.get(toAddress).remove(timer);
         return ns;
     }
 
@@ -455,9 +451,9 @@ public final class SearchState extends AbstractState
 
     @Override
     public String toString() {
-        return String.format("State(nodes={%s}, network=%s, timeouts=%s)",
+        return String.format("State(nodes={%s}, network=%s, timers=%s)",
                 Streams.stream(addresses())
                        .map(a -> String.format("%s=%s", a, node(a)))
-                       .collect(Collectors.joining(", ")), network, timeouts);
+                       .collect(Collectors.joining(", ")), network, timers);
     }
 }

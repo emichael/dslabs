@@ -42,9 +42,9 @@ class PBServer extends Node {
     // Your code here...
 
     /* -------------------------------------------------------------------------
-        Timeout Handlers
+        Timer Handlers
        -----------------------------------------------------------------------*/
-    private void onPingTimeout(PingTimeout t) {
+    private void onPingTimer(PingTimer t) {
         // Your code here...
     }
 

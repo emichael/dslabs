@@ -64,9 +64,9 @@ public abstract class CheckLogger {
         if (transition.isMessage()) {
             methodName = "handle" +
                     transition.message().message().getClass().getSimpleName();
-        } else if (transition.isTimeout()) {
+        } else if (transition.isTimer()) {
             methodName = "on" +
-                    transition.timeout().timeout().getClass().getSimpleName();
+                    transition.timer().timer().getClass().getSimpleName();
         } else {
             // Don't handler other methods for now
             return null;

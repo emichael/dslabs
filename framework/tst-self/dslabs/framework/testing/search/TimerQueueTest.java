@@ -1,8 +1,8 @@
 package dslabs.framework.testing.search;
 
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -15,49 +15,49 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
-public class TimeoutQueueTest {
+public class TimerQueueTest {
 
     @Data
-    private static class T implements Timeout {
+    private static class T implements Timer {
     }
 
-    private TimeoutQueue tq = new TimeoutQueue();
+    private TimerQueue tq = new TimerQueue();
 
     @Before
     public void setUp() {
-        tq = new TimeoutQueue();
+        tq = new TimerQueue();
     }
 
-    private static TimeoutEnvelope te(int n, int timeoutLengthMillis) {
-        return new TimeoutEnvelope(new LocalAddress(Integer.toString(n)),
-                new T(), timeoutLengthMillis, timeoutLengthMillis);
+    private static TimerEnvelope te(int n, int timerLengthMillis) {
+        return new TimerEnvelope(new LocalAddress(Integer.toString(n)), new T(),
+                timerLengthMillis, timerLengthMillis);
     }
 
-    private static TimeoutEnvelope te(int n, int minTimeoutLengthMillis,
-                                      int maxTimeoutLengthMillis) {
-        return new TimeoutEnvelope(new LocalAddress(Integer.toString(n)),
-                new T(), minTimeoutLengthMillis, maxTimeoutLengthMillis);
+    private static TimerEnvelope te(int n, int minTimerLengthMillis,
+                                    int maxTimerLengthMillis) {
+        return new TimerEnvelope(new LocalAddress(Integer.toString(n)), new T(),
+                minTimerLengthMillis, maxTimerLengthMillis);
     }
 
-    private List<TimeoutEnvelope> deliverable() {
-        LinkedList<TimeoutEnvelope> l = new LinkedList<>();
-        for (TimeoutEnvelope t : tq.deliverable()) {
+    private List<TimerEnvelope> deliverable() {
+        LinkedList<TimerEnvelope> l = new LinkedList<>();
+        for (TimerEnvelope t : tq.deliverable()) {
             l.add(t);
         }
         return l;
     }
 
-    private void assertDeliverable(TimeoutEnvelope... tes) {
-        Collection<TimeoutEnvelope> d = deliverable();
-        for (TimeoutEnvelope t : tes) {
+    private void assertDeliverable(TimerEnvelope... tes) {
+        Collection<TimerEnvelope> d = deliverable();
+        for (TimerEnvelope t : tes) {
             assertTrue(tq.isDeliverable(t));
             assertTrue(d.contains(t));
         }
     }
 
-    private void assertNotDeliverable(TimeoutEnvelope... tes) {
-        Collection<TimeoutEnvelope> d = deliverable();
-        for (TimeoutEnvelope t : tes) {
+    private void assertNotDeliverable(TimerEnvelope... tes) {
+        Collection<TimerEnvelope> d = deliverable();
+        for (TimerEnvelope t : tes) {
             assertFalse(tq.isDeliverable(t));
             assertFalse(d.contains(t));
         }
@@ -132,19 +132,19 @@ public class TimeoutQueueTest {
     }
 
     @Test
-    public void testRandomTimeouts() {
+    public void testRandomTimers() {
         for (int i = 1; i <= 4; i++) {
             for (int j = i; j <= 4; j++) {
                 for (int k = 1; k <= 4; k++) {
                     for (int l = k; l <= 4; l++) {
                         setUp();
-                        TimeoutEnvelope te1 = te(1, i, j), te2 = te(2, k, l);
+                        TimerEnvelope te1 = te(1, i, j), te2 = te(2, k, l);
                         tq.add(te1);
                         assertDeliverable(te1);
                         tq.add(te2);
                         assertDeliverable(te1);
-                        if (te2.minTimeoutLengthMillis() <
-                                te1.maxTimeoutLengthMillis()) {
+                        if (te2.minTimerLengthMillis() <
+                                te1.maxTimerLengthMillis()) {
                             assertDeliverable(te2);
                         } else {
                             assertNotDeliverable(te2);

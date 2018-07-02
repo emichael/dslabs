@@ -248,8 +248,8 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(joinFinished, searchSettings));
 
-        // Search from the beginning with no timeouts (potentially not useful)
-        searchSettings.deliverTimeouts(false);
+        // Search from the beginning with no timers (potentially not useful)
+        searchSettings.deliverTimers(false);
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(initSearchState, searchSettings));
     }
@@ -297,8 +297,8 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(firstJoin, searchSettings));
 
-        // Again without timeouts (potentially not useful)
-        searchSettings.deliverTimeouts(false).maxTimeSecs(15);
+        // Again without timers (potentially not useful)
+        searchSettings.deliverTimers(false).maxTimeSecs(15);
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(firstJoin, searchSettings));
     }
@@ -352,8 +352,8 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(secondJoin, searchSettings));
 
-        // Again without timeouts (potentially not useful)
-        searchSettings.deliverTimeouts(false);
+        // Again without timers (potentially not useful)
+        searchSettings.deliverTimers(false);
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(secondJoin, searchSettings));
     }

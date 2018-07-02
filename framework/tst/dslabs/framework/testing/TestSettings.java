@@ -53,7 +53,7 @@ public class TestSettings {
             new ConcurrentLinkedQueue<>();
 
     private volatile int maxTimeSecs = -1;
-    private volatile boolean deliverTimeouts = true;
+    private volatile boolean deliverTimers = true;
     private volatile boolean singleThreaded = GlobalSettings.singleThreaded();
 
     // Network settings
@@ -242,7 +242,7 @@ public class TestSettings {
         clearInvariants();
         clearPrunes();
         timeLimited(false);
-        deliverTimeouts(true);
+        deliverTimers(true);
         singleThreaded(false);
         resetNetwork();
         return this;

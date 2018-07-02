@@ -27,7 +27,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.google.common.collect.Streams;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StatePredicate;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.Json;
@@ -50,10 +50,10 @@ public class VizClient {
     private final static String MSGTYPEFIELD = "msgtype";
     private final static String STATEIDFIELD = "state-id";
     private final static String MSGIDFIELD = "msg-id";
-    private final static String TIMEOUTIDFIELD = "timeout-id";
+    private final static String TIMERIDFIELD = "timeout-id";
 
     private final static String MSGTYPEMSG = "msg";
-    private final static String MSGTYPETIMEOUT = "timeout";
+    private final static String MSGTYPETIMER = "timeout";
     private final static String MSGTYPESTART = "start";
     private final static String MSGTYPEQUIT = "quit";
     private final static String MSGTYPEREGISTER = "register";
@@ -212,22 +212,22 @@ public class VizClient {
                     sendJson(Json.toJson(result, invariant));
                     break;
 
-                case MSGTYPETIMEOUT:
+                case MSGTYPETIMER:
                     if (VERBOSE) {
-                        System.out.println("Got timeout.");
+                        System.out.println("Got timer.");
                     }
 
                     stateId = msg.get(STATEIDFIELD).textValue();
-                    String timeoutId = msg.get(TIMEOUTIDFIELD).textValue();
+                    String timerId = msg.get(TIMERIDFIELD).textValue();
                     s = Json.getState(stateId);
-                    TimeoutEnvelope te = Json.getTimeout(timeoutId);
+                    TimerEnvelope te = Json.getTimer(timerId);
                     if (te == null) {
                         throw new RuntimeException(
-                                "Specified state or timeout doesn't exist");
+                                "Specified state or timer doesn't exist");
                     }
-                    result = s.stepTimeout(te, null, true);
+                    result = s.stepTimer(te, null, true);
                     if (result == null) {
-                        throw new RuntimeException("Couldn't deliver timeout");
+                        throw new RuntimeException("Couldn't deliver timer");
                     }
                     sendJson(Json.toJson(result, invariant));
                     break;

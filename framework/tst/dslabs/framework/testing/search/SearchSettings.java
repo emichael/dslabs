@@ -80,8 +80,8 @@ public class SearchSettings extends TestSettings {
     }
 
     @Override
-    public SearchSettings deliverTimeouts(boolean deliverTimeouts) {
-        super.deliverTimeouts(deliverTimeouts);
+    public SearchSettings deliverTimers(boolean deliverTimers) {
+        super.deliverTimers(deliverTimers);
         return this;
     }
 

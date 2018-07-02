@@ -1,20 +1,20 @@
 package dslabs.primarybackup;
 
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import lombok.Data;
 
 @Data
-final class PingCheckTimeout implements Timeout {
+final class PingCheckTimer implements Timer {
     static final int PING_CHECK_MILLIS = 100;
 }
 
 @Data
-final class PingTimeout implements Timeout {
+final class PingTimer implements Timer {
     static final int PING_MILLIS = 25;
 }
 
 @Data
-final class ClientTimeout implements Timeout {
+final class ClientTimer implements Timer {
     static final int CLIENT_RETRY_MILLIS = 100;
 
     // Your code here...

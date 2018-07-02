@@ -5,7 +5,7 @@ import dslabs.framework.Node;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
-import static dslabs.primarybackup.PingCheckTimeout.PING_CHECK_MILLIS;
+import static dslabs.primarybackup.PingCheckTimer.PING_CHECK_MILLIS;
 
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
@@ -24,7 +24,7 @@ class ViewServer extends Node {
 
     @Override
     public void init() {
-        set(new PingCheckTimeout(), PING_CHECK_MILLIS);
+        set(new PingCheckTimer(), PING_CHECK_MILLIS);
         // Your code here...
     }
 
@@ -40,9 +40,9 @@ class ViewServer extends Node {
     }
 
     /* -------------------------------------------------------------------------
-        Timeout Handlers
+        Timer Handlers
        -----------------------------------------------------------------------*/
-    private void onPingCheckTimeout(PingCheckTimeout t) {
+    private void onPingCheckTimer(PingCheckTimer t) {
         // Your code here...
         set(t, PING_CHECK_MILLIS);
     }

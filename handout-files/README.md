@@ -61,21 +61,21 @@ The core intellectual challenge of distributed systems is to build working
 systems that produce useful results despite these difficulties. For simplicity,
 we assume that nodes have a globally unique ID and fail by permanently crashing
 (i.e., they do not restart). Your solutions to each lab are a set of message and
-timeout handlers for each node in the distributed system, to achieve some
-desired system-level behavior. These handlers can change local state and send
-messages to other nodes.
+timer handlers for each node in the distributed system, to achieve some desired
+system-level behavior. These handlers can change local state and send messages
+to other nodes.
 
 Just as the message handler is only invoked if you send a message to that node,
-the timeout handler on a node is triggered only if you set the timer on the
-node. NOTE: Timeouts are not triggered by default; you must set them for them to
-be delivered.
+the timer handler on a node is triggered only if you set the timer on the node.
+NOTE: Timers are not triggered by default; you must set them for them to be
+delivered.
 
 Your handlers only need to support single-threaded access and must be
 deterministic. The first property means that on each node, the handlers execute
 one at a time, and run to completion. The second assumption asserts that the
-node behavior is only a function of the order of messages and timeouts. If the
-messages arrive in the same order, the same output occurs – the same sequence
-of message sends and internal state changes.
+node behavior is only a function of the order of messages and timers. If the
+messages arrive in the same order, the same output occurs – the same sequence of
+message sends and internal state changes.
 
 Lastly, while not necessary, your message handlers should be as idempotent as
 possible; idempotence is useful when a network can deliver a message multiple
@@ -88,7 +88,7 @@ sent and the internal state only changes as a result of the first message.
 These properties combine to allow us to do more thorough testing of your
 solutions. For each part of each lab, there are a set of "run tests" that look
 for the basic functionality. We then run a set of "search tests" – automated
-model checks that systematically try as many message and timeout orderings as
+model checks that systematically try as many message and timer orderings as
 possible, to better ensure your solution works in all (rather than just a few)
 cases. These include both safety and liveness tests. Safety tests check if
 invariants are violated along any code paths. Liveness tests check if some code
@@ -97,7 +97,7 @@ cumulative – we test basic functionality first before proceeding to exploring
 corner cases.
 
 Finally, we also include a package to produce visualizations of your solutions
-to aid in debugging, e.g., to illustrate the sequence of messages, timeouts,
+to aid in debugging, e.g., to illustrate the sequence of messages, timers,
 and/or failures that might lead to a violation of the invariants of the system.
 
 
@@ -131,16 +131,16 @@ subclasses of the provided classes and should understand the contract those
 classes need to follow.
 
 Briefly, you will be creating subclasses of the `Node` class by defining
-`Message` and `Timeout` handlers as well as a special `init` handler. In this
+`Message` and `Timer` handlers as well as a special `init` handler. In this
 framework, `Node`s are I/O automata; they process events sequentially as
 delivered by the environment. They do not need to handle concurrent access, and
 all methods should run without blocking or starting other threads. Subclasses of
-`Node` can send each other `Message`s and set `Timeout`s for themselves through
-the `Node` interface. Here, `Timeout`s are simply asynchronous callbacks that
-will be delivered back to the `Node` once their time expires. Messages may be
-dropped or re-ordered depending on the network semantics of the individual lab
-(asynchronous and lossy unless otherwise specified), but `Timeout`s will always
-be delivered (provided that your code asks for a timeout -- they don't occur by
+`Node` can send each other `Message`s and set `Timer`s for themselves through
+the `Node` interface. Here, `Timer`s are simply asynchronous callbacks that will
+be delivered back to the `Node` once their time expires. Messages may be dropped
+or re-ordered depending on the network semantics of the individual lab
+(asynchronous and lossy unless otherwise specified), but `Timer`s will always be
+delivered (provided that your code asks for a timer -- they don't occur by
 default).
 
 Some of your `Node`s will be `Client`s. These `Node`s provide a way for the
@@ -220,13 +220,14 @@ When debugging these tests, you might find running in single-threaded mode
 These tests run in "model checking mode," where the testing framework explores
 the graph of all reachable states. Here, a "state" is the state of all nodes in
 the system, the state of the network (i.e., the messages currently in the
-network), and the timeouts pending for each node. By default, search tests
-assume a fully asynchronous network in which messages can be dropped,
-re-ordered, and even duplicated. Timeouts will be delivered in an order
-respecting their durations (i.e. if `t1.timeoutLength <= t2.timeoutLength` and
-`t1` is set before `t2`, then `t1` will be delivered before `t2`).
+network), and the timers pending for each node. By default, search tests assume
+a fully asynchronous network in which messages can be dropped, re-ordered, and
+even duplicated. Timers will be delivered in an order respecting their durations
+(i.e. if the maximum timer length for `t1` is less than or equal to the minimum
+timer length for `t2` and `t1` is set before `t2`, then `t1` will be delivered
+before `t2`).
 
-All `Node`s, `Message`s, and `Timeout`s must properly implement `equals`,
+All `Node`s, `Message`s, and `Timer`s must properly implement `equals`,
 `hashCode`, and `toString` to pass these tests. Furthermore, they must be
 `Serializable` (i.e., all data structures they encompass must be
 `Serializable`). Usually, all that is needed to make a data structure
@@ -235,9 +236,9 @@ serializable is to have the class implement the empty `Serializable` interface.
 Running `run-tests.py --checks` for a lab will attempt to report possible errors
 with that lab's code. While some of the reported items are always errors (e.g.,
 a clone of a state not being equal to itself), others are not (e.g., some
-message and timeout handlers are not supposed to be idempotent). Furthermore,
-some of these checks rely on non-exhaustive model checking; just because they do
-not report a certain error doesn't mean the problem doesn't exist.
+message and timer handlers are not supposed to be idempotent). Furthermore, some
+of these checks rely on non-exhaustive model checking; just because they do not
+report a certain error doesn't mean the problem doesn't exist.
 
 
 ## Debugging and Logging
@@ -251,10 +252,10 @@ argument to `run-tests.py` will let you change the logging level. *IMPORTANT:*
 Disable all logging statements before submitting your code (e.g., by only
 logging at levels lower than `INFO`).
 
-The framework has built-in logging of all delivered messages and timeouts at the
+The framework has built-in logging of all delivered messages and timers at the
 `FINEST` level (see it with `run-tests.py -g FINEST`). This may be useful for
 run tests. You can add additional instrumentation to the `send`, `broadcast`,
-`set`, `handleMessage`, and `onTimeout` methods of `Node` by overriding those
+`set`, `handleMessage`, and `onTimer` methods of `Node` by overriding those
 methods (and calling the `super` method of course).
 
 
@@ -275,8 +276,8 @@ Chrome window, you should open a Chrome tab manually and navigate to
 ![Debug Startup](img/debug-startup.png)
 
 Your servers should now appear in the main window. Each server has a "queue" of
-timeouts and messages waiting to be delivered to it. Clicking on any message or
-timeout will deliver it to that server. Right-clicking on a message, timeout, or
+timers and messages waiting to be delivered to it. Clicking on any message or
+timer will deliver it to that server. Right-clicking on a message, timer, or
 server will show more information about its state.
 
 The servers are positioned in a circle by default. With more than 3 or 4
@@ -286,10 +287,10 @@ dragging the black dot below each server.
 ![Debug Servers](img/debug-servers.png)
 
 The bottom window shows a history of the "events" that have occurred; each
-message or timeout delivered corresponds to an event. Clicking on states in this
+message or timer delivered corresponds to an event. Clicking on states in this
 history allows you to "time travel" by going back to previous states of your
 system. If you choose a different event than was executed before--for instance,
-delivering a timeout instead of a message--the history will branch. This enables
+delivering a timer instead of a message--the history will branch. This enables
 exploration of multiple possible system traces.
 
 ![Debug Servers](img/debug-branch.png)
@@ -310,14 +311,14 @@ browser window is opened as before and the list of servers is displaying, click
 Now, the visualization tool will be pre-populated with the invariant-violating
 trace, the last state of which actually violates one of the invariants being
 tested for. You can explore this trace by using the history navigation tools
-described above. You can also click on messages or timeouts to explore alternate
+described above. You can also click on messages or timers to explore alternate
 traces branching off the one that violated the invariant.
 
 ![Trace](img/trace-servers.png)
 
 
 ### JSON Issues
-If your `Node`s, `Message`s, or `Timeout`s contain circular references, you may
+If your `Node`s, `Message`s, or `Timer`s contain circular references, you may
 run into issues using the visualization tool. In this case, you will have to
 remove the circular references or define custom JSON serializers for the
 offending classes. The testing framework uses the
@@ -334,15 +335,14 @@ class.
 ### Common Issues
 - If search tests fail to find states that should be reachable and only finds a
   few unique states, make sure `equals` and `hashCode` are properly implemented
-  for your nodes, messages, and timeouts (especially if you created any
-  classes).
+  for your nodes, messages, and timers (especially if you created any classes).
 - Using `==` instead of `equals` in your code for references (non-primitives) is
   almost always wrong. The test infrastructure will clone (i.e.
-  serialize/deserialize) your nodes, messages, and timeouts, breaking pointer
+  serialize/deserialize) your nodes, messages, and timers, breaking pointer
   equality.
 - If your search tests time out because there are too many unique states, check
-  that all of your message and timeout handlers are *deterministic*. Also,
-  you'll want as many of them to be idempotent as possible.
+  that all of your message and timer handlers are *deterministic*. Also, you'll
+  want as many of them to be idempotent as possible.
 - Your code should not acquire any locks, except in clients by using
   `synchronized` on handlers and the client interface methods. Concurrency is
   handled by the framework. Use of locking data structures (e.g. `Hashtable`) is

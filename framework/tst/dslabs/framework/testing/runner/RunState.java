@@ -27,12 +27,12 @@ import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
 import dslabs.framework.testing.utils.Either;
@@ -88,10 +88,10 @@ public class RunState extends AbstractState {
             Message m = Cloning.clone(me.getRight());
             network.send(new MessageEnvelope(me.getLeft(), me.getMiddle(), m));
         }, null, te -> {
-            // Clone timeout on set
-            Timeout t = Cloning.clone(te.getMiddle());
+            // Clone timer on set
+            Timer t = Cloning.clone(te.getMiddle());
             Pair<Integer, Integer> bounds = te.getRight();
-            inbox.set(new TimeoutEnvelope(te.getLeft(), t, bounds.getLeft(),
+            inbox.set(new TimerEnvelope(te.getLeft(), t, bounds.getLeft(),
                     bounds.getRight()));
         });
         node.init();
@@ -114,7 +114,7 @@ public class RunState extends AbstractState {
 
     private void runNode(Address address, Node node, Inbox inbox) {
         while (!Thread.interrupted()) {
-            Either<MessageEnvelope, TimeoutEnvelope> item;
+            Either<MessageEnvelope, TimerEnvelope> item;
 
             try {
                 item = inbox.take();
@@ -130,9 +130,9 @@ public class RunState extends AbstractState {
             }
 
             if (item.isRight()) {
-                TimeoutEnvelope te = item.right();
-                if (settings.deliverTimeouts()) {
-                    node.onTimeout(te.timeout(), te.to());
+                TimerEnvelope te = item.right();
+                if (settings.deliverTimers()) {
+                    node.onTimer(te.timer(), te.to());
                 }
             }
 
@@ -147,7 +147,7 @@ public class RunState extends AbstractState {
     }
 
     private synchronized void takeSingleThreadedStep() {
-        // Deliver 1 message and 1 timeout per node
+        // Deliver 1 message and 1 timer per node
         for (Address address : addresses()) {
             Node node = node(address);
             Inbox inbox = network.inbox(address);
@@ -157,9 +157,9 @@ public class RunState extends AbstractState {
                 node.handleMessage(me.message(), me.from(), me.to());
             }
 
-            TimeoutEnvelope te = inbox.pollTimeout();
-            if (te != null && settings.deliverTimeouts()) {
-                node.onTimeout(te.timeout(), te.to());
+            TimerEnvelope te = inbox.pollTimer();
+            if (te != null && settings.deliverTimers()) {
+                node.onTimer(te.timer(), te.to());
             }
         }
     }
@@ -347,8 +347,8 @@ public class RunState extends AbstractState {
 
 
     @Override
-    public Iterable<TimeoutEnvelope> timeouts(Address address) {
-        return network.inbox(address).timeouts();
+    public Iterable<TimerEnvelope> timers(Address address) {
+        return network.inbox(address).timers();
     }
 
     @Override

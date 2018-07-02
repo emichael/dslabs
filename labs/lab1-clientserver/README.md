@@ -61,7 +61,7 @@ You can (and should) make the simplifying assumption that a client will have
 only one outstanding request at a time. (In practice, many distributed systems
 allow the client to issue multiple simultaneous requests; the bookkeeping for
 that is a bit more involved.) Also, recall that the timer interrupt handler will
-fire iff you explicitly set a timeout.
+fire iff you explicitly set a timer.
 
 The client interface includes both a polling and a blocking interface.
 `hasResult` should return whether the client has a result for the most recent
@@ -97,7 +97,7 @@ results in `getResult`. Our solution used one call to `this.wait()` and
 `this.notify()` each in `SimpleClient`.
 
 Your client and server code should use `this.send` and `this.set` to send
-messages and set timeouts, respectively. The server's address is available via
+messages and set timers, respectively. The server's address is available via
 `serverAddress` in the client.
 
 Our solution to part 2 took approximately 40 lines of code.
@@ -132,7 +132,7 @@ having to reimplement the functionality for Labs 2, 3, and 4.
 
 We've started you in the right direction by providing the `atmostonce` package.
 You will need to implement the classes in this package and possibly modify the
-other parts of your solution -- the messages, timeouts, client, and server -- to
+other parts of your solution -- the messages, timers, client, and server -- to
 work with these changes.
 
 The `AMOApplication` is an `Application` that takes any `Application` and turns
@@ -145,7 +145,7 @@ Some steps that may be needed: wrap the provided `Application` in the
 constructor in an `AMOApplication` (and perhaps changing the corresponding
 field's declared type). You will also need to deal with what happens when the
 server receives "old" `Request`s. The modifications to the client should be
-similarly simple. Your modifications to `Request`, `Reply`, and `ClientTimeout`
+similarly simple. Your modifications to `Request`, `Reply`, and `ClientTimer`
 should only take a couple lines each; the metadata you added in part 2 can
 probably be removed (it should have been subsumed by metadata kept in
 `AMOCommand` and `AMOResult`).
@@ -160,43 +160,42 @@ infrastructure will never call `sendCommand` twice in a row without getting the
 result for the first command.
 
 
-### Designing with Timeouts
+### Designing with Timers
 The test suite also makes sure that your clients and server continue to perform
 well when the system has been running for a while. One important thing to note
-is that the event loop delivering messages and timeouts to your nodes
-prioritizes timeouts that are due. If a node sets too many timeouts and every
-time a timeout fires, it resets that timeout, it might eventually get into a
-state where its timeout queue is so long that the node only processes those
-timeouts and never does anything else!
+is that the event loop delivering messages and timers to your nodes prioritizes
+timers that are due. If a node sets too many timers and every time a timer
+fires, it resets that timer, it might eventually get into a state where its
+timer queue is so long that the node only processes those timers and never does
+anything else!
 
 The workloads your clients are running in this long test continuously send new
 commands as soon as they receive the result for the previous one, so your
-`SimpleClient` might be susceptible to this problem with `ClientTimeout`s.
+`SimpleClient` might be susceptible to this problem with `ClientTimer`s.
 
 There are two important protocol design patterns you should know:
-1. **The Resend/Discard Pattern:** Nodes set timeouts when they need responses
-   to the messages they send. If that timeout fires before the required response
-   is received, the node resends the message and resets the timeout.
-   Importantly, *if the timeout fires after the required response is received,
-   the node should drop the timeout (i.e., not reset it).* Otherwise, your
-   system could run into the problem described above. This pattern usually
-   requires the timeout itself having enough state to describe the response
-   needed.
-2. **The Tick Pattern:** Nodes set a single timeout on `init`. Then, every time
-   that timeout fires, the node takes some action (e.g., resends messages
-   awaiting responses) and also resets the timeout. Thus, there is always
-   exactly one timeout of that type in the node's queue, which fires every
-   `timeoutLengthMillis` (every "tick").
+1. **The Resend/Discard Pattern:** Nodes set timers when they need responses to
+   the messages they send. If that timer fires before the required response is
+   received, the node resends the message and resets the timer. Importantly, *if
+   the timer fires after the required response is received, the node should drop
+   the timer (i.e., not reset it).* Otherwise, your system could run into the
+   problem described above. This pattern usually requires the timer itself
+   having enough state to describe the response needed.
+2. **The Tick Pattern:** Nodes set a single timer on `init`. Then, every time
+   that timer fires, the node takes some action (e.g., resends messages awaiting
+   responses) and also resets the timer. Thus, there is always exactly one timer
+   of that type in the node's queue, which fires every `timerLengthMillis`
+   (every "tick").
 
 There are trade-offs to make with both of these patterns, and you should think
 about their relative performance implementations. The tick pattern is often
 simpler and more conducive to exploratory model-checking, but it sometimes
 results in sending of unnecessary messages.
 
-One last note on timeouts, which is important for both of the above patterns:
-when a node resets a timeout inside a timeout handler, it is often best practice
-to wait until the very end of the timeout handler to reset it, so that the node
-doesn't get into an infinite loop by taking too long in the rest of the method.
+One last note on timers, which is important for both of the above patterns: when
+a node resets a timer inside a timer handler, it is often best practice to wait
+until the very end of the timer handler to reset it, so that the node doesn't
+get into an infinite loop by taking too long in the rest of the method.
 
 
 ### Lab 1 Search Tests

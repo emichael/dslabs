@@ -24,7 +24,7 @@ package dslabs.framework;
 
 /**
  * <p>Clients are a special case of {@link Node}. Client nodes will have
- * handlers for {@link Message}s and {@link Timeout}s like all {@link Node}s but
+ * handlers for {@link Message}s and {@link Timer}s like all {@link Node}s but
  * also provide an interface for interactively sending {@link Command}s and
  * receiving {@link Result}s in a system.
  *
@@ -34,13 +34,12 @@ package dslabs.framework;
  * to return a result before sending the next.
  *
  * <p><b>IMPORTANT:</b> Client interface methods must be properly {@code
- * synchronized} with {@link Message} handlers and {@link Timeout} handlers,
- * since the event handlers are invoked concurrently with the code using the
- * client. The easiest way to do this is to add the {@code synchronized}
- * modifier to all of the aforementioned methods. Furthermore, {@link
- * Client#hasResult()} should return immediately, while {@link
- * Client#getResult()} should block until the client has received a result for
- * the latest command it sent.
+ * synchronized} with {@link Message} handlers and {@link Timer} handlers, since
+ * the event handlers are invoked concurrently with the code using the client.
+ * The easiest way to do this is to add the {@code synchronized} modifier to all
+ * of the aforementioned methods. Furthermore, {@link Client#hasResult()} should
+ * return immediately, while {@link Client#getResult()} should block until the
+ * client has received a result for the latest command it sent.
  */
 public interface Client {
 

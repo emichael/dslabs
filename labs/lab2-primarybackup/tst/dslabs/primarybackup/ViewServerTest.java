@@ -4,7 +4,7 @@ import dslabs.framework.Address;
 import dslabs.framework.Message;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.junit.PrettyTestName;
 import dslabs.framework.testing.junit.TestPointValue;
@@ -40,7 +40,7 @@ public class ViewServerTest extends BaseJUnitTest {
 
     private ViewServer vs;
     private LinkedList<MessageEnvelope> messages;
-    private LinkedList<TimeoutEnvelope> timeouts;
+    private LinkedList<TimerEnvelope> timers;
 
     @Before
     public void setup() throws NoSuchMethodException, InvocationTargetException,
@@ -48,24 +48,24 @@ public class ViewServerTest extends BaseJUnitTest {
         vs = new ViewServer(vsa);
 
         messages = new LinkedList<>();
-        timeouts = new LinkedList<>();
+        timers = new LinkedList<>();
 
         // TODO: clone messages and timers!!!
 
         vs.config(me -> messages
                 .add(new MessageEnvelope(me.getLeft(), me.getMiddle(),
-                        me.getRight())), null, te -> timeouts
-                .add(new TimeoutEnvelope(te.getLeft(), te.getMiddle(),
+                        me.getRight())), null, te -> timers
+                .add(new TimerEnvelope(te.getLeft(), te.getMiddle(),
                         te.getRight().getLeft(), te.getRight().getRight())));
 
         vs.init();
     }
 
     private void timeout() {
-        assertFalse(timeouts.isEmpty());
-        TimeoutEnvelope te = timeouts.remove();
-        assertTrue(te.timeout() instanceof PingCheckTimeout);
-        vs.onTimeout(te.timeout(), te.to());
+        assertFalse(timers.isEmpty());
+        TimerEnvelope te = timers.remove();
+        assertTrue(te.timer() instanceof PingCheckTimer);
+        vs.onTimer(te.timer(), te.to());
     }
 
     private void sendMessage(Message m, Address from) {
@@ -131,8 +131,7 @@ public class ViewServerTest extends BaseJUnitTest {
     }
 
     /**
-     * Deliver 2 timeouts to view server, while serversSendingPings are
-     * pinging.
+     * Deliver 2 timers to view server, while serversSendingPings are pinging.
      *
      * @param serversSendingPings
      *         servers to send pings every interval.

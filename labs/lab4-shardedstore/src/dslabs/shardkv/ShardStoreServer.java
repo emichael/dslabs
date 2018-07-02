@@ -41,7 +41,7 @@ public class ShardStoreServer extends ShardStoreNode {
     // Your code here...
 
     /* -------------------------------------------------------------------------
-        Timeout Handlers
+        Timer Handlers
        -----------------------------------------------------------------------*/
     // Your code here...
 

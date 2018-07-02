@@ -22,7 +22,7 @@
 
 package dslabs.framework.testing.search;
 
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -32,56 +32,50 @@ import javax.annotation.Nonnull;
 import lombok.EqualsAndHashCode;
 
 /**
- * Implements an abstract timeout queue for a single node. In an asynchronous
- * system, the only restriction on timeout delivery is the following: if a node
- * sets timeouts t1, t2 in that order, and t2.duration >= t1.duration, then it
- * must deliver t1 before t2.
+ * Implements an abstract timer queue for a single node. In an asynchronous
+ * system, the only restriction on timer delivery is the following: if a node
+ * sets timers t1, t2 in that order, and t2.minTimerLength >= t1.maxTimerLength,
+ * then it must deliver t1 before t2.
  *
  * This datastructure is not threadsafe.
  *
  * TODO: make this datastructure more efficient? Better way of representing?
  *
- * TODO: make equality checking a bit better? This technically returns false
- * sometimes when the actual queg sues (the dependency graphs) are identical. It
- * turns out, though, that doing the actual equality checking is a case of
- * DAG-isomorphism, which is Graph-isomorphism complete. It might be a special
- * case, but probably not. There might exist some relatively simple algorithm
- * for doing it, and since the timeout queues are relatively small, it might be
- * worth it. Anything that can reduce the branching factor of the BFS is good.
+ * TODO: equality checking is definitely wrong now
  */
 @EqualsAndHashCode
-class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
-    private final List<TimeoutEnvelope> timeouts;
+class TimerQueue implements Serializable, Iterable<TimerEnvelope> {
+    private final List<TimerEnvelope> timers;
 
-    TimeoutQueue() {
-        this.timeouts = new LinkedList<>();
+    TimerQueue() {
+        this.timers = new LinkedList<>();
     }
 
     /**
-     * Creates a copy of the other TimeoutQueue.
+     * Creates a copy of the other TimerQueue.
      *
      * TODO: maybe add in a delayed copy mechanism?
      */
-    TimeoutQueue(TimeoutQueue other) {
-        this.timeouts = new LinkedList<>(other.timeouts);
+    TimerQueue(TimerQueue other) {
+        this.timers = new LinkedList<>(other.timers);
     }
 
-    void add(TimeoutEnvelope timeoutEnvelope) {
-        timeouts.add(timeoutEnvelope);
+    void add(TimerEnvelope timerEnvelope) {
+        timers.add(timerEnvelope);
     }
 
-    Iterable<TimeoutEnvelope> deliverable() {
-        return new Iterable<TimeoutEnvelope>() {
+    Iterable<TimerEnvelope> deliverable() {
+        return new Iterable<TimerEnvelope>() {
             @Override
             @Nonnull
-            public Iterator<TimeoutEnvelope> iterator() {
-                return new Iterator<TimeoutEnvelope>() {
+            public Iterator<TimerEnvelope> iterator() {
+                return new Iterator<TimerEnvelope>() {
                     Integer minMaxTime = null;
                     int i = 0;
 
                     private void skip() {
-                        while (i < timeouts.size() && minMaxTime != null &&
-                                timeouts.get(i).minTimeoutLengthMillis() >=
+                        while (i < timers.size() && minMaxTime != null &&
+                                timers.get(i).minTimerLengthMillis() >=
                                         minMaxTime) {
                             i++;
                         }
@@ -89,19 +83,17 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
 
                     @Override
                     public boolean hasNext() {
-                        return i < timeouts.size();
+                        return i < timers.size();
                     }
 
                     @Override
-                    public TimeoutEnvelope next()
-                            throws NoSuchElementException {
+                    public TimerEnvelope next() throws NoSuchElementException {
                         if (hasNext()) {
-                            TimeoutEnvelope next = timeouts.get(i);
+                            TimerEnvelope next = timers.get(i);
                             i++;
                             if (minMaxTime == null ||
-                                    next.maxTimeoutLengthMillis() <
-                                            minMaxTime) {
-                                minMaxTime = next.maxTimeoutLengthMillis();
+                                    next.maxTimerLengthMillis() < minMaxTime) {
+                                minMaxTime = next.maxTimerLengthMillis();
                             }
                             skip();
                             return next;
@@ -114,13 +106,13 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
         };
     }
 
-    boolean isDeliverable(TimeoutEnvelope timeoutEnvelope) {
-        for (TimeoutEnvelope te : timeouts) {
-            if (te.equals(timeoutEnvelope)) {
+    boolean isDeliverable(TimerEnvelope timerEnvelope) {
+        for (TimerEnvelope te : timers) {
+            if (te.equals(timerEnvelope)) {
                 return true;
             }
-            if (timeoutEnvelope.minTimeoutLengthMillis() >=
-                    te.maxTimeoutLengthMillis()) {
+            if (timerEnvelope.minTimerLengthMillis() >=
+                    te.maxTimerLengthMillis()) {
                 return false;
             }
         }
@@ -129,16 +121,16 @@ class TimeoutQueue implements Serializable, Iterable<TimeoutEnvelope> {
 
     @Override
     public String toString() {
-        return timeouts.toString();
+        return timers.toString();
     }
 
     @Override
     @Nonnull
-    public Iterator<TimeoutEnvelope> iterator() {
-        return timeouts.iterator();
+    public Iterator<TimerEnvelope> iterator() {
+        return timers.iterator();
     }
 
-    void remove(TimeoutEnvelope timeoutEnvelope) {
-        timeouts.remove(timeoutEnvelope);
+    void remove(TimerEnvelope timerEnvelope) {
+        timers.remove(timerEnvelope);
     }
 }

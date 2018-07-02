@@ -58,7 +58,7 @@ public abstract class AbstractState implements Serializable {
 
     public abstract Iterable<MessageEnvelope> network();
 
-    public abstract Iterable<TimeoutEnvelope> timeouts(Address address);
+    public abstract Iterable<TimerEnvelope> timers(Address address);
 
     protected abstract void setupNode(Address address);
 

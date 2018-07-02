@@ -133,7 +133,7 @@ class PingClient extends Node implements Client {
         pong = null;
 
         send(new PingRequest(p), serverAddress);
-        set(new PingTimeout(p), RETRY_MILLIS);
+        set(new PingTimer(p), RETRY_MILLIS);
     }
 
     @Override
@@ -161,9 +161,9 @@ class PingClient extends Node implements Client {
     }
 
     /* -------------------------------------------------------------------------
-        Timeout Handlers
+        Timer Handlers
        -----------------------------------------------------------------------*/
-    private synchronized void onPingTimeout(PingTimeout t) {
+    private synchronized void onPingTimer(PingTimer t) {
         if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
             send(new PingRequest(ping), serverAddress);
             set(t, RETRY_MILLIS);
@@ -175,24 +175,24 @@ class PingClient extends Node implements Client {
 `PingClient` implements the `Client` interface. You should read the
 documentation for that interface carefully, as you will soon have to implement
 it yourself! When the `PingClient` gets a `Ping` from the calling code, it sends
-the `PingRequest` over the network to the server and sets a `PingTimeout`. Once
+the `PingRequest` over the network to the server and sets a `PingTimer`. Once
 the `PongReply` is received (with the necessary value), the client stores the
-result and notifies the calling code which may be waiting. Like all timeouts
-`PingTimeout` defines a timeout length.
+result and notifies the calling code which may be waiting. Like all timers
+`PingTimer` defines a timer length.
 
 ```java
 @Data
-final class PingTimeout implements Timeout {
+final class PingTimer implements Timer {
     static final int RETRY_MILLIS = 10;
     private final Ping ping;
 }
 ```
 
 Once this time elapses after it is set, it will be re-delivered to the
-`PingClient`. If the `PingClient` receives this timeout and still hasn't
-received the necessary `Pong` (e.g., because the `PingRequest` was dropped on
-the network), it will send the request again and re-set the timeout. In this
-way, the `PingClient` continually retries until it gets a response.
+`PingClient`. If the `PingClient` receives this timer and still hasn't received
+the necessary `Pong` (e.g., because the `PingRequest` was dropped on the
+network), it will send the request again and re-set the timer. In this way, the
+`PingClient` continually retries until it gets a response.
 
 ## Hello, World!
 Now that we have everything in place, let's run our system! We have defined
@@ -305,11 +305,11 @@ and see what happens.
 
 First, notice that test 3 is marked as "UNRELIABLE." This means that the network
 can (and will) randomly drop messages without delivering them. Let's comment-out
-a crucial line in `PingClient`. Without re-setting the timeout, if one of the
+a crucial line in `PingClient`. Without re-setting the timer, if one of the
 messages gets dropped in the network *again*, the system will be stuck.
 
 ```java
-private synchronized void onPingTimeout(PingTimeout t) {
+private synchronized void onPingTimer(PingTimer t) {
     if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
         send(new PingRequest(ping), serverAddress);
         // set(t, RETRY_MILLIS);
@@ -382,9 +382,9 @@ app=PingApplication()),
 client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-1), pong=null),
 results=[])}, network=[Message(client1 -> pingserver,
-PingRequest(ping=PingApplication.Ping(value=ping-1)))], timeouts={pingserver=[],
-client1=[Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-1)))]})
+PingRequest(ping=PingApplication.Ping(value=ping-1)))], timers={pingserver=[],
+client1=[Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-1)))]})
 
   Message(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=ping-1)))
 
@@ -395,8 +395,8 @@ serverAddress=pingserver, ping=PingApplication.Ping(value=ping-1), pong=null),
 results=[])}, network=[Message(client1 -> pingserver,
 PingRequest(ping=PingApplication.Ping(value=ping-1))), Message(pingserver ->
 client1, PongReply(pong=PingApplication.Pong(value=ping-1)))],
-timeouts={pingserver=[], client1=[Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-1)))]})
+timers={pingserver=[], client1=[Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-1)))]})
 
   Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
 
@@ -409,9 +409,9 @@ pingserver, PingRequest(ping=PingApplication.Ping(value=ping-2))),
 Message(client1 -> pingserver,
 PingRequest(ping=PingApplication.Ping(value=ping-1))), Message(pingserver ->
 client1, PongReply(pong=PingApplication.Pong(value=ping-1)))],
-timeouts={pingserver=[], client1=[Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-1))), Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-2)))]})
+timers={pingserver=[], client1=[Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-1))), Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-2)))]})
 
   Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
 
@@ -426,10 +426,10 @@ pingserver, PingRequest(ping=PingApplication.Ping(value=ping-1))),
 Message(pingserver -> client1,
 PongReply(pong=PingApplication.Pong(value=ping-1))), Message(client1 ->
 pingserver, PingRequest(ping=PingApplication.Ping(value=ping-3)))],
-timeouts={pingserver=[], client1=[Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-1))), Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-2))), Timeout(-> client1,
-PingTimeout(ping=PingApplication.Ping(value=ping-3)))]})
+timers={pingserver=[], client1=[Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-1))), Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-2))), Timer(-> client1,
+PingTimer(ping=PingApplication.Ping(value=ping-3)))]})
 
 dslabs.framework.testing.junit.InvariantViolationError: State violates "Clients got expected results"
 Error info: client1 got PingApplication.Pong(value=ping-1), expected PingApplication.Pong(value=ping-2)

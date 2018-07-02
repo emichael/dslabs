@@ -44,11 +44,11 @@ found by the model-checker.
 ### Programming Model
 The DSLabs framework is built around message-passing state machines (also known
 as I/O automata or distributed actors), which we call *nodes*. These basic units
-of a distributed system consist of a set of message and timeout handlers; these
+of a distributed system consist of a set of message and timer handlers; these
 handlers define how the node updates its internal state, sends messages, and
-sets timeouts in response to an incoming message or timeout. These nodes are run
-in single-threaded event loops, which take messages from network and timeouts
-from the node's timeout queue and call the node's handlers for those events.
+sets timers in response to an incoming message or timer. These nodes are run in
+single-threaded event loops, which take messages from network and timers from
+the node's timer queue and call the node's handlers for those events.
 
 This model of computation is typically the one we use when introduce distributed
 systems for the first time and the one we use when we want to reason about
@@ -75,11 +75,11 @@ of distributed computation, it enables a more thorough form of testing –
 
 Model checking a distributed system is conceptually simple. First, the initial
 state of the system is configured. Then, we say that one state of the system,
-s₂, (consisting of the internal state of all nodes, the state of their timeout
+s₂, (consisting of the internal state of all nodes, the state of their timer
 queues, and the state of the network) is the successor of another state s₁ if it
-can be obtained from s₁ by delivering a single message or timeout that is
-pending in s₁. A state might have multiple successor states. Model checking is
-the systematic exploration of this state graph, the simplest approach being
+can be obtained from s₁ by delivering a single message or timer that is pending
+in s₁. A state might have multiple successor states. Model checking is the
+systematic exploration of this state graph, the simplest approach being
 breadth-first search. The DSLabs model-checker lets us define *invariants* that
 should be preserved (e.g. linearizability) and then search though all possible
 ordering of events to make sure those invariants are preserved in students'

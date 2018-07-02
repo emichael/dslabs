@@ -28,7 +28,7 @@ def make():
 
 
 def run_tests(lab, part=None, no_run=False, no_search=False,
-              timeouts_disabled=False, log_level=None, single_threaded=False,
+              timers_disabled=False, log_level=None, single_threaded=False,
               start_viz=False, no_viz_server=False, do_checks=False,
               test_num=None, assertions=False):
     """Run the specified tests."""
@@ -41,7 +41,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if assertions:
         command.append('-ea')
 
-    if timeouts_disabled:
+    if timers_disabled:
         command.append('-DtestTimeoutsDisabled=true')
 
     if log_level:
@@ -135,7 +135,7 @@ def main():
     parser.add_argument('--no-search', action='store_true',
                         help="do not execure search tests")
 
-    parser.add_argument('--no-timeouts', action='store_true',
+    parser.add_argument('--no-timers', action='store_true',
                         help="stop tests from timing out")
     parser.add_argument('-g', '--log-level', nargs='?', type=str,
                         help="level the default Java util logging should use")
@@ -169,7 +169,7 @@ def main():
                   part=args.part,
                   no_run=args.no_run,
                   no_search=args.no_search,
-                  timeouts_disabled=args.no_timeouts,
+                  timers_disabled=args.no_timers,
                   log_level=args.log_level,
                   single_threaded=args.single_threaded,
                   start_viz=args.start_viz,

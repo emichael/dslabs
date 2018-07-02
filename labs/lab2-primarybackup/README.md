@@ -175,24 +175,24 @@ must be either the primary or backup of the previous view -- lead to the view
 service being stuck if the primary fails in a view with no backup. This is a
 flaw of the design of the `ViewServer` that we will fix in later labs.
 
-Each key/value server should send a `Ping` message once per
-`PING_INTERVAL_MILLIS` (use `PingTimeout` for this purpose on the `PBServer`s).
-The `ViewServer` replies to the `Ping` with a `ViewReply`. A `Ping` lets the
-`ViewServer` know that the server is alive; informs the server of the current
-view; and informs the `ViewServer` of the most recent view that the server knows
-about. The ViewServer should use the `PingCheckTimeout` for deciding whether a
-server is alive or (potentially) dead. If the ViewServer doesn't receive a Ping
-from a server in-between two consecutive `PingCheckTimeout`s, it should consider
-the server to be dead. **Important:** to facilitate search tests, you should
-**not** store timestamps in your `ViewServer`; your message and timeout handlers
-should be **deterministic**.
+Each key/value server should send a `Ping` message once per `PING_MILLIS` (use
+`PingTimer` for this purpose on the `PBServer`s). The `ViewServer` replies to
+the `Ping` with a `ViewReply`. A `Ping` lets the `ViewServer` know that the
+server is alive; informs the server of the current view; and informs the
+`ViewServer` of the most recent view that the server knows about. The ViewServer
+should use the `PingCheckTimer` for deciding whether a server is alive or
+(potentially) dead. If the ViewServer doesn't receive a Ping from a server
+in-between two consecutive `PingCheckTimer`s, it should consider the server to
+be dead. **Important:** to facilitate search tests, you should **not** store
+timestamps in your `ViewServer`; your message and timer handlers should be
+**deterministic**.
 
 The `ViewServer` should return `STARTUP_VIEWNUM` with `null` primary and backup
 when it has not yet started a view and use `INITIAL_VIEWNUM` for the first
 started view. It then proceeds to later view numbers sequentially. The view
 service can proceed to a new view in one of two cases:
 1. It hasn't received a `Ping` from the primary or backup for two consecutive
-   `PING_CHECK_INTERVAL_MILLIS` intervals.
+   `PING_CHECK_MILLIS` intervals.
 2. There is no backup and there's an idle server (a server that's been pinging
    but is neither the primary nor the backup).
 
@@ -220,11 +220,11 @@ ready to move into the new view, which will be important for Part 1 of this lab.
 The `ViewServer` should not consider the view to be acknowledged until the
 primary sends a ping with the view number (i.e., S1 sends `Ping(6)`).
 
-You should not need to implement any messages, timeouts, or other data
-structures for this part of the lab. Your `ViewServer` should have handlers for
-`Ping` and `GetView` messages (replying with a `ViewReply` for each, where
-`GetView` simply returns the current view without the sender "pinging") and
-should handle and set `PingCheckTimeout`s.
+You should not need to implement any messages, timers, or other data structures
+for this part of the lab. Your `ViewServer` should have handlers for `Ping` and
+`GetView` messages (replying with a `ViewReply` for each, where `GetView` simply
+returns the current view without the sender "pinging") and should handle and set
+`PingCheckTimer`s.
 
 Our solution took approximately 100 lines of code.
 
@@ -238,7 +238,7 @@ You should pass the part 1 tests before moving on to part 2; execute them with
   acknowledging the view in which it is the primary. This is expected. We will
   fix these flaws in the design in future labs.
 * You'll want to add field(s) to `ViewServer` in order to keep track of which
-  servers have pinged since the most recent `PingCheckTimeout` and how many ping
+  servers have pinged since the most recent `PingCheckTimer` and how many ping
   intervals each server has most recently missed.
 * Add field(s) to `ViewServer` to keep track of the current view.
 * There may be more than two servers sending `Ping`s. The extra ones (beyond
@@ -276,11 +276,11 @@ respond with an error.
 A server should not talk to the `ViewServer` for every operation it receives,
 since that would put the `ViewServer` on the critical path for performance and
 fault-tolerance. Instead servers should `Ping` the `ViewServer` periodically
-(once every `PING_INTERVAL_MILLIS`) to learn about new views. Similarly, the
-client should not talk to the `ViewServer` for every operation it sends;
-instead, it should cache the current view and only talk to the `ViewServer` (by
-sending a `GetView` message) on initial startup, when the current primary seems
-to be dead (i.e., on `ClientTimeout`), or when it receives an error.
+(once every `PING_MILLIS`) to learn about new views. Similarly, the client
+should not talk to the `ViewServer` for every operation it sends; instead, it
+should cache the current view and only talk to the `ViewServer` (by sending a
+`GetView` message) on initial startup, when the current primary seems to be dead
+(i.e., on `ClientTimer`), or when it receives an error.
 
 When servers startup initially, they should `Ping` the `ViewServer` with
 `ViewServer.STARTUP_VIEWNUM`. After that, they should `Ping` with the latest
@@ -303,7 +303,7 @@ your application in) should handle the backup receiving duplicate operations
 from the primary. However, you will need to keep some state on the primary to
 ensure that the backup processes operations in the correct order.
 
-You will have to define your own messages and timeouts for this part of the lab.
+You will have to define your own messages and timers for this part of the lab.
 
 Our solution took approximately 200 lines of code.
 
@@ -312,12 +312,12 @@ You should pass the part 2 tests; execute them with `run-tests.py --lab 2 --part
 
 
 ### Hints
-* You'll probably need to create new messages and timeouts to forward client
+* You'll probably need to create new messages and timers to forward client
   requests from primary to backup, since the backup should reject a direct
   client request but should accept a forwarded request.
-* You'll probably need to create new messages and timeouts to handle the
-  transfer of the complete application state from the primary to a new backup.
-  You can send the whole application in one message.
+* You'll probably need to create new messages and timers to handle the transfer
+  of the complete application state from the primary to a new backup. You can
+  send the whole application in one message.
 * Even if your `ViewServer` passed all the tests in Part 1, it may still have
   bugs that cause failures in Part 2.
 * Your `PBClient` should be very similar to the `SimpleClient` from lab 1.

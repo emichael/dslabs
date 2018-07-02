@@ -46,7 +46,7 @@ import org.apache.commons.lang3.tuple.Triple;
 
 /**
  * <p>Nodes are the basic unit of computation. They can send and receive {@link
- * Message}s, set and handle {@link Timeout}s, and modify private data. These
+ * Message}s, set and handle {@link Timer}s, and modify private data. These
  * handlers (as well {@link Node#init()}) are invoked <i>sequentially</i>, and
  * they should deterministically run to completion <b>without blocking,
  * sleeping, or starting other threads</b>.
@@ -58,15 +58,15 @@ import org.apache.commons.lang3.tuple.Triple;
  * signature. For instance, to define a message handler for the {@code Foo
  * extends Message}, a Node would define the method {@code handleFoo(Foo
  * message, Address sender)}. Similarly, to define a handler for {@code Bar
- * extends Timeout} a Node would define the method {@code onBar(Bar timeout)}.
+ * extends Timer} a Node would define the method {@code onBar(Bar timer)}.
  *
- * <p>After creation (but before any {@link Message} or {@link Timeout}
+ * <p>After creation (but before any {@link Message} or {@link Timer}
  * handlers are invoked), the {@link Node#init()} method will be invoked. Nodes
- * should <b>not</b> send any messages or set any timeouts in their constructor.
+ * should <b>not</b> send any messages or set any timers in their constructor.
  * Instead, they should send any necessary messages during initialization.
  *
  * <p>Nodes can add sub-Nodes, which allow code re-use. When a Node is
- * registered as a sub-Node, it can send messages and set timeouts as normal.
+ * registered as a sub-Node, it can send messages and set timers as normal.
  * However, messages can also be passed <i>reliably</i> and immediately between
  * the sub-Node and its parent using {@link #handleMessage(Message, Address)}}.
  * The parent node registering the sub-Node is responsible for creating the
@@ -114,8 +114,8 @@ public abstract class Node implements Serializable {
     transient private Consumer<Triple<Address, Address, Message>> messageAdder;
     transient private Consumer<Triple<Address, Address[], Message>>
             batchMessageAdder;
-    transient private Consumer<Triple<Address, Timeout, Pair<Integer, Integer>>>
-            timeoutAdder;
+    transient private Consumer<Triple<Address, Timer, Pair<Integer, Integer>>>
+            timerAdder;
 
     @JsonIgnore private Node parentNode;
 
@@ -127,7 +127,7 @@ public abstract class Node implements Serializable {
 
     /**
      * Takes any initialization steps necessary (potentially sending {@link
-     * Message}s and setting {@link Timeout}s).
+     * Message}s and setting {@link Timer}s).
      */
     public abstract void init();
 
@@ -148,7 +148,7 @@ public abstract class Node implements Serializable {
         }
 
         if (subNode.messageAdder != null || subNode.batchMessageAdder != null ||
-                subNode.timeoutAdder != null) {
+                subNode.timerAdder != null) {
             throw new IllegalArgumentException(
                     "Cannot configure node; already configured as stand-alone.");
         }
@@ -213,48 +213,47 @@ public abstract class Node implements Serializable {
     }
 
     /**
-     * Sets a {@link Timeout} to be tracked by the environment. The Timeout will
-     * be re-delivered to the setting {@link Node} after timeoutLengthMillis
-     * milliseconds. Timeouts may be cloned by the testing infrastructure before
+     * Sets a {@link Timer} to be tracked by the environment. The Timer will be
+     * re-delivered to the setting {@link Node} after timerLengthMillis
+     * milliseconds. Timers may be cloned by the testing infrastructure before
      * being re-delivered.
      *
-     * @param timeout
-     *         the timeout to set
-     * @param timeoutLengthMillis
-     *         the timeout duration
+     * @param timer
+     *         the timer to set
+     * @param timerLengthMillis
+     *         the timer duration
      */
-    protected void set(Timeout timeout, int timeoutLengthMillis) {
-        set(timeout, timeoutLengthMillis, timeoutLengthMillis, address);
+    protected void set(Timer timer, int timerLengthMillis) {
+        set(timer, timerLengthMillis, timerLengthMillis, address);
     }
 
     /**
-     * Sets a {@link Timeout} to be tracked by the environment. The Timeout will
-     * be re-delivered to the setting {@link Node} between
-     * minTimeoutLengthMillis and maxTimeoutLengthMillis, inclusive, chosen
-     * uniformly at random. Timeouts may be cloned by the testing infrastructure
-     * before being re-delivered.
+     * Sets a {@link Timer} to be tracked by the environment. The Timer will be
+     * re-delivered to the setting {@link Node} between minTimerLengthMillis and
+     * maxTimerLengthMillis, inclusive, chosen uniformly at random. Timers may
+     * be cloned by the testing infrastructure before being re-delivered.
      *
-     * @param timeout
-     *         the timeout to set
-     * @param minTimeoutLengthMillis
-     *         the minimum timeout duration
-     * @param maxTimeoutLengthMillis
-     *         the maximum timeout duration
+     * @param timer
+     *         the timer to set
+     * @param minTimerLengthMillis
+     *         the minimum timer duration
+     * @param maxTimerLengthMillis
+     *         the maximum timer duration
      */
-    protected void set(Timeout timeout, int minTimeoutLengthMillis,
-                       int maxTimeoutLengthMillis) {
-        if (minTimeoutLengthMillis > maxTimeoutLengthMillis) {
+    protected void set(Timer timer, int minTimerLengthMillis,
+                       int maxTimerLengthMillis) {
+        if (minTimerLengthMillis > maxTimerLengthMillis) {
             throw new IllegalArgumentException(
-                    "Minimum timeout length greater than maximum timeout length");
+                    "Minimum timer length greater than maximum timer length");
         }
 
-        // TODO: test this in TimeoutEnvelope too? What about Message Envelope?
+        // TODO: test this in TimerEnvelope too? What about Message Envelope?
 
-        if (minTimeoutLengthMillis < 1) {
-            throw new IllegalArgumentException("Minimum timeout length < 1ms");
+        if (minTimerLengthMillis < 1) {
+            throw new IllegalArgumentException("Minimum timer length < 1ms");
         }
 
-        set(timeout, minTimeoutLengthMillis, maxTimeoutLengthMillis, address);
+        set(timer, minTimerLengthMillis, maxTimerLengthMillis, address);
     }
 
     private void send(Message message, Address from, Address to) {
@@ -319,26 +318,25 @@ public abstract class Node implements Serializable {
         }
     }
 
-    private void set(Timeout timeout, int minTimeoutLengthMillis,
-                     int maxTimeoutLengthMillis, Address from) {
-        if (timeout == null) {
+    private void set(Timer timer, int minTimerLengthMillis,
+                     int maxTimerLengthMillis, Address from) {
+        if (timer == null) {
             LOG.severe(String.format(
-                    "Attempting to set null timeout for %s, not setting",
-                    from));
+                    "Attempting to set null timer for %s, not setting", from));
             return;
         }
 
-        if (timeoutAdder != null) {
-            timeoutAdder.accept(new ImmutableTriple<>(from, timeout,
-                    new ImmutablePair<>(minTimeoutLengthMillis,
-                            maxTimeoutLengthMillis)));
+        if (timerAdder != null) {
+            timerAdder.accept(new ImmutableTriple<>(from, timer,
+                    new ImmutablePair<>(minTimerLengthMillis,
+                            maxTimerLengthMillis)));
         } else if (parentNode != null) {
-            parentNode.set(timeout, minTimeoutLengthMillis,
-                    maxTimeoutLengthMillis, from);
+            parentNode.set(timer, minTimerLengthMillis, maxTimerLengthMillis,
+                    from);
         } else {
             LOG.severe(String.format(
                     "Attempting to set %s from %s before node configured, not setting",
-                    timeout, from));
+                    timer, from));
         }
     }
 
@@ -418,17 +416,17 @@ public abstract class Node implements Serializable {
     /**
      * <p><b>Do not use.</b> Only used by testing framework.</p>
      *
-     * <p>Uses reflection to find the appropriate timeout handler; calls that
+     * <p>Uses reflection to find the appropriate timer handler; calls that
      * handler with the given argument.</p>
      *
-     * @param timeout
-     *         the timeout to deliver
+     * @param timer
+     *         the timer to deliver
      * @param destination
      *         the Node to deliver to
      */
-    public void onTimeout(Timeout timeout, Address destination) {
-        if (timeout == null) {
-            LOG.severe(String.format("Attempting to deliver null timeout to %s",
+    public void onTimer(Timer timer, Address destination) {
+        if (timer == null) {
+            LOG.severe(String.format("Attempting to deliver null timer to %s",
                     address));
             return;
         }
@@ -440,23 +438,22 @@ public abstract class Node implements Serializable {
             return;
         }
 
-        LOG.finest(() -> String
-                .format("Timeout(-> %s, %s)", destination, timeout));
+        LOG.finest(() -> String.format("Timer(-> %s, %s)", destination, timer));
 
-        String handlerName = "on" + timeout.getClass().getSimpleName();
-        callMethod(destination, handlerName, timeout);
+        String handlerName = "on" + timer.getClass().getSimpleName();
+        callMethod(destination, handlerName, timer);
     }
 
     /**
-     * <p>Can be used to invoke a timeout handler on a Node, rather than
-     * setting the timeout and waiting for it to expire. The timeout handler is
+     * <p>Can be used to invoke a timer handler on a Node, rather than
+     * setting the timer and waiting for it to expire. The timer handler is
      * handled <i>immediately</i>.
      *
-     * @param timeout
-     *         the timeout to deliver
+     * @param timer
+     *         the timer to deliver
      */
-    protected final void onTimeout(Timeout timeout) {
-        onTimeout(timeout, address);
+    protected final void onTimer(Timer timer) {
+        onTimer(timer, address);
     }
 
     private Object callMethod(Address destination, String methodName,
@@ -513,11 +510,11 @@ public abstract class Node implements Serializable {
     /**
      * <p><b>Do not use.</b> Only used by testing framework.
      *
-     * <p>Configures the node to allow it to send messages and set timeouts.
+     * <p>Configures the node to allow it to send messages and set timers.
      */
     public void config(Consumer<Triple<Address, Address, Message>> messageAdder,
                        Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-                       Consumer<Triple<Address, Timeout, Pair<Integer, Integer>>> timeoutAdder) {
+                       Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder) {
         if (parentNode != null) {
             LOG.severe("Cannot configure Node already configured as sub-Node.");
         }
@@ -529,6 +526,6 @@ public abstract class Node implements Serializable {
 
         this.messageAdder = messageAdder;
         this.batchMessageAdder = batchMessageAdder;
-        this.timeoutAdder = timeoutAdder;
+        this.timerAdder = timerAdder;
     }
 }

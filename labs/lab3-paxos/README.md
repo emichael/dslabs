@@ -26,8 +26,8 @@ the operations that they missed.
 Your system will consist of `PaxosServer`s and `PaxosClient`s. The clients send
 `PaxosRequest`s to the servers, and servers respond with `PaxosReply`s. Each
 node has the list of servers in the system. You are only provided the
-aforementioned messages as well as the `ClientTimeout`; you will have to define
-the rest of the messages and timeouts your implementation uses.
+aforementioned messages as well as the `ClientTimer`; you will have to define
+the rest of the messages and timers your implementation uses.
 
 Your system should guarantee *linearizability* of clients' commands. That is,
 from the perspective of the callers of clients' functions and the results they
@@ -84,19 +84,19 @@ preempted (receives a ballot larger than its own), instead of immediately
 starting phase 1 of Paxos (spawning a scout) again, it should transition to
 "follower mode" and stay inactive.
 
-Every `PaxosServer` should have a `HeartbeatCheckTimeout` which ticks, firing
-periodically, exactly like the `PingCheckTimeout` in lab 2. While in follower
-mode, if a node sees two of these timeouts in a row without receiving a message
+Every `PaxosServer` should have a `HeartbeatCheckTimer` which ticks, firing
+periodically, exactly like the `PingCheckTimer` in lab 2. While in follower
+mode, if a node sees two of these timers in a row without receiving a message
 from the node it thinks is the active leader (the one with the largest ballot
 it's seen), it should then attempt to become active and start phase 1 of Paxos.
 
 To prevent itself from being preempted unnecessarily, while an active leader, a
 `PaxosServer` should periodically broadcast `Heartbeat` messages to the other
-nodes. Simply have another timeout which fires periodically.
+nodes. Simply have another timer which fires periodically.
 
 While you can use the AIMD (additive increase, multiplicative decrease) like the
-one described in section 3 of the PMMC paper, we recommend keeping the timeout
-lengths fixed for simplicity. The timeout lengths from lab 2 are a good starting
+one described in section 3 of the PMMC paper, we recommend keeping the timer
+lengths fixed for simplicity. The timer lengths from lab 2 are a good starting
 point, but you are free to tune them as you see fit.
 
 One important note: this approach to leader election should only be seen as a

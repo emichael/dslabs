@@ -24,7 +24,7 @@ package dslabs.framework.testing.search;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -34,31 +34,31 @@ import lombok.Getter;
 @EqualsAndHashCode
 public class Transition {
     private final MessageEnvelope message;
-    private final TimeoutEnvelope timeout;
+    private final TimerEnvelope timer;
 
     Transition(MessageEnvelope messageEnvelope) {
         this.message = messageEnvelope;
-        this.timeout = null;
+        this.timer = null;
     }
 
-    Transition(TimeoutEnvelope timeout) {
+    Transition(TimerEnvelope timer) {
         this.message = null;
-        this.timeout = timeout;
+        this.timer = timer;
     }
 
     public boolean isMessage() {
         return message != null;
     }
 
-    public boolean isTimeout() {
-        return timeout != null;
+    public boolean isTimer() {
+        return timer != null;
     }
 
     public Address locationRootAddress() {
         if (isMessage()) {
             return message.to().rootAddress();
         } else {
-            return timeout.to().rootAddress();
+            return timer.to().rootAddress();
         }
     }
 
@@ -67,7 +67,7 @@ public class Transition {
         if (isMessage()) {
             return message.toString();
         } else {
-            return timeout.toString();
+            return timer.toString();
         }
     }
 }

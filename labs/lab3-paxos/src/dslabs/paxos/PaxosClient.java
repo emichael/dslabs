@@ -56,9 +56,9 @@ public final class PaxosClient extends Node implements Client {
     }
 
     /* -------------------------------------------------------------------------
-        Timeout Handlers
+        Timer Handlers
        -----------------------------------------------------------------------*/
-    private synchronized void onClientTimeout(ClientTimeout t) {
+    private synchronized void onClientTimer(ClientTimer t) {
         // Your code here...
     }
 }

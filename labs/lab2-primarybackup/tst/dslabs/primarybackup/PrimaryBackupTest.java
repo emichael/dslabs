@@ -12,7 +12,7 @@ import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
-import dslabs.framework.testing.TimeoutEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.junit.PrettyTestName;
@@ -64,8 +64,8 @@ import static dslabs.kvstore.KVStoreWorkload.putAppendGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putOk;
 import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
-import static dslabs.primarybackup.PingCheckTimeout.PING_CHECK_MILLIS;
-import static dslabs.primarybackup.PingTimeout.PING_MILLIS;
+import static dslabs.primarybackup.PingCheckTimer.PING_CHECK_MILLIS;
+import static dslabs.primarybackup.PingTimer.PING_MILLIS;
 import static dslabs.primarybackup.ViewServerTest.INITIAL_VIEWNUM;
 import static dslabs.primarybackup.ViewServerTest.ta;
 import static dslabs.primarybackup.ViewServerTest.vsa;
@@ -213,7 +213,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
      */
     private View getView() {
         runState.network().send(new MessageEnvelope(ta, vsa, new GetView()));
-        Either<MessageEnvelope, TimeoutEnvelope> p = null;
+        Either<MessageEnvelope, TimerEnvelope> p = null;
         try {
             p = runState.network().take(ta);
         } catch (InterruptedException e) {

@@ -23,7 +23,7 @@
 package dslabs.framework.testing;
 
 import dslabs.framework.Address;
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import java.io.Serializable;
 import java.util.Random;
 import lombok.Data;
@@ -33,45 +33,44 @@ import lombok.EqualsAndHashCode;
  * Note: this class has a natural ordering that is inconsistent with equals.
  */
 @Data
-@EqualsAndHashCode(of = {"to", "timeout", "minTimeoutLengthMillis",
-        "maxTimeoutLengthMillis"})
-public final class TimeoutEnvelope
-        implements Serializable, Comparable<TimeoutEnvelope> {
+@EqualsAndHashCode(
+        of = {"to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis"})
+public final class TimerEnvelope
+        implements Serializable, Comparable<TimerEnvelope> {
     private static final Random rand = new Random();
 
     private final Address to;
-    private final Timeout timeout;
+    private final Timer timer;
 
-    private final int minTimeoutLengthMillis, maxTimeoutLengthMillis,
-            timeoutLengthMillis;
+    private final int minTimerLengthMillis, maxTimerLengthMillis,
+            timerLengthMillis;
 
     private final long startTimeNanos;
 
-    public TimeoutEnvelope(Address to, Timeout timeout,
-                           int minTimeoutLengthMillis,
-                           int maxTimeoutLengthMillis) {
+    public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis,
+                         int maxTimerLengthMillis) {
         this.to = to;
-        this.timeout = timeout;
-        this.minTimeoutLengthMillis = minTimeoutLengthMillis;
-        this.maxTimeoutLengthMillis = maxTimeoutLengthMillis;
+        this.timer = timer;
+        this.minTimerLengthMillis = minTimerLengthMillis;
+        this.maxTimerLengthMillis = maxTimerLengthMillis;
 
-        if (minTimeoutLengthMillis > maxTimeoutLengthMillis) {
+        if (minTimerLengthMillis > maxTimerLengthMillis) {
             throw new IllegalArgumentException(
-                    "Minimum timeout length greater than maximum timeout length");
+                    "Minimum timer length greater than maximum timer length");
         }
 
-        if (minTimeoutLengthMillis == maxTimeoutLengthMillis) {
-            this.timeoutLengthMillis = minTimeoutLengthMillis;
+        if (minTimerLengthMillis == maxTimerLengthMillis) {
+            this.timerLengthMillis = minTimerLengthMillis;
         } else {
-            this.timeoutLengthMillis = minTimeoutLengthMillis + rand.nextInt(
-                    1 + maxTimeoutLengthMillis - minTimeoutLengthMillis);
+            this.timerLengthMillis = minTimerLengthMillis + rand.nextInt(
+                    1 + maxTimerLengthMillis - minTimerLengthMillis);
         }
 
         this.startTimeNanos = System.nanoTime();
     }
 
     public long endTimeNanos() {
-        return startTimeNanos + (((long) timeoutLengthMillis()) * 1000000);
+        return startTimeNanos + (((long) timerLengthMillis()) * 1000000);
     }
 
     public final long timeRemainingNanos() {
@@ -83,7 +82,7 @@ public final class TimeoutEnvelope
     }
 
     @Override
-    public final int compareTo(TimeoutEnvelope o) {
+    public final int compareTo(TimerEnvelope o) {
         if (o == null) {
             return 1;
         }
@@ -92,6 +91,6 @@ public final class TimeoutEnvelope
 
     @Override
     public String toString() {
-        return String.format("Timeout(-> %s, %s)", to, timeout);
+        return String.format("Timer(-> %s, %s)", to, timer);
     }
 }

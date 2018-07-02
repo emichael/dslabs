@@ -1,11 +1,11 @@
 package dslabs.pingpong;
 
-import dslabs.framework.Timeout;
+import dslabs.framework.Timer;
 import dslabs.pingpong.PingApplication.Ping;
 import lombok.Data;
 
 @Data
-final class PingTimeout implements Timeout {
+final class PingTimer implements Timer {
     static final int RETRY_MILLIS = 10;
     private final Ping ping;
 }
