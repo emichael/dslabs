@@ -63,7 +63,7 @@ public final class SearchState extends AbstractState
     private final Map<Address, TimerQueue> timers;
 
     @Getter private final transient SearchState previous;
-    @Getter private final transient Transition transitionFromPrevious;
+    @Getter private final transient Event previousEvent;
     @Getter private final transient int depth;
 
     // TODO: only return iterable for these in getter?
@@ -77,7 +77,7 @@ public final class SearchState extends AbstractState
         this.network = new HashSet<>();
         this.timers = new HashMap<>();
         this.previous = null;
-        this.transitionFromPrevious = null;
+        this.previousEvent = null;
         this.depth = 0;
         this.newMessages = new HashSet<>();
         this.newTimers = new HashSet<>();
@@ -93,13 +93,13 @@ public final class SearchState extends AbstractState
      * configured.
      */
     private SearchState(SearchState previous, Address addressToClone,
-                        Transition transitionFromPrevious) {
+                        Event previousEvent) {
         super(previous, addressToClone);
 
         network = new HashSet<>(previous.network);
         timers = new HashMap<>(previous.timers);
         this.previous = previous;
-        this.transitionFromPrevious = transitionFromPrevious;
+        this.previousEvent = previousEvent;
         depth = previous.depth + 1;
         newMessages = new HashSet<>();
         newTimers = new HashSet<>();
@@ -118,7 +118,7 @@ public final class SearchState extends AbstractState
         network = new HashSet<>(source.network);
         timers = new HashMap<>(source.timers);
         this.previous = source.previous;
-        this.transitionFromPrevious = source.transitionFromPrevious;
+        this.previousEvent = source.previousEvent;
         depth = source.depth;
         newMessages = new HashSet<>(source.newMessages);
         newTimers = new HashSet<>(source.newTimers);
@@ -201,12 +201,12 @@ public final class SearchState extends AbstractState
         });
     }
 
-    Collection<Transition> transitions(SearchSettings settings) {
+    Collection<Event> events(SearchSettings settings) {
         if (settings == null) {
             settings = new SearchSettings();
         }
 
-        List<Transition> transitions = new LinkedList<>();
+        List<Event> events = new LinkedList<>();
 
         // These checks MUST stay in-sync with the individual step methods
 
@@ -214,7 +214,7 @@ public final class SearchState extends AbstractState
         for (MessageEnvelope message : network) {
             if (hasNode(message.to().rootAddress()) &&
                     settings.shouldDeliver(message)) {
-                transitions.add(new Transition(message));
+                events.add(new Event(message));
             }
         }
 
@@ -222,12 +222,12 @@ public final class SearchState extends AbstractState
             // Deliver all possible timers
             for (Address address : addresses()) {
                 for (TimerEnvelope timer : timers.get(address).deliverable()) {
-                    transitions.add(new Transition(timer));
+                    events.add(new Event(timer));
                 }
             }
         }
 
-        return transitions;
+        return events;
     }
 
     /**
@@ -243,24 +243,23 @@ public final class SearchState extends AbstractState
 
         List<SearchState> newStates = new LinkedList<>();
 
-        for (Transition transition : transitions(settings)) {
+        for (Event event : events(settings)) {
             // TODO: make sure skipping checks is fine
-            newStates.add(stepTransition(transition, settings, true));
+            newStates.add(stepEvent(event, settings, true));
         }
 
         return newStates;
     }
 
-    public SearchState stepTransition(Transition transition,
-                                      SearchSettings settings,
-                                      boolean skipChecks) {
-        // TODO: use enum for transition type
+    public SearchState stepEvent(Event event, SearchSettings settings,
+                                 boolean skipChecks) {
+        // TODO: use enum for event type
 
-        if (transition.isMessage()) {
-            return stepMessage(transition.message(), settings, skipChecks);
+        if (event.isMessage()) {
+            return stepMessage(event.message(), settings, skipChecks);
         }
-        if (transition.isTimer()) {
-            return stepTimer(transition.timer(), settings, skipChecks);
+        if (event.isTimer()) {
+            return stepTimer(event.timer(), settings, skipChecks);
         }
 
         return null;
@@ -282,8 +281,7 @@ public final class SearchState extends AbstractState
             return null;
         }
 
-        SearchState ns =
-                new SearchState(this, toAddress, new Transition(message));
+        SearchState ns = new SearchState(this, toAddress, new Event(message));
         Message nm = Cloning.clone(message.message());
         Node n = ns.node(toAddress);
 
@@ -306,8 +304,7 @@ public final class SearchState extends AbstractState
             return null;
         }
 
-        SearchState ns =
-                new SearchState(this, toAddress, new Transition(timer));
+        SearchState ns = new SearchState(this, toAddress, new Event(timer));
         Timer nt = Cloning.clone(timer.timer());
         Node n = ns.node(toAddress);
 
@@ -338,21 +335,21 @@ public final class SearchState extends AbstractState
         class GraphNode {
             final Set<GraphNode> next = new HashSet<>();
             final Set<GraphNode> previous = new HashSet<>();
-            final Transition transition;
+            final Event event;
         }
 
-        // Build up graph of transitions
+        // Build up graph of events
         Map<MessageEnvelope, GraphNode> whenSent = new HashMap<>();
         Map<Address, GraphNode> lastStep = new HashMap<>();
         List<GraphNode> initSteps = new ArrayList<>();
 
         for (int i = 1; i < originalTrace.size(); i++) {
             SearchState state = originalTrace.get(i);
-            Transition transition = state.transitionFromPrevious;
-            GraphNode node = new GraphNode(transition);
+            Event event = state.previousEvent;
+            GraphNode node = new GraphNode(event);
 
-            if (transition.isMessage()) {
-                MessageEnvelope me = transition.message();
+            if (event.isMessage()) {
+                MessageEnvelope me = event.message();
                 if (whenSent.containsKey(me)) {
                     GraphNode p = whenSent.get(me);
                     p.next.add(node);
@@ -360,7 +357,7 @@ public final class SearchState extends AbstractState
                 }
             }
 
-            Address a = transition.locationRootAddress();
+            Address a = event.locationRootAddress();
             if (lastStep.containsKey(a)) {
                 GraphNode p = lastStep.get(a);
                 p.next.add(node);
@@ -380,7 +377,7 @@ public final class SearchState extends AbstractState
             }
         }
 
-        List<Transition> transitions = new ArrayList<>();
+        List<Event> events = new ArrayList<>();
         Stack<GraphNode> stack = new Stack<>();
 
         Collections.reverse(initSteps);
@@ -391,7 +388,7 @@ public final class SearchState extends AbstractState
         // Do depth-first traversal of graph
         while (!stack.isEmpty()) {
             GraphNode node = stack.pop();
-            transitions.add(node.transition);
+            events.add(node.event);
 
             for (GraphNode next : node.next) {
                 next.previous.remove(node);
@@ -407,16 +404,16 @@ public final class SearchState extends AbstractState
         List<SearchState> newTrace = new ArrayList<>();
         newTrace.add(initialState);
         SearchState previous = initialState;
-        for (Transition transition : transitions) {
-            SearchState next = previous.stepTransition(transition, null, true);
+        for (Event event : events) {
+            SearchState next = previous.stepEvent(event, null, true);
 
             if (next == null) {
                 LOG.severe(
-                        "Taking transition when generating human-readable trace resulted in null state, returning original trace");
+                        "Taking event when generating human-readable trace resulted in null state, returning original trace");
                 return originalTrace;
             }
 
-            // Don't take null transitions ever
+            // Don't take null events ever
             if (next.equals(previous)) {
                 continue;
             }
@@ -437,8 +434,8 @@ public final class SearchState extends AbstractState
 
     public void printTrace(PrintStream out) {
         for (SearchState state : trace()) {
-            if (state.transitionFromPrevious != null) {
-                out.println("\t" + state.transitionFromPrevious);
+            if (state.previousEvent != null) {
+                out.println("\t" + state.previousEvent);
             }
 
             out.println(state);

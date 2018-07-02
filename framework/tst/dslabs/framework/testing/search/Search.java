@@ -201,9 +201,8 @@ public abstract class Search {
         }
 
         private void exploreNode(SearchState node) {
-            for (Transition transition : node.transitions(settings)) {
-                SearchState successor =
-                        node.stepTransition(transition, settings, true);
+            for (Event event : node.events(settings)) {
+                SearchState successor = node.stepEvent(event, settings, true);
 
                 // If node is null or has already been explored, continue
                 if (successor == null || !discovered.add(successor)) {
@@ -219,17 +218,16 @@ public abstract class Search {
 
                 // Run checks on node
                 if (GlobalSettings.doChecks()) {
-                    // Check if transition is deterministic
+                    // Check if event is deterministic
                     if (!Objects.equals(successor,
-                            node.stepTransition(transition, settings, true))) {
-                        CheckLogger.notDeterministic(transition, node);
+                            node.stepEvent(event, settings, true))) {
+                        CheckLogger.notDeterministic(event, node);
                     }
 
-                    // Check if transition is idempotent
-                    if (transition.isMessage() && !Objects.equals(successor,
-                            successor.stepTransition(transition, settings,
-                                    true))) {
-                        CheckLogger.notIdempotent(transition, node);
+                    // Check if event is idempotent
+                    if (event.isMessage() && !Objects.equals(successor,
+                            successor.stepEvent(event, settings, true))) {
+                        CheckLogger.notIdempotent(event, node);
                     }
                 }
 

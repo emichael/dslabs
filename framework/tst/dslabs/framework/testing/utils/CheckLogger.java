@@ -25,8 +25,8 @@ package dslabs.framework.testing.utils;
 import dslabs.framework.Node;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.search.Event;
 import dslabs.framework.testing.search.SearchState;
-import dslabs.framework.testing.search.Transition;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import lombok.NonNull;
@@ -46,9 +46,9 @@ public abstract class CheckLogger {
     private static final Map<Class, Object> hashCodeNotEqualToClone =
             new ConcurrentHashMap<>();
 
-    private static final Map<String, Pair<SearchState, Transition>>
+    private static final Map<String, Pair<SearchState, Event>>
             notDeterministicMethods = new ConcurrentHashMap<>();
-    private static final Map<String, Pair<SearchState, Transition>>
+    private static final Map<String, Pair<SearchState, Event>>
             notIdempotentMethods = new ConcurrentHashMap<>();
 
     static {
@@ -59,20 +59,20 @@ public abstract class CheckLogger {
         }
     }
 
-    private static String methodName(Transition transition, SearchState state) {
+    private static String methodName(Event event, SearchState state) {
         String methodName;
-        if (transition.isMessage()) {
+        if (event.isMessage()) {
             methodName = "handle" +
-                    transition.message().message().getClass().getSimpleName();
-        } else if (transition.isTimer()) {
-            methodName = "on" +
-                    transition.timer().timer().getClass().getSimpleName();
+                    event.message().message().getClass().getSimpleName();
+        } else if (event.isTimer()) {
+            methodName =
+                    "on" + event.timer().timer().getClass().getSimpleName();
         } else {
             // Don't handler other methods for now
             return null;
         }
 
-        Node n = state.node(transition.locationRootAddress().rootAddress());
+        Node n = state.node(event.locationRootAddress().rootAddress());
         if (n instanceof ClientWorker) {
             // TODO: reflect on ClientWorker to get the name of the client instead
         }
@@ -103,26 +103,25 @@ public abstract class CheckLogger {
         }
     }
 
-    public static void notDeterministic(Transition transition,
+    public static void notDeterministic(Event event,
                                         SearchState startingState) {
-        String methodName = methodName(transition, startingState);
+        String methodName = methodName(event, startingState);
         if (methodName == null) {
             return;
         }
 
         notDeterministicMethods.putIfAbsent(methodName,
-                new ImmutablePair<>(startingState, transition));
+                new ImmutablePair<>(startingState, event));
     }
 
-    public static void notIdempotent(Transition transition,
-                                     SearchState startingState) {
-        String methodName = methodName(transition, startingState);
+    public static void notIdempotent(Event event, SearchState startingState) {
+        String methodName = methodName(event, startingState);
         if (methodName == null) {
             return;
         }
 
         notIdempotentMethods.putIfAbsent(methodName,
-                new ImmutablePair<>(startingState, transition));
+                new ImmutablePair<>(startingState, event));
     }
 
     /* Common Tests */
@@ -163,8 +162,7 @@ public abstract class CheckLogger {
         }
     }
 
-    private static void printMethods(
-            Map<String, Pair<SearchState, Transition>> m) {
+    private static void printMethods(Map<String, Pair<SearchState, Event>> m) {
         m.forEach((methodName, info) -> System.err.println(
                 String.format("- %s\n  See: %s\n       %s", methodName,
                         info.getLeft(), info.getRight())));

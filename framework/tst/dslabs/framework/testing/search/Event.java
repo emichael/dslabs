@@ -28,20 +28,19 @@ import dslabs.framework.testing.TimerEnvelope;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-// TODO: rename to Event
 
 @Getter
 @EqualsAndHashCode
-public class Transition {
+public class Event {
     private final MessageEnvelope message;
     private final TimerEnvelope timer;
 
-    Transition(MessageEnvelope messageEnvelope) {
+    Event(MessageEnvelope messageEnvelope) {
         this.message = messageEnvelope;
         this.timer = null;
     }
 
-    Transition(TimerEnvelope timer) {
+    Event(TimerEnvelope timer) {
         this.message = null;
         this.timer = timer;
     }

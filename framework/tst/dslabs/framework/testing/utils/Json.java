@@ -208,15 +208,13 @@ class SingleStateSerializer extends JsonSerializer<SearchState> {
         }
         gen.writeEndObject();
 
-        // Write out the transition from previous state
-        if (s.transitionFromPrevious() != null &&
-                s.transitionFromPrevious().isMessage()) {
+        // Write out the previous event
+        if (s.previousEvent() != null && s.previousEvent().isMessage()) {
             gen.writeFieldName("deliver-message");
-            serializeMessage(s.transitionFromPrevious().message(), gen, ser);
+            serializeMessage(s.previousEvent().message(), gen, ser);
 
-        } else if (s.transitionFromPrevious() != null &&
-                s.transitionFromPrevious().isTimer()) {
-            TimerEnvelope te = s.transitionFromPrevious().timer();
+        } else if (s.previousEvent() != null && s.previousEvent().isTimer()) {
+            TimerEnvelope te = s.previousEvent().timer();
 
             gen.writeFieldName("deliver-timeout");
             serializeTimer(te, gen, ser);
