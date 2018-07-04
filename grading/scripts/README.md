@@ -1,4 +1,4 @@
-# 452 Grading Scripts
+# Grading Scripts
 
 ## Files
 
@@ -14,6 +14,5 @@ json_to_csv.py just converts a passed json file to out.csv, a csv file, for use 
 ### parse_json.py
 parse_json.py reads through the merged score json file, computing scores for each student, averaging the top n students, printing out some data to help you decide how many to average.
 
-
-## Workflow
-Run the grader, copy all of the test-summary.txt files into different JSON files (this really should be automated honestly), and then run combine-json.py to combine all of the files, then run parse_json.py to average the scores and spit out some useful global summary.
+### parse_logs.py
+parse_logs.py reads through a directory, like a merged directory, and then it will scan through each log and then print out an averaged score for each student.
