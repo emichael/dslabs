@@ -1,3 +1,6 @@
+#!/usr/bin/env python3
+# coding: utf-8
+
 import json
 import math
 import os
@@ -12,7 +15,7 @@ from distutils.dir_util import copy_tree
 with open('config.json', 'r') as fd:
     config = json.loads(fd.read())
 
-STUDENT_SUBMISSION_PATH = config['submission_path']
+STUDENT_SUBMISSION_PATH = os.path.expanduser(config['submission_path'])
 HOSTS = config['hosts']
 HANDOUT_PATH = config['handout_path']
 LAB_NAME = config['lab_name']
@@ -22,7 +25,7 @@ HOST_SUBDIVISION_DIRECTORY = 'students'
 RESULTS_DIRECTORY = 'results'
 MERGED_OUT_NAME = 'merged.json'
 
-TEMP_GRADE_DIR_NAME = '452GRADING'
+TEMP_GRADE_DIR_NAME = 'GRADING'
 TEST_DIR_PATH = os.path.join(HANDOUT_PATH, LAB_NAME, 'tst', 'dslabs')
 
 # Distribute students to grade into folders for each host
@@ -92,8 +95,8 @@ for t in threads:
 # Merge all of the results
 host_result_paths = []
 for host in HOSTS:
-	result_path = h + ':/tmp/' + TEMP_GRADE_DIR_NAME + '/results'
-	if not os.exists(result_path):
+	result_path = os.path.join(RESULTS_DIRECTORY, host + '-results', 'results', 'test-summary.txt')
+	if not os.path.exists(result_path):
 		print('ERROR: host %s\'s summary file could not be found!' % host)
 		# TODO Fall back to scanning through all of the logs that you DO have		
 	
