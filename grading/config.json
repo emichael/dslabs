@@ -1,0 +1,8 @@
+{
+  "hosts": [],
+  "submission_path": "",
+  "lab_name": "lab2-primarybackup",
+  "lab_number": "2",
+  "handout_path": "../handout",
+  "test_runner_path": "../handout/run-tests.py"
+}
