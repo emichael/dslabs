@@ -177,8 +177,7 @@ documentation for that interface carefully, as you will soon have to implement
 it yourself! When the `PingClient` gets a `Ping` from the calling code, it sends
 the `PingRequest` over the network to the server and sets a `PingTimer`. Once
 the `PongReply` is received (with the necessary value), the client stores the
-result and notifies the calling code which may be waiting. Like all timers
-`PingTimer` defines a timer length.
+result and notifies the calling code which may be waiting.
 
 ```java
 @Data
