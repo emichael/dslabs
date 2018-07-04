@@ -139,12 +139,14 @@ at the University of Washington.
 - `framework/tst` contains in the testing infrastructure.
 - `framework/tst-self` contains the tests for the for the interface and testing
   infrastructure.
-- `labs/` contains a subdirectory for each lab. The lab directories each have a
-  `src/` directory initialized with skeleton code where students write their
-  implementations, as well as a `tst/` directory containing the tests for that
+- `labs` contains a subdirectory for each lab. The lab directories each have a
+  `src` directory initialized with skeleton code where students write their
+  implementations, as well as a `tst` directory containing the tests for that
   lab.
-- `handout-files/` contains files to be directly copied into the student
+- `handout-files` contains files to be directly copied into the student
   handout, including the main `README` and `run-tests.py`.
+- `grading` contains scripts created by previous TAs for the course to batch
+  grade submissions.
 
 The `master` branch of this repository is not setup to be distributed to
 students as-is. The `Makefile` has targets to build the `handout` directory and
