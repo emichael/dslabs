@@ -50,6 +50,11 @@ for i in range(len(HOSTS)):
 if not os.path.exists(RESULTS_DIRECTORY):
 	os.mkdir(RESULTS_DIRECTORY)
 
+# Create the merged directory within the results directory if it does not exist
+if not os.path.exists(os.path.join(RESULTS_DIRECTORY, 'merged')):
+	os.mkdir(os.path.join(RESULTS_DIRECTORY, 'merged'))
+
+
 def run_host(host):
 	ssh = ['ssh', host]
 	clean_host = ['rm', '-rf', '/tmp/' + TEMP_GRADE_DIR_NAME, '&&',
@@ -97,30 +102,10 @@ host_result_paths = []
 for host in HOSTS:
 	result_path = os.path.join(RESULTS_DIRECTORY, host + '-results', 'results', 'test-summary.txt')
 	if not os.path.exists(result_path):
-		print('ERROR: host %s\'s summary file could not be found!' % host)
-		# TODO Fall back to scanning through all of the logs that you DO have		
-	
-		"""
-from os import listdir
-from os.path import join, isdir
-from re import search
-
-to_avg = 3
-for student in [d for d in listdir('.') if isdir(d)]:
-	scores = []
-	for log_path in [f for f in listdir(student) if f.startswith('test-results')]:
-		with open(join(student, log_path), 'r') as fd:
-			try:
-				score_group = search('Points: (\d+)', fd.read())
-				scores += [float(score_group.group(1))]
-			except Exception as e:
-				pass
-	if len(scores) > 0:
-		print('%s %f' % (student, sum(sorted(scores)[-to_avg:]) / min(to_avg, len(scores))))
-
-		"""
+		print('ERROR: host %s\'s summary file could not be found! There may be some logs to parse some grades from in the results directory.' % host)
 	else:
 		host_result_paths.append(result_path)
+	copy_tree(os.path.join(RESULTS_DIRECTORY, host + '-results', 'results'), os.path.join(RESULTS_DIRECTORY, 'merged'))
 
 # TODO Finish integrating the merging and printing of a single log file
 merged = {}

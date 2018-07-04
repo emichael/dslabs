@@ -49,7 +49,7 @@ STUDENT_DIFF_NAME = 'diff.txt'
 TAR_NAME = 'submit.tar.gz'
 GIT_DIFF_OUTPUT_NAME = 'diff.txt'
 TIMEOUT = 10 * 60
-TIMES_TO_RUN = 5
+TIMES_TO_RUN = 2
 
 # Contains summary.txt, then a directory for each student containing src, diff, and full test output.
 if os.path.exists(RESULTS_DIR_NAME):
