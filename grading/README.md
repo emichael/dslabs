@@ -4,8 +4,8 @@
 Build handouts in the directory above this one (just run make) to make sure you have the test suite to be run for a given lab, then add your hosts (make sure you can ssh without a password prompt from this machine), set your directory for your student submissions, and set the name/number of the lab you are trying to grade. Then, just run distributor.py (./distributor.py) and wait for it to complete. I suggest using tmux or some other means of persistence to run the distribtor because this can take awhile (and with tmux, you can check on it conveniently).
 
 ## Files
-- config.json: contains the test configuration (what tests to run, where they are, where the student submissions are, what servers to use, where the jars/etc are). There are some old configuration parameters for git integration, but I didn't finish that up.
-- distributor.py: splits up the students into groups for each of the hosts that the tests will be run on. Rsyncs the students to grade onto each host and starts to run grader.py.
+- config.json: contains the test configuration (what tests to run, where they are, where the student submissions are, what servers to use, where the jars/etc are).
+- distributor.py: splits up the students into groups for each of the hosts that the tests will be run on. Rsyncs the students to grade onto each host and starts to run grader.py. Rsyncs results back.
 - grader.py: grades on a local machine with many command line parameters corresponding to all of the required items.
 
 ## Overview
