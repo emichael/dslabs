@@ -105,7 +105,7 @@ public class VizClient {
             System.out.println(json);
         }
 
-        out.writeInt(json.length());
+        out.writeInt(json.getBytes().length());
         out.writeBytes(json);
     }
 
