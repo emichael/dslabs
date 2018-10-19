@@ -39,7 +39,7 @@ especially bugs which rely on precise orderings of messages. Moreover, when a
 bug is found, these search-based tests output a trace which generates the error,
 making debugging dramatically simpler. Finally, DSLabs is integrated with a tool
 for [visualizing executions of distributed
-systems](https://github.com/uwplse/dviz), which allows students to graphically
+systems](https://github.com/uwplse/oddity), which allows students to graphically
 explore executions of their systems and visualize invariant-violating traces
 found by the model-checker.
 
@@ -100,7 +100,7 @@ of the state space.
 
 
 ### Visualization
-This framework is integrated with the [DViz](https://github.com/uwplse/dviz)
+This framework is integrated with the [Oddity](https://github.com/uwplse/oddity)
 distributed systems visualization tool, created by [Doug
 Woos](https://www.dougwoos.com/). This tool allows students to interactively
 explore executions of the distributed systems they build. By exploring

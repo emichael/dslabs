@@ -1,6 +1,6 @@
 .PHONY: all test clean clean-all
 
-DVIZ_URL = https://github.com/uwplse/dviz/releases/download/v0.26a/dviz.jar
+ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.32a/oddity.jar
 
 FRAMEWORK_FILES_FOLDER = framework
 LAB_FILES_FOLDER = labs
@@ -14,7 +14,7 @@ JAR_FILES = jars/framework.jar \
 						jars/framework-compile.jar
 OTHER_FILES = lombok.config \
 						  doc/ \
-						  dviz.jar
+						  oddity.jar
 
 
 ifeq ($(shell uname -s),Darwin)
@@ -37,8 +37,8 @@ $(JAR_FILES) doc/: $(FRAMEWORK_FILES)
 	ant jar-framework jar-framework-sources jar-framework-compile javadoc
 	touch $@
 
-dviz.jar:
-	wget -O $@ $(DVIZ_URL)
+oddity.jar:
+	wget -O $@ $(ODDITY_URL)
 
 handout/: $(LAB_FILES) $(JAR_FILES) $(HANDOUT_FILES) $(OTHER_FILES)
 	rm -rf $@
@@ -56,5 +56,5 @@ clean:
 	rm -rf handout handout.tar.gz
 
 clean-all: clean
-	rm -rf dviz.jar
+	rm -rf oddity.jar
 	ant clean-all

@@ -39,7 +39,7 @@ import java.net.Socket;
 import java.util.Arrays;
 
 /**
- * dviz client.
+ * Oddity client.
  */
 public class VizClient {
     private static final boolean VERBOSE = false;
@@ -126,24 +126,24 @@ public class VizClient {
         return Json.fromJson(json);
     }
 
-    public void run(Boolean startDviz) throws IOException {
+    public void run(Boolean startOddity) throws IOException {
         if (trace) {
             System.out.println("Starting trace visualization client.");
         } else {
             System.out.println("Starting state visualization client.");
         }
 
-        // Startup dviz from jar if necessary
-        if (startDviz == null) {
-            startDviz = GlobalSettings.startVizServer();
+        // Startup oddity from jar if necessary
+        if (startOddity == null) {
+            startOddity = GlobalSettings.startVizServer();
         }
 
-        if (startDviz) {
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", "dviz.jar");
+        if (startOddity) {
+            ProcessBuilder pb = new ProcessBuilder("java", "-jar", "oddity.jar");
             pb.redirectOutput(Redirect.INHERIT).redirectError(Redirect.INHERIT);
             final Process p = pb.start();
 
-            // Kill dviz on exit
+            // Kill oddity on exit
             Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
 
             waitUntilPortListening(host, DEFAULT_BROWSER_PORT);
