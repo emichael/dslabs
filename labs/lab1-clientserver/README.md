@@ -188,9 +188,9 @@ There are two important protocol design patterns you should know:
    (every "tick").
 
 There are trade-offs to make with both of these patterns, and you should think
-about their relative performance implementations. The tick pattern is often
-simpler and more conducive to exploratory model-checking, but it sometimes
-results in sending of unnecessary messages.
+about their performance implications. The tick pattern is often simpler and more
+conducive to exploratory model-checking, but it sometimes results in sending of
+unnecessary messages.
 
 One last note on timers, which is important for both of the above patterns: when
 a node resets a timer inside a timer handler, it is often best practice to wait
