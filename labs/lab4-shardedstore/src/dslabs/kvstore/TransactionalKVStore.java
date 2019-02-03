@@ -16,7 +16,7 @@ import lombok.ToString;
 public class TransactionalKVStore extends KVStore {
     /**
      * A simple, single-round transaction (i.e., a transaction whose read and
-     * write sets are known a priori.
+     * write sets are known a priori).
      */
     public interface Transaction extends KVStoreCommand {
         Set<String> readSet();
