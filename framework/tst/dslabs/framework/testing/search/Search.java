@@ -24,17 +24,22 @@ package dslabs.framework.testing.search;
 
 import dslabs.framework.testing.utils.CheckLogger;
 import dslabs.framework.testing.utils.GlobalSettings;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.Condition;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import lombok.NonNull;
 
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
@@ -42,112 +47,271 @@ import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_E
 import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EXHAUSTED;
 
 
+/**
+ * The base class other search strategies are built off of. Based on the search
+ * settings, either executes the search strategy in single-threaded or
+ * multi-threaded mode.
+ *
+ * This search class represents a single instance of a search. {@link
+ * #run(SearchState)} should not be called more than once on the same object.
+ *
+ * Ordinarily, tests should only use the static convenience methods on this
+ * class.
+ */
 public abstract class Search {
-    private static class BFS {
-        // Settings
-        private final SearchSettings settings;
+    protected final SearchSettings settings;
 
-        // Shared state
-        private final Queue<SearchState> queue = new ConcurrentLinkedQueue<>();
-        private final Set<SearchState> discovered =
-                Collections.newSetFromMap(new ConcurrentHashMap<>());
-        private final AtomicInteger activeWorkers = new AtomicInteger();
+    private Lock lock = new ReentrantLock();
+    private Condition searchFinished = lock.newCondition(), workerFinished =
+            lock.newCondition();
+    /**
+     * Protected by lock.
+     */
+    private int numActiveWorkers = 0;
 
-        // Resulting state
-        private final SearchResults results = new SearchResults();
+    private final SearchResults results = new SearchResults();
 
-        // Executor thread state
-        private int explored;
-        private int depth;
-        private long startTimeMillis;
-        private long lastLoggedMillis;
+    private long startTimeMillis;
 
+    Search(SearchSettings settings) {
+        this.settings = settings;
+        results.invariantsTested(new LinkedList<>(settings.invariants()));
+    }
 
-        private BFS(SearchSettings settings) {
-            this.settings = settings;
+    /**
+     * Should return a adjective describing "search." Only called by the main
+     * thread.
+     *
+     * @return the type of search being executed
+     */
+    protected abstract String searchType();
 
-            results.invariantsTested(new LinkedList<>(settings.invariants()));
+    /**
+     * Initialize the search, setup any strategy-specific fields. Only called by
+     * the main thread.
+     *
+     * @param initialState
+     *         the state the search is initialized with
+     */
+    protected abstract void initSearch(SearchState initialState);
+
+    /**
+     * Should return the status message to display to the user. Should not
+     * include leading spaces. Should be thread-safe.
+     *
+     * @param elapsedSecs
+     *         the time elapsed since the start of the search
+     * @return the status message
+     */
+    protected abstract String status(double elapsedSecs);
+
+    /**
+     * Determine whether or not the space has been fully explored, up to the
+     * limits imposed by the search settings. For example, if the depth-limit
+     * has been reached in a breadth-first search, then this method should
+     * return {@code true}. This method is free to assume that there are no
+     * active workers running for purposes of determining whether the space is
+     * exhausted or not. Need not be thread-safe.
+     *
+     * @return whether the space has been fully explored
+     */
+    protected abstract boolean spaceExhausted();
+
+    /**
+     * Get an executable for the worker thread (or the main thread in
+     * single-threaded mode) to run, or {@code null} if there are no workers
+     * waiting to run. If {@link #spaceExhausted()} returns {@code false} (and
+     * there are no workers started in the interim), should not return {@code
+     * null}. Need not be thread-safe.
+     *
+     * @return the next worker
+     */
+    protected abstract Runnable getWorker();
+
+    private boolean searchFinished() {
+        lock.lock();
+        try {
+            return ((numActiveWorkers == 0) && spaceExhausted()) ||
+                    (settings.timeLimited() &&
+                            ((System.currentTimeMillis() - startTimeMillis) >
+                                    (settings.maxTimeSecs() * 1000))) ||
+                    (results.invariantViolatingState() != null);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    private void printStatus() {
+        double time = (System.currentTimeMillis() - startTimeMillis) / 1000.0;
+        if (time == 0.0) {
+            time += .01;
+        }
+        System.out.println("\t" + status(time));
+    }
+
+    /**
+     * Convenience method to be used by workers to execute checks for each state
+     * encountered.
+     *
+     * @param node
+     *         the initial state
+     * @param event
+     *         the event that transitions the initial state to the successor
+     *         state
+     * @param successor
+     *         the successor state
+     */
+    protected final void doChecks(SearchState node, Event event,
+                                  SearchState successor) {
+        if (GlobalSettings.doChecks()) {
+            // Check if event is deterministic
+            if (!Objects
+                    .equals(successor, node.stepEvent(event, settings, true))) {
+                CheckLogger.notDeterministic(event, node);
+            }
+
+            // Check if event is idempotent
+            if (event.isMessage() && !Objects.equals(successor,
+                    successor.stepEvent(event, settings, true))) {
+                CheckLogger.notIdempotent(event, node);
+            }
+        }
+    }
+
+    /**
+     * Convenience method to be used by workers to check if a node has violated
+     * an invariant. Logs invariant violations to {@code results}.
+     *
+     * @param node
+     *         the state to check
+     * @return whether or not an invariant has been violated
+     */
+    protected final boolean invariantViolated(SearchState node) {
+        if (settings.invariantViolated(node)) {
+            results.invariantViolated(node,
+                    settings.whichInvariantViolated(node));
+            return true;
+        }
+        return false;
+    }
+
+    SearchResults run(SearchState initialState) {
+        startTimeMillis = System.currentTimeMillis();
+        initSearch(initialState);
+
+        if (settings.shouldOutputStatus()) {
+            System.out.println(
+                    String.format("Starting %s search...", searchType()));
         }
 
-        private boolean searchFinished() {
-            boolean workersFinished =
-                    settings.singleThreaded() || activeWorkers.get() == 0;
+        if (settings.multiThreaded()) {
+            Collection<Thread> workerThreads = new LinkedList<>();
 
-            boolean maxDepthReached = !queue.isEmpty() &&
-                    queue.peek().depth() >= settings.maxDepth() &&
-                    settings.depthLimited();
-
-            boolean maxTimeReached = settings.timeLimited() &&
-                    System.currentTimeMillis() - startTimeMillis >
-                            settings.maxTimeSecs() * 1000;
-
-            boolean invariantViolated =
-                    results.invariantViolatingState() != null;
-
-            return (workersFinished && queue.isEmpty()) || maxDepthReached ||
-                    maxTimeReached || invariantViolated;
-        }
-
-        private void printStatus() {
-            double time =
-                    (System.currentTimeMillis() - startTimeMillis) / 1000.0;
-            if (time == 0.0) {
-                time += .01;
-            }
-            System.out.println(String.format(
-                    "\tExplored: %s, Depth exploring: %s (%.2fs, %.2fK states/s)",
-                    explored, depth, time, explored / time / 1000.0));
-        }
-
-        SearchResults run(SearchState initialState) {
-            // Executor thread state
-            explored = 0;
-            depth = initialState.depth();
-            startTimeMillis = System.currentTimeMillis();
-            lastLoggedMillis = 0;
-
-            // Begin search
-            queue.add(initialState);
-            discovered.add(initialState);
-
-            ExecutorService executor = null;
-            if (settings.multiThreaded()) {
-                // TODO: use unbounded queue??
-                executor = Executors.newFixedThreadPool(settings.numThreads());
-            }
-
-            if (settings.shouldOutputStatus()) {
-                System.out.println("Starting breadth-first search...");
-            }
-
-            while (!searchFinished()) {
-                // If the queue is empty, let's wait on the active workers and retry
-                if (queue.isEmpty()) {
-                    // Should never be true for singleThreaded execution
-                    synchronized (activeWorkers) {
-                        if (activeWorkers.get() == 0) {
-                            continue;
-                        }
+            // Start all of the worker threads
+            for (int i = 0; i < settings.numThreads(); i++) {
+                Thread t = new Thread(() -> {
+                    while (!Thread.interrupted()) {
+                        Runnable worker;
+                        lock.lock();
                         try {
-                            if (settings.timeLimited()) {
-                                long waitTime = System.currentTimeMillis() -
-                                        (startTimeMillis + (1000 *
-                                                settings.maxTimeSecs()));
-                                if (waitTime > 0) {
-                                    activeWorkers.wait(waitTime);
-                                }
-                            } else {
-                                activeWorkers.wait();
+                            while ((worker = getWorker()) == null) {
+                                workerFinished.await();
                             }
-                            continue;
+                            numActiveWorkers++;
                         } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                            break;
+                            return;
+                        } finally {
+                            lock.unlock();
+                        }
+
+                        worker.run();
+
+                        lock.lock();
+                        try {
+                            numActiveWorkers--;
+                            workerFinished.signal();
+                            if (searchFinished()) {
+                                searchFinished.signal();
+                            }
+                        } finally {
+                            lock.unlock();
                         }
                     }
-                }
+                });
+                workerThreads.add(t);
+                t.start();
+            }
 
-                // Next, let's print out the status if necessary
+            // If should output status, start the status thread
+            Thread statusThread = null;
+            if (settings.shouldOutputStatus()) {
+                statusThread = new Thread(() -> {
+                    long lastLoggedMillis = 0;
+
+                    while (!Thread.interrupted()) {
+                        long waitTime = settings.outputFreqSecs() * 1000 +
+                                lastLoggedMillis - System.currentTimeMillis();
+                        if (waitTime > 0) {
+                            try {
+                                Thread.sleep(waitTime);
+                            } catch (InterruptedException e) {
+                                break;
+                            }
+                        }
+                        lastLoggedMillis = System.currentTimeMillis();
+                        printStatus();
+                    }
+                });
+                statusThread.start();
+            }
+
+            // Wait for search to finish
+            lock.lock();
+            try {
+                while (!searchFinished()) {
+                    if (settings.timeLimited()) {
+                        long timeRemaining = settings.maxTimeSecs() * 1000 +
+                                startTimeMillis - System.currentTimeMillis();
+                        if (timeRemaining > 0) {
+                            searchFinished.await(timeRemaining,
+                                    TimeUnit.MILLISECONDS);
+                        }
+                    } else {
+                        searchFinished.await();
+                    }
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            } finally {
+                lock.unlock();
+            }
+
+            // Interrupt all the threads
+            for (Thread t : workerThreads) {
+                t.interrupt();
+            }
+
+            if (statusThread != null) {
+                statusThread.interrupt();
+            }
+
+            // Wait for the threads to finish
+            try {
+                for (Thread t : workerThreads) {
+                    t.join();
+                }
+                if (statusThread != null) {
+                    statusThread.join();
+                }
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+
+        } else {
+            long lastLoggedMillis = 0;
+
+            while (!searchFinished()) {
+                // First, let's print out the status if necessary
                 if (settings.shouldOutputStatus() &&
                         System.currentTimeMillis() - lastLoggedMillis >
                                 settings.outputFreqSecs() * 1000) {
@@ -155,117 +319,197 @@ public abstract class Search {
                     printStatus();
                 }
 
-                // Finally, let's pop a state off the queue and deal with it
-                SearchState next = queue.poll();
-                if (next.depth() > depth) {
-                    depth = next.depth();
-                }
-                explored++;
-                if (settings.multiThreaded()) {
-                    activeWorkers.incrementAndGet();
-                    executor.execute(() -> exploreNode(next));
-                } else {
-                    exploreNode(next);
-                }
+                // Then, run a single worker
+                getWorker().run();
             }
+        }
 
-            if (settings.shouldOutputStatus()) {
-                printStatus();
-                System.out.println("Search finished.\n");
-            }
+        if (settings.shouldOutputStatus()) {
+            printStatus();
+            System.out.println("Search finished.\n");
+        }
 
-            if (settings.multiThreaded()) {
-                executor.shutdownNow();
-                try {
-                    // TODO: time how long shutdown takes
-                    executor.awaitTermination(5, TimeUnit.SECONDS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
-
-                if (!executor.isTerminated()) {
-                    throw new RuntimeException("Couldn't shut down search.");
-                }
-            }
-
+        lock.lock();
+        try {
             if (results.invariantViolatingState() != null) {
                 results.endCondition(INVARIANT_VIOLATED);
-            } else if (queue.isEmpty()) {
-                // TODO: queue should always be empty???
+            } else if (numActiveWorkers == 0 && spaceExhausted()) {
                 results.endCondition(SPACE_EXHAUSTED);
             } else {
                 results.endCondition(TIME_EXHAUSTED);
             }
-
-            return results;
+        } finally {
+            lock.unlock();
         }
 
-        private void exploreNode(SearchState node) {
-            for (Event event : node.events(settings)) {
-                SearchState successor = node.stepEvent(event, settings, true);
-
-                // If node is null or has already been explored, continue
-                if (successor == null || !discovered.add(successor)) {
-                    continue;
-                }
-
-                // Check all invariants
-                if (settings.invariantViolated(successor)) {
-                    results.invariantViolated(successor,
-                            settings.whichInvariantViolated(successor));
-                    break;
-                }
-
-                // Run checks on node
-                if (GlobalSettings.doChecks()) {
-                    // Check if event is deterministic
-                    if (!Objects.equals(successor,
-                            node.stepEvent(event, settings, true))) {
-                        CheckLogger.notDeterministic(event, node);
-                    }
-
-                    // Check if event is idempotent
-                    if (event.isMessage() && !Objects.equals(successor,
-                            successor.stepEvent(event, settings, true))) {
-                        CheckLogger.notIdempotent(event, node);
-                    }
-                }
-
-                // Prune away the state if possible
-                if (settings.shouldPrune(successor)) {
-                    continue;
-                }
-
-                queue.add(successor);
-            }
-
-            // Done with searching successors, report back to main thread
-            if (settings.multiThreaded()) {
-                synchronized (activeWorkers) {
-                    activeWorkers.decrementAndGet();
-                    activeWorkers.notify();
-                }
-            }
-        }
+        return results;
     }
 
-
-    /**
-     * Main model checking loop. Does a breadth-first search starting at
-     * initialState, goes until it starts exploring past maxDepth or an explored
-     * state violates an invariant.
-     *
-     * TODO: fix docs
-     *
-     * @param initialState
-     *         the initial state to start at
-     * @return a state that violates an invariant, if one exists; otherwise null
-     */
     public static SearchResults bfs(@NonNull SearchState initialState,
                                     SearchSettings settings) {
         if (settings == null) {
             settings = new SearchSettings();
         }
         return new BFS(settings).run(initialState);
+    }
+
+    public static SearchResults dfs(@NonNull SearchState initialState,
+                                    SearchSettings settings) {
+        if (settings == null) {
+            settings = new SearchSettings();
+        }
+        return new RandomDFS(settings).run(initialState);
+    }
+}
+
+class BFS extends Search {
+    private final Queue<SearchState> queue = new ConcurrentLinkedQueue<>();
+    private final Set<SearchState> discovered =
+            Collections.newSetFromMap(new ConcurrentHashMap<>());
+
+    private final AtomicLong states = new AtomicLong();
+    private final AtomicInteger depth = new AtomicInteger();
+
+    BFS(SearchSettings settings) {
+        super(settings);
+    }
+
+    @Override
+    protected String searchType() {
+        return "breadth-first";
+    }
+
+    @Override
+    protected String status(double elapsedSecs) {
+        long explored = states.get();
+        return String.format("Explored: %s, Depth: %s (%.2fs, %.2fK states/s)",
+                explored, depth.get(), elapsedSecs,
+                explored / elapsedSecs / 1000.0);
+    }
+
+    @Override
+    protected void initSearch(SearchState initialState) {
+        queue.add(initialState);
+        discovered.add(initialState);
+        states.set(0);
+        depth.getAndAccumulate(initialState.depth(), Math::max);
+    }
+
+    @Override
+    protected boolean spaceExhausted() {
+        return queue.isEmpty() ||
+                (settings.depthLimited() && depth.get() > settings.maxDepth());
+    }
+
+    @Override
+    protected Runnable getWorker() {
+        SearchState n = queue.poll();
+        if (n == null) {
+            return null;
+        }
+        return () -> exploreNode(n);
+    }
+
+    private void exploreNode(@NonNull SearchState node) {
+        for (Event event : node.events(settings)) {
+            SearchState successor = node.stepEvent(event, settings, true);
+
+            if (successor == null || !discovered.add(successor)) {
+                continue;
+            }
+
+            if (invariantViolated(successor)) {
+                return;
+            }
+
+            doChecks(node, event, successor);
+
+            if (settings.shouldPrune(successor)) {
+                continue;
+            }
+
+            states.incrementAndGet();
+            depth.getAndAccumulate(node.depth(), Math::max);
+            queue.add(successor);
+        }
+    }
+}
+
+class RandomDFS extends Search {
+    private SearchState initialState;
+
+    private AtomicLong states = new AtomicLong(), probes = new AtomicLong();
+
+    RandomDFS(SearchSettings settings) {
+        super(settings);
+    }
+
+    @Override
+    protected String searchType() {
+        return "random depth-first";
+    }
+
+    @Override
+    protected String status(double elapsedSecs) {
+        long explored = states.get();
+        if (settings.depthLimited()) {
+            return String
+                    .format("Explored: %s, Num Probes: %s (%.2fs, %.2fK explored/s)",
+                            explored, probes.get(), elapsedSecs,
+                            explored / elapsedSecs / 1000.0);
+        } else {
+            return String
+                    .format("Explored: %s (%.2fs, %.2fK explored/s)", explored,
+                            elapsedSecs, explored / elapsedSecs / 1000.0);
+        }
+    }
+
+    @Override
+    protected void initSearch(SearchState initialState) {
+        this.initialState = initialState;
+        probes.set(0);
+        states.set(0);
+    }
+
+    @Override
+    protected boolean spaceExhausted() {
+        return false;
+    }
+
+    @Override
+    protected Runnable getWorker() {
+        return this::exploreNode;
+    }
+
+    private void exploreNode() {
+        probes.incrementAndGet();
+
+        for (SearchState current = initialState, next = null;
+             current != null && current.depth() <= settings.maxDepth();
+             current = next, next = null) {
+            states.incrementAndGet();
+
+            List<Event> events = new ArrayList<>(current.events(settings));
+            Collections.shuffle(events);
+
+            for (Event event : events) {
+                SearchState s = current.stepEvent(event, settings, true);
+
+                if (s == null) {
+                    continue;
+                }
+
+                if (invariantViolated(s)) {
+                    return;
+                }
+
+                if (settings.shouldPrune(s)) {
+                    continue;
+                }
+
+                next = s;
+                break;
+            }
+        }
     }
 }
