@@ -1,6 +1,6 @@
 .PHONY: all test clean clean-all
 
-ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.32a/oddity.jar
+ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.36a/oddity.jar
 
 FRAMEWORK_FILES_FOLDER = framework
 LAB_FILES_FOLDER = labs
