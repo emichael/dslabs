@@ -36,6 +36,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 /**
@@ -105,8 +106,11 @@ public class VizClient {
             System.out.println(json);
         }
 
-        out.writeInt(json.length());
-        out.writeBytes(json);
+        byte[] jsonBytes = json.getBytes(StandardCharsets.UTF_8);
+
+        out.writeInt(jsonBytes.length);
+        out.write(jsonBytes, 0, jsonBytes.length);
+        out.flush();
     }
 
     private JsonNode readJson() throws IOException {
@@ -121,7 +125,7 @@ public class VizClient {
             numRead += newNumRead;
         }
 
-        String json = new String(bytes);
+        String json = new String(bytes, StandardCharsets.UTF_8);
 
         return Json.fromJson(json);
     }
@@ -139,7 +143,8 @@ public class VizClient {
         }
 
         if (startOddity) {
-            ProcessBuilder pb = new ProcessBuilder("java", "-jar", "oddity.jar");
+            ProcessBuilder pb =
+                    new ProcessBuilder("java", "-jar", "oddity.jar");
             pb.redirectOutput(Redirect.INHERIT).redirectError(Redirect.INHERIT);
             final Process p = pb.start();
 
