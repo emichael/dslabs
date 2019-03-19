@@ -14,7 +14,7 @@
 
     <dependency org="org.apache.commons" name="commons-lang3" rev="3.7"/>
 
-    <dependency org="org.projectlombok" name="lombok" rev="1.16.18"/>
+    <dependency org="org.projectlombok" name="lombok" rev="1.18.6"/>
 
     <dependency org="com.fasterxml.jackson.core" name="jackson-core" rev="2.9.3"/>
     <dependency org="com.fasterxml.jackson.core" name="jackson-databind" rev="2.9.3"/>
