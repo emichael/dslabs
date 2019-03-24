@@ -135,7 +135,7 @@ def main():
     parser.add_argument('--no-search', action='store_true',
                         help="do not execure search tests")
 
-    parser.add_argument('--no-timers', action='store_true',
+    parser.add_argument('--no-timeouts', action='store_true',
                         help="stop tests from timing out")
     parser.add_argument('-g', '--log-level', nargs='?', type=str,
                         help="level the default Java util logging should use")
@@ -169,7 +169,7 @@ def main():
                   part=args.part,
                   no_run=args.no_run,
                   no_search=args.no_search,
-                  timers_disabled=args.no_timers,
+                  timers_disabled=args.no_timeouts,
                   log_level=args.log_level,
                   single_threaded=args.single_threaded,
                   start_viz=args.start_viz,
