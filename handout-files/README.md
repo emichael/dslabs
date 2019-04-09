@@ -344,9 +344,14 @@ class.
   that all of your message and timer handlers are *deterministic*. Also, you'll
   want as many of them to be idempotent as possible.
 - Your code should not acquire any locks, except in clients by using
-  `synchronized` on handlers and the client interface methods. Concurrency is
-  handled by the framework. Use of locking data structures (e.g. `Hashtable`) is
-  likely to cause search tests to deadlock.
+  `synchronized` on handlers and the client interface methods. In particular,
+  your nodes should allow simultaneous access to their `equals` and `hashCode`
+  methods without locking or waiting. All other concurrency is handled by the
+  framework. Use of locking data structures (e.g. `Hashtable`) is likely to
+  cause search tests to deadlock.
+- Do not use any static, mutable fields in your classes (constants are fine).
+  Your nodes (i.e., instances of the `Node` classes) should communicate only
+  through message passing.
 
 
 ### Important Notes
