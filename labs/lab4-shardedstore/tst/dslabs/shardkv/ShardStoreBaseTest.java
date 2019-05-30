@@ -261,7 +261,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
     void singleClientMultiGroupSearch() {
         // Group 1 joins -> group 2 joins -> group 1 leaves
         initSearchState.addClientWorker(cca, Workload.builder().commands(
-                new Join(1, servers(1, 1)), new Join(2, servers(1, 1)),
+                new Join(1, servers(1, 1)), new Join(2, servers(2, 1)),
                 new Leave(1)).results(new Ok(), new Ok(), new Ok()).build());
 
         // Find state where first Join is finished
@@ -304,15 +304,15 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
     }
 
     /**
-     * Runs a single-client, multi-group search. The clients should be
-     * client(1), client(2). This method forces client(1)'s commands to be
-     * executed before client(2)'s. Must call setupStates(2, 1, 1, N) before
-     * calling this method.
+     * Runs a multi-client, multi-group search. The clients should be client(1),
+     * client(2). This method forces client(1)'s commands to be executed before
+     * client(2)'s. Must call setupStates(2, 1, 1, N) before calling this
+     * method.
      */
     void multiClientMultiGroupSearch() {
         // Both groups join
         initSearchState.addClientWorker(cca, Workload.builder().commands(
-                new Join(1, servers(1, 1)), new Join(2, servers(1, 1)))
+                new Join(1, servers(1, 1)), new Join(2, servers(2, 1)))
                                                      .build());
 
         // Find state where first join is finished
