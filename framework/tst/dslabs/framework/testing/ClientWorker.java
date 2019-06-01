@@ -145,7 +145,7 @@ public final class ClientWorker extends Node {
                 }
 
                 maxWaitTimeMillis = max(maxWaitTimeMillis,
-                        lastSendTimeMillis - System.currentTimeMillis());
+                        System.currentTimeMillis() - lastSendTimeMillis);
 
                 if (workload.hasResults() &&
                         !Objects.equals(expectedResult, result)) {
