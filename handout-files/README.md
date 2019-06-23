@@ -316,6 +316,17 @@ traces branching off the one that violated the invariant.
 
 ![Trace](img/trace-servers.png)
 
+### Run-until
+You can save some time by asking the visualization tool to find a state matching
+a particular predicate. Click "Run Until" and then "Predicate":
+
+![Run until](img/debug-rununtil.png)
+
+Enter a predicate in the window that pops up. Predicates have the form
+`<server-name>.<path> = <value>`, for instance, `server1.proposer.ballot = 4` or
+`server2.leader = true`. If the visualization tool cannot find such a state
+after 10 seconds, it will time out.
+
 
 ### JSON Issues
 If your `Node`s, `Message`s, or `Timer`s contain circular references, you may
