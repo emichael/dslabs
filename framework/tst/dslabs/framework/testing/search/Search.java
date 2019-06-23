@@ -22,6 +22,7 @@
 
 package dslabs.framework.testing.search;
 
+import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.utils.CheckLogger;
 import dslabs.framework.testing.utils.GlobalSettings;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public abstract class Search {
      */
     private int numActiveWorkers = 0;
 
-    private final SearchResults results = new SearchResults();
+    protected final SearchResults results = new SearchResults();
 
     private long startTimeMillis;
 
@@ -135,7 +136,7 @@ public abstract class Search {
                     (settings.timeLimited() &&
                             ((System.currentTimeMillis() - startTimeMillis) >
                                     (settings.maxTimeSecs() * 1000))) ||
-                    (results.invariantViolatingState() != null);
+                    (results.invariantViolated() != null);
         } finally {
             lock.unlock();
         }
@@ -176,23 +177,6 @@ public abstract class Search {
                 CheckLogger.notIdempotent(event, node);
             }
         }
-    }
-
-    /**
-     * Convenience method to be used by workers to check if a node has violated
-     * an invariant. Logs invariant violations to {@code results}.
-     *
-     * @param node
-     *         the state to check
-     * @return whether or not an invariant has been violated
-     */
-    protected final boolean invariantViolated(SearchState node) {
-        if (settings.invariantViolated(node)) {
-            results.invariantViolated(node,
-                    settings.whichInvariantViolated(node));
-            return true;
-        }
-        return false;
     }
 
     SearchResults run(SearchState initialState) {
@@ -418,7 +402,9 @@ class BFS extends Search {
                 continue;
             }
 
-            if (invariantViolated(successor)) {
+            if (settings.invariantViolated(successor)) {
+                results.invariantViolated(successor,
+                        settings.whichInvariantViolated(successor));
                 return;
             }
 
@@ -499,7 +485,17 @@ class RandomDFS extends Search {
                     continue;
                 }
 
-                if (invariantViolated(s)) {
+                if (settings.invariantViolated(s)) {
+                    StatePredicate violatedInvariant =
+                            settings.whichInvariantViolated(s);
+
+                    // Log the violation to shut the other threads down
+                    results.invariantViolated(null, violatedInvariant);
+
+                    // Minimize the trace and log the actual invariant-violating state
+                    s = TraceMinimizer
+                            .minimizeTrace(s, violatedInvariant, false);
+                    results.invariantViolated(s, violatedInvariant);
                     return;
                 }
 
