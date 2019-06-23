@@ -191,6 +191,10 @@ public abstract class AbstractState implements Serializable {
         return servers.size() + clientWorkers.size() + clients.size();
     }
 
+    public synchronized int numServers() {
+        return servers.size();
+    }
+
     public synchronized Node node(Address address) {
         if (servers.containsKey(address)) {
             return servers.get(address);

@@ -3,8 +3,11 @@ package dslabs.paxos;
 import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
+import dslabs.framework.Command;
+import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.junit.PrettyTestName;
@@ -22,7 +25,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -46,6 +51,10 @@ import static dslabs.kvstore.KVStoreWorkload.putGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putOk;
 import static dslabs.kvstore.KVStoreWorkload.putWorkload;
 import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
+import static dslabs.paxos.PaxosLogSlotStatus.ACCEPTED;
+import static dslabs.paxos.PaxosLogSlotStatus.CHOSEN;
+import static dslabs.paxos.PaxosLogSlotStatus.CLEARED;
+import static dslabs.paxos.PaxosLogSlotStatus.EMPTY;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -95,6 +104,173 @@ public class PaxosTest extends BaseJUnitTest {
         }
     }
 
+    /* Predicates */
+
+    private static PaxosLogSlotStatus status(Address a, int i,
+                                             AbstractState s) {
+        PaxosServer p = (PaxosServer) s.server(a);
+        return p.status(i);
+    }
+
+    private static Command command(Address a, int i, AbstractState s) {
+        PaxosServer p = (PaxosServer) s.server(a);
+        return p.command(i);
+    }
+
+    private static StatePredicate hasStatus(Address a, int i,
+                                            PaxosLogSlotStatus s) {
+        return StatePredicate.statePredicate(
+                String.format("%s has status %s in slot %s", a, s, i),
+                st -> status(a, i, st) == s);
+    }
+
+    private static StatePredicate hasCommand(Address a, int i, Command c) {
+        return StatePredicate.statePredicate(
+                String.format("%s has command %s in slot %s", a, c, i),
+                st -> Objects.equals(command(a, i, st), c));
+    }
+
+    /**
+     * Checks whether a single slot in the log is consistent. More specifically,
+     * it checks the following:
+     *
+     * 1) No two different commands are chosen.
+     *
+     * 2) If a command has been chosen, there is a majority of servers where the
+     * command has been chosen or accepted or the slot has been cleared.
+     *
+     * 3) If the slot has been cleared, there is a majority of servers where the
+     * slot is non-empty.
+     *
+     * This predicate is not completely exhaustive. In particular, the third
+     * check above should not count acceptances of different commands towards
+     * the same majority.
+     */
+    private static StatePredicate slotValid(int i) {
+        return StatePredicate
+                .statePredicateWithMessage("Logs consistent for slot " + i,
+                        st -> {
+                            Command chosen = null;
+                            boolean isChosen = false, isCleared = false;
+
+                            for (Address a : st.serverAddresses()) {
+                                PaxosLogSlotStatus s = status(a, i, st);
+
+                                if (s == CLEARED) {
+                                    isCleared = true;
+                                }
+
+                                if (s == CHOSEN) {
+                                    Command c = command(a, i, st);
+                                    if (isChosen &&
+                                            !Objects.equals(chosen, c)) {
+                                        // There are two different commands chosen in the same slot
+                                        return new ImmutablePair<>(false,
+                                                String.format(
+                                                        "Two different commands (%s and %s) chosen for slot %s",
+                                                        chosen, c, i));
+                                    }
+                                    chosen = c;
+                                    isChosen = true;
+                                }
+                            }
+
+                            if (!isChosen && !isCleared) {
+                                return new ImmutablePair<>(true, "");
+                            }
+
+                            int count = 0;
+                            for (Address a : st.serverAddresses()) {
+                                PaxosLogSlotStatus s = status(a, i, st);
+                                if (s != EMPTY && (s != ACCEPTED || !isChosen ||
+                                        Objects.equals(chosen,
+                                                command(a, i, st)))) {
+                                    count++;
+                                }
+                            }
+
+                            if (2 * count <= st.numServers()) {
+                                if (isChosen) {
+                                    return new ImmutablePair<>(false,
+                                            String.format(
+                                                    "Command chosen for slot %s without a majority accepting",
+                                                    i));
+                                }
+
+                                return new ImmutablePair<>(false, String.format(
+                                        "Slot %s cleared without a majority accepting",
+                                        i));
+
+                            }
+
+                            return new ImmutablePair<>(true, "");
+                        });
+    }
+
+    /**
+     * Checks that all of the non-empty and non-cleared log slots are valid.
+     * Also performs some checks on the first non-cleared and last non-empty
+     * methods.
+     */
+    private static StatePredicate LOGS_CONSISTENT =
+            StatePredicate.statePredicateWithMessage("Logs consistent", st -> {
+                int minNonCleared = Integer.MAX_VALUE, maxNonEmpty = 0;
+
+                for (Address a : st.serverAddresses()) {
+                    PaxosServer p = (PaxosServer) st.server(a);
+
+                    int nc = p.firstNonCleared(), ne = p.lastNonEmpty();
+
+                    minNonCleared =
+                            Math.min(minNonCleared, p.firstNonCleared());
+                    maxNonEmpty = Math.max(maxNonEmpty, p.lastNonEmpty());
+
+                    if (nc < 1) {
+                        return new ImmutablePair<>(false, String.format(
+                                "%s returned %s as first non-cleared slot", a,
+                                nc));
+                    }
+
+                    if (ne < 0) {
+                        return new ImmutablePair<>(false, String.format(
+                                "%s returned %s as last non-empty slot", a,
+                                ne));
+                    }
+
+                    if (p.status(nc) == CLEARED) {
+                        return new ImmutablePair<>(false, String.format(
+                                "%s returned %s as first non-cleared slot, but slot has status cleared",
+                                a, nc));
+                    }
+
+                    if (ne > 0 && p.status(ne) == EMPTY) {
+                        return new ImmutablePair<>(false, String.format(
+                                "%s returned %s as last non-empty slot, but slot has status empty",
+                                a, ne));
+                    }
+
+                    if (nc > 1 && p.status(nc - 1) != CLEARED) {
+                        return new ImmutablePair<>(false, String.format(
+                                "%s returned %s as first non-cleared slot, but the previous slot isn't cleared",
+                                a, nc));
+                    }
+
+                    if (p.status(ne + 1) != EMPTY) {
+                        return new ImmutablePair<>(false, String.format(
+                                "%s returned %s as last non-empty slot, but the next slot isn't empty",
+                                a, ne));
+                    }
+                }
+
+                for (int i = minNonCleared; i <= maxNonEmpty; i++) {
+                    StatePredicate sv = slotValid(i);
+                    if (!sv.test(st)) {
+                        return new ImmutablePair<>(false, sv.detail(st));
+                    }
+                }
+
+                return new ImmutablePair<>(true, "");
+            });
 
     /* Tests */
 
@@ -630,7 +806,8 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Check that linearizability is preserved (with and without timers)
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addPrune(CLIENTS_DONE).maxTimeSecs(30);
+                      .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE)
+                      .maxTimeSecs(30);
         assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
                 Search.bfs(results.invariantViolatingState(), searchSettings));
 
@@ -657,7 +834,6 @@ public class PaxosTest extends BaseJUnitTest {
         searchSettings.deliverTimers(false);
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(initSearchState, searchSettings));
-
     }
 
     @Test
@@ -696,25 +872,132 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Checking that linearizability is preserved in both other partitions
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addPrune(CLIENTS_DONE).resetNetwork()
+                      .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE)
+                      .resetNetwork()
                       .partition(server(1), server(3), client(2));
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
-
-        searchSettings.resetNetwork()
-                      .partition(server(2), server(3), client(2));
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
-
-        // Same checks but without timers (not necessarily useful)
-        searchSettings.deliverTimers(false).resetNetwork()
-                      .partition(server(1), server(3), client(2));
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(firstAppendSent, searchSettings));
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(firstAppendSent, searchSettings));
+
+        // Same checks but without timers (not necessarily useful)
+        searchSettings.deliverTimers(false).resetNetwork()
+                      .partition(server(1), server(3), client(2));
+        assertNotEndCondition(INVARIANT_VIOLATED,
+                Search.bfs(firstAppendSent, searchSettings));
+
+        searchSettings.resetNetwork()
+                      .partition(server(2), server(3), client(2));
+        assertNotEndCondition(INVARIANT_VIOLATED,
+                Search.bfs(firstAppendSent, searchSettings));
+    }
+
+    @Test
+    @PrettyTestName("Two clients, five servers, multiple leader changes")
+    @Category(SearchTests.class)
+    @TestPointValue(20)
+    public void test23QuorumCheckingSearch() {
+        setupStates(5);
+
+        Command c1 = append("foo", "X");
+        Command c2 = append("foo", "Y");
+
+        initSearchState.addClientWorker(client(1),
+                Workload.builder().commands(c1).build());
+        initSearchState.addClientWorker(client(2),
+                Workload.builder().commands(c2).build());
+
+        searchSettings.maxTimeSecs(30);
+
+        // Nothing ever cleared, nothing in slot 2
+        for (Address a : servers(5)) {
+            searchSettings.addPrune(hasStatus(a, 2, EMPTY).negate());
+            searchSettings.addPrune(hasStatus(a, 1, CLEARED));
+        }
+
+        // First two servers don't accept anything for now
+        searchSettings.addPrune(hasStatus(server(1), 1, EMPTY).negate())
+                      .addPrune(hasStatus(server(2), 1, EMPTY).negate());
+
+        // Client 1 can talk to server 4; client 2 can talk to server 5
+        searchSettings.nodeActive(client(1), false)
+                      .linkActive(client(1), server(4), true)
+                      .nodeActive(client(2), false)
+                      .linkActive(client(2), server(5), true)
+                      .addPrune(hasCommand(server(4), 1, c2))
+                      .addPrune(hasCommand(server(5), 1, c1));
+
+        // Find a state where server 3 gets client 1's command
+        searchSettings.nodeActive(server(1), false).nodeActive(server(5), false)
+                      .deliverTimers(server(1), false)
+                      .deliverTimers(server(5), false)
+                      .deliverTimers(client(2), false)
+                      .addInvariant(hasCommand(server(4), 1, c1).negate());
+        SearchResults results = Search.bfs(initSearchState, searchSettings);
+        assertEndCondition(INVARIANT_VIOLATED, results);
+        SearchState c1AtServer4 = results.invariantViolatingState();
+        searchSettings.clearInvariants()
+                      .addInvariant(hasCommand(server(3), 1, c1).negate());
+        results = Search.bfs(c1AtServer4, searchSettings);
+        assertEndCondition(INVARIANT_VIOLATED, results);
+        SearchState c1AtServer3 = results.invariantViolatingState();
+
+        // Now, find a state where server 3 has client 2's command
+        searchSettings.nodeActive(server(4), false).nodeActive(server(3), false)
+                      .nodeActive(server(1), true).nodeActive(server(5), true)
+                      .clearDeliverTimers().deliverTimers(server(4), false)
+                      .deliverTimers(server(3), false)
+                      .deliverTimers(client(1), false).clearInvariants()
+                      .addInvariant(hasCommand(server(5), 1, c2).negate());
+        results = Search.bfs(c1AtServer3, searchSettings);
+        assertEndCondition(INVARIANT_VIOLATED, results);
+        SearchState c2AtServer5 = results.invariantViolatingState();
+        searchSettings.nodeActive(server(3), true)
+                      .deliverTimers(server(3), true).clearInvariants()
+                      .addInvariant(hasCommand(server(3), 1, c2).negate());
+        results = Search.bfs(c2AtServer5, searchSettings);
+        assertEndCondition(INVARIANT_VIOLATED, results);
+        SearchState c2AtServer3 = results.invariantViolatingState();
+
+        // Now, clear the prunes and find a state where server 2 has c1
+        searchSettings.clear().maxTimeSecs(30).maxDepth(1000);
+
+        // Drop all pending messages to narrow search
+        c2AtServer3.dropPendingMessages();
+
+        for (Address a : servers(5)) {
+            searchSettings.addPrune(hasStatus(a, 1, CLEARED));
+        }
+        searchSettings.addPrune(hasCommand(server(4), 1, c2))
+                      .addPrune(hasCommand(server(2), 1, c2))
+                      .addPrune(hasCommand(server(1), 1, c2))
+                      .nodeActive(server(5), false).nodeActive(server(3), false)
+                      .nodeActive(client(2), false)
+                      .linkActive(server(1), server(2), false)
+                      .linkActive(server(2), server(1), false)
+                      .deliverTimers(server(5), false)
+                      .deliverTimers(server(3), false)
+                      .deliverTimers(client(2), false)
+                      .addInvariant(hasCommand(server(1), 1, c1).negate());
+        results = Search.bfs(c2AtServer3, searchSettings);
+        assertEndCondition(INVARIANT_VIOLATED, results);
+        SearchState c1AtServer1 = results.invariantViolatingState();
+
+        // Make sure server 4 can get c1 chosen
+        searchSettings.clearInvariants()
+                      .addInvariant(hasStatus(server(4), 1, CHOSEN).negate());
+        assertEndConditionAndContinue(INVARIANT_VIOLATED,
+                Search.bfs(c1AtServer1, searchSettings));
+
+        // Re-add ignored messages
+        c1AtServer1.undropMessagesFrom(server(3));
+
+        searchSettings.linkActive(server(3), server(4), true).clearInvariants()
+                      .addInvariant(slotValid(1));
+        assertNotEndCondition(INVARIANT_VIOLATED,
+                Search.bfs(c1AtServer1, searchSettings));
     }
 }
