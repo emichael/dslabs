@@ -109,13 +109,15 @@ public class WorkloadReplacementTest {
         runRepeatedly(() -> {
             Pair<String, String> r;
 
-            r = Workload.doReplacements("%r%n9%i%i+1%i-1%a", "%r%n9%i%i+1%i-1%a", a("baz"), 15);
+            r = Workload.doReplacements("%r%n9%i%i+1%i-1%a",
+                    "%r%n9%i%i+1%i-1%a", a("baz"), 15);
             assertEquals(r.getLeft(), r.getRight());
             assertEquals(18, r.getLeft().length());
             assertEquals("151614baz", r.getLeft().substring(9));
 
             r = Workload.doReplacements("%i%r%n9", "%r%n9%i", a("baz"), 15);
-            assertEquals(r.getLeft().substring(2), r.getRight().substring(0, 9));
+            assertEquals(r.getLeft().substring(2),
+                    r.getRight().substring(0, 9));
         });
     }
 }

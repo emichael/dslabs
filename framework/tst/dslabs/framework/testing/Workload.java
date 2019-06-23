@@ -182,7 +182,8 @@ public abstract class Workload implements Serializable {
 
                     if (randomString == null) {
                         int upperBound;
-                        if (matcher.group(2) != null && !matcher.group(2).isEmpty()) {
+                        if (matcher.group(2) != null &&
+                                !matcher.group(2).isEmpty()) {
                             upperBound = Integer.parseInt(matcher.group(2));
                         } else {
                             upperBound = 100;
