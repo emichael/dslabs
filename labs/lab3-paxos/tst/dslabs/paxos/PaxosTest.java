@@ -1000,4 +1000,36 @@ public class PaxosTest extends BaseJUnitTest {
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(c1AtServer1, searchSettings));
     }
+
+    private void randomSearch() {
+        initSearchState.addClientWorker(client(1),
+                KVStoreWorkload.builder().commands(append("foo", "x")).build());
+        initSearchState.addClientWorker(client(2),
+                KVStoreWorkload.builder().commands(append("foo", "y")).build());
+
+        searchSettings.maxDepth(1000).maxTimeSecs(20)
+                      .addInvariant(APPENDS_LINEARIZABLE)
+                      .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE);
+
+        assertNotEndCondition(INVARIANT_VIOLATED,
+                Search.dfs(initSearchState, searchSettings));
+    }
+
+    @Test
+    @PrettyTestName("Three server random search")
+    @Category(SearchTests.class)
+    @TestPointValue(20)
+    public void test24ThreeServerRandomSearch() {
+        setupStates(3);
+        randomSearch();
+    }
+
+    @Test
+    @PrettyTestName("Five server random search")
+    @Category(SearchTests.class)
+    @TestPointValue(20)
+    public void test25FiveServerRandomSearch() {
+        setupStates(5);
+        randomSearch();
+    }
 }
