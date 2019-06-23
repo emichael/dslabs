@@ -518,7 +518,7 @@ public class PaxosTest extends BaseJUnitTest {
         System.out.println(
                 "Using " + readableSize(afterPutBytes) + " after puts.");
         // Must at least have random values in memory at nodes (~27 MB)
-        assertTrue(afterPutBytes > valueSize * items * 3);
+        assertTrue(afterPutBytes > valueSize * items * 2);
 
         // Clear memory and let nodes talk to each other
         runSettings.resetNetwork();
