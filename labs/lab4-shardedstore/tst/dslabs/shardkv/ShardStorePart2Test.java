@@ -2,21 +2,32 @@ package dslabs.shardkv;
 
 import dslabs.framework.Address;
 import dslabs.framework.Client;
+import dslabs.framework.Result;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.PrettyTestName;
 import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
+import dslabs.framework.testing.search.Search;
 import dslabs.kvstore.TransactionalKVStore.MultiGetResult;
 import dslabs.kvstore.TransactionalKVStoreWorkload;
+import dslabs.shardmaster.ShardMaster.Join;
+import dslabs.shardmaster.ShardMaster.Leave;
+import dslabs.shardmaster.ShardMaster.Ok;
+import java.util.List;
+import java.util.Objects;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runners.MethodSorters;
 
+import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.framework.testing.StatePredicate.resultsHaveType;
+import static dslabs.framework.testing.StatePredicate.statePredicate;
+import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
+import static dslabs.kvstore.KVStoreWorkload.KEY_NOT_FOUND;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.MULTI_GETS_MATCH;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.OK;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.multiGet;
@@ -264,5 +275,61 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         initSearchState.addClientWorker(client(2), w2);
 
         multiClientMultiGroupSearch();
+    }
+
+    private void randomSearch(int numServersPerGroup) {
+        setupStates(2, numServersPerGroup, 1, 2);
+
+        Workload ccWorkload = Workload.builder().commands(
+                new Join(1, servers(1, numServersPerGroup)),
+                new Join(2, servers(2, numServersPerGroup)), new Leave(1))
+                                      .results(new Ok(), new Ok(), new Ok())
+                                      .build();
+        initSearchState.addClientWorker(cca, ccWorkload);
+
+        initSearchState.addClientWorker(client(1),
+                TransactionalKVStoreWorkload.builder().commands(
+                        multiPut("foo-1", "X", "foo-2", "Y"))
+                                            .results(multiPutOk()).build());
+
+        initSearchState.addClientWorker(client(2),
+                TransactionalKVStoreWorkload.builder().commands(
+                        multiGet("foo-1", "foo-2")).build());
+
+        searchSettings.maxDepth(1000).maxTimeSecs(20).addInvariant(
+                statePredicate("MultiGet returns correct results", s -> {
+                    List<Result> results = s.clientWorker(client(2)).results();
+                    if (results.isEmpty()) {
+                        return true;
+                    }
+                    if (results.size() > 1) {
+                        return false;
+                    }
+                    Result r = results.get(0);
+                    return Objects.equals(r,
+                            multiGetResult("foo-1", "X", "foo-2", "Y")) ||
+                            Objects.equals(r,
+                                    multiGetResult("foo-1", KEY_NOT_FOUND,
+                                            "foo-2", KEY_NOT_FOUND));
+                })).addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
+
+        assertNotEndCondition(INVARIANT_VIOLATED,
+                Search.dfs(initSearchState, searchSettings));
+    }
+
+    @Test
+    @PrettyTestName("One server per group random search")
+    @Category(SearchTests.class)
+    @TestPointValue(20)
+    public void test11SingleServerRandomSearch() {
+        randomSearch(1);
+    }
+
+    @Test
+    @PrettyTestName("Multiple servers per group random search")
+    @Category(SearchTests.class)
+    @TestPointValue(20)
+    public void test12MultiServerRandomSearch() {
+        randomSearch(3);
     }
 }
