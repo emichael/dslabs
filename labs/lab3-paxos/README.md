@@ -141,6 +141,15 @@ modular; you will see what we mean by that when you use Paxos as a part of a
 larger protocol in lab 4.
 
 
+## Paxos Interface Methods
+In order for the tests to more efficiently check your implementation, you'll
+need to implement four methods in your `PaxosServer`: `status(logSlotNum)`,
+`command(logSlotNum)`, `firstNonCleared()`, and `lastNonEmpty()`. These methods
+simply return information about the *local state* of a server. Implementing
+them should be straightforward, but be sure to pay attention their requirements
+and implement them correctly.
+
+
 ---
 
 
