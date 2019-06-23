@@ -46,6 +46,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
@@ -502,17 +503,45 @@ public final class SearchState extends AbstractState
      * different sets of dropped messages to be equivalent?
      */
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
-    @EqualsAndHashCode
     static final class SearchEquivalenceWrappedSearchState {
         @Getter @NonNull private final SearchState state;
 
-        @EqualsAndHashCode.Include
-        private Set<MessageEnvelope> network() {
-            return state.network;
-        }
-
         public String toString() {
             return state.toString();
+        }
+
+        public boolean equals(final Object o) {
+            if (o == this) {
+                return true;
+            }
+            if (!(o instanceof SearchEquivalenceWrappedSearchState)) {
+                return false;
+            }
+            final SearchEquivalenceWrappedSearchState other =
+                    (SearchEquivalenceWrappedSearchState) o;
+            if (!Objects.equals(state, other.state)) {
+                return false;
+            }
+            if (state.droppedNetwork.isEmpty() &&
+                    other.state.droppedNetwork.isEmpty()) {
+                return true;
+            }
+            if (!Objects.equals(state.network, other.state.network)) {
+                return false;
+            }
+            return true;
+        }
+
+        public int hashCode() {
+            final int PRIME = 59;
+            int result = 1;
+            result = result * PRIME + (state == null ? 43 : state.hashCode());
+            if (state.droppedNetwork.isEmpty()) {
+                return result;
+            }
+            result = result * PRIME +
+                    (state.network == null ? 43 : state.network.hashCode());
+            return result;
         }
     }
 
