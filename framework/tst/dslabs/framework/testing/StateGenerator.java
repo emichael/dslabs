@@ -67,9 +67,9 @@ public class StateGenerator {
 
     @SuppressWarnings("unchecked")
     public <C extends Node & Client> ClientWorker clientWorker(Address address,
-                                                               boolean recordResults) {
+                                                               boolean recordCommandsAndResults) {
         return new ClientWorker((C) clientSupplier.apply(address),
-                workloadSupplier.apply(address), recordResults);
+                workloadSupplier.apply(address), recordCommandsAndResults);
     }
 
     public ClientWorker clientWorker(Address address, Workload workload) {
@@ -78,9 +78,9 @@ public class StateGenerator {
     }
 
     public ClientWorker clientWorker(Address address, Workload workload,
-                                     boolean recordResults) {
+                                     boolean recordCommandsAndResults) {
         return new ClientWorker((Node & Client) clientSupplier.apply(address),
-                workload, recordResults);
+                workload, recordCommandsAndResults);
     }
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses) {
@@ -90,10 +90,10 @@ public class StateGenerator {
     }
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
-                                                    boolean recordResults) {
+                                                    boolean recordCommandsAndResults) {
         return addresses.stream().collect(Collectors.toMap(Function.identity(),
                 a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workloadSupplier.apply(a), recordResults)));
+                        workloadSupplier.apply(a), recordCommandsAndResults)));
     }
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
@@ -105,10 +105,10 @@ public class StateGenerator {
 
     public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
                                                     Workload workload,
-                                                    boolean recordResults) {
+                                                    boolean recordCommandsAndResults) {
         return addresses.stream().collect(Collectors.toMap(Function.identity(),
                 a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workload, recordResults)));
+                        workload, recordCommandsAndResults)));
     }
 
     public static class StateGeneratorBuilder {

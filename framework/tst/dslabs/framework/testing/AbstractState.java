@@ -234,12 +234,13 @@ public abstract class AbstractState implements Serializable {
     }
 
     public synchronized void addClientWorker(Address address,
-                                             boolean recordResults) {
+                                             boolean recordCommandsAndResults) {
         if (hasNode(address)) {
             LOG.severe("Re-adding an existing address to state");
             return;
         }
-        clientWorkers.put(address, gen.clientWorker(address, recordResults));
+        clientWorkers.put(address,
+                gen.clientWorker(address, recordCommandsAndResults));
         setupNode(address);
     }
 
@@ -254,13 +255,13 @@ public abstract class AbstractState implements Serializable {
     }
 
     public synchronized void addClientWorker(Address address, Workload workload,
-                                             boolean recordResults) {
+                                             boolean recordCommandsAndResults) {
         if (hasNode(address)) {
             LOG.severe("Re-adding an existing address to state");
             return;
         }
         clientWorkers.put(address,
-                gen.clientWorker(address, workload, recordResults));
+                gen.clientWorker(address, workload, recordCommandsAndResults));
         setupNode(address);
     }
 

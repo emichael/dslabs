@@ -55,7 +55,7 @@ public final class ClientWorker extends Node {
     }
 
     // Defaults
-    private static final boolean DEFAULT_RECORD_RESULTS = true;
+    private static final boolean DEFAULT_RECORD_COMMANDS_AND_RESULTS = true;
 
     // Configuration
     private final Client client;
@@ -63,16 +63,18 @@ public final class ClientWorker extends Node {
 
     // Properties
     // TODO: move this to Workload
-    @JsonIgnore @Getter private final boolean recordResults;
+    @JsonIgnore @Getter private final boolean recordCommandsAndResults;
 
     // Mutable state
     @JsonIgnore private boolean initialized = false;
     @JsonIgnore private boolean waitingOnResult = false;
     @JsonIgnore private boolean waitingToSend = false;
+    @JsonIgnore private Command lastCommand = null;
     @JsonIgnore private Result expectedResult = null;
     @JsonIgnore private long lastSendTimeMillis;
 
     // Resulting state
+    @Getter @JsonIgnore private final List<Command> sentCommands = new ArrayList<>();
     @Getter private final List<Result> results = new ArrayList<>();
     @Getter @JsonIgnore private boolean resultsOk = true;
     @Getter @JsonIgnore private Pair<Result, Result> expectedAndReceived = null;
@@ -81,10 +83,10 @@ public final class ClientWorker extends Node {
 
     public <C extends Node & Client> ClientWorker(@NonNull C client,
                                                   @NonNull Workload workload,
-                                                  boolean recordResults) {
+                                                  boolean recordCommandsAndResults) {
         super(client.address());
         this.client = client;
-        this.recordResults = recordResults;
+        this.recordCommandsAndResults = recordCommandsAndResults;
 
         // Clone operations on creation and reset it to completely avoid sharing
         this.workload = Cloning.clone(workload);
@@ -92,7 +94,7 @@ public final class ClientWorker extends Node {
     }
 
     public <C extends Node & Client> ClientWorker(C client, Workload workload) {
-        this(client, workload, DEFAULT_RECORD_RESULTS);
+        this(client, workload, DEFAULT_RECORD_COMMANDS_AND_RESULTS);
     }
 
     public synchronized void addCommand(Command command) {
@@ -140,7 +142,8 @@ public final class ClientWorker extends Node {
                     return;
                 }
 
-                if (recordResults) {
+                if (recordCommandsAndResults) {
+                    sentCommands.add(lastCommand);
                     results.add(result);
                 }
 
@@ -157,6 +160,7 @@ public final class ClientWorker extends Node {
                 }
 
                 waitingOnResult = false;
+                lastCommand = null;
                 expectedResult = null;
             }
 
@@ -190,10 +194,12 @@ public final class ClientWorker extends Node {
         if (workload.hasResults()) {
             Pair<Command, Result> commandAndResult =
                     workload.nextCommandAndResult(clientNode().address());
+            lastCommand = commandAndResult.getLeft();
             expectedResult = commandAndResult.getRight();
-            client.sendCommand(commandAndResult.getLeft());
+            client.sendCommand(lastCommand);
         } else {
-            client.sendCommand(workload.nextCommand(clientNode().address()));
+            lastCommand = workload.nextCommand(clientNode().address());
+            client.sendCommand(lastCommand);
         }
 
         waitingToSend = false;

@@ -150,7 +150,7 @@ public final class SearchState extends AbstractState
     protected void setupNode(Address address) {
         Node node = node(address);
         if (node instanceof ClientWorker) {
-            if (!((ClientWorker) node).recordResults()) {
+            if (!((ClientWorker) node).recordCommandsAndResults()) {
                 throw new RuntimeException(
                         "Cannot add a ClientWorker that does not store results to SearchState.");
             }
