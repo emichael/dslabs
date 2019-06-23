@@ -23,6 +23,7 @@
 package dslabs.framework.testing.search;
 
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.search.SearchState.SearchEquivalenceWrappedSearchState;
 import dslabs.framework.testing.utils.CheckLogger;
 import dslabs.framework.testing.utils.GlobalSettings;
 import java.util.ArrayList;
@@ -30,7 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -151,6 +151,25 @@ public abstract class Search {
     }
 
     /**
+     * Determine if two states are equal with respect to search-equivalence.
+     *
+     * @param s1
+     *         the first state
+     * @param s2
+     *         the second state
+     * @return whether the two states are actually equivalent
+     */
+    protected final boolean statesEqual(SearchState s1, SearchState s2) {
+        if (s1 == s2) {
+            return true;
+        }
+        if (s1 == null || s2 == null) {
+            return false;
+        }
+        return s1.wrapped().equals(s2.wrapped());
+    }
+
+    /**
      * Convenience method to be used by workers to execute checks for each state
      * encountered.
      *
@@ -166,13 +185,13 @@ public abstract class Search {
                                   SearchState successor) {
         if (GlobalSettings.doChecks()) {
             // Check if event is deterministic
-            if (!Objects
-                    .equals(successor, node.stepEvent(event, settings, true))) {
+            if (!statesEqual(successor,
+                    node.stepEvent(event, settings, true))) {
                 CheckLogger.notDeterministic(event, node);
             }
 
             // Check if event is idempotent
-            if (event.isMessage() && !Objects.equals(successor,
+            if (event.isMessage() && !statesEqual(successor,
                     successor.stepEvent(event, settings, true))) {
                 CheckLogger.notIdempotent(event, node);
             }
@@ -348,7 +367,7 @@ public abstract class Search {
 
 class BFS extends Search {
     private final Queue<SearchState> queue = new ConcurrentLinkedQueue<>();
-    private final Set<SearchState> discovered =
+    private final Set<SearchEquivalenceWrappedSearchState> discovered =
             Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private final AtomicLong states = new AtomicLong();
@@ -374,7 +393,7 @@ class BFS extends Search {
     @Override
     protected void initSearch(SearchState initialState) {
         queue.add(initialState);
-        discovered.add(initialState);
+        discovered.add(initialState.wrapped());
         states.set(0);
         depth.getAndAccumulate(initialState.depth(), Math::max);
     }
@@ -398,7 +417,7 @@ class BFS extends Search {
         for (Event event : node.events(settings)) {
             SearchState successor = node.stepEvent(event, settings, true);
 
-            if (successor == null || !discovered.add(successor)) {
+            if (successor == null || !discovered.add(successor.wrapped())) {
                 continue;
             }
 

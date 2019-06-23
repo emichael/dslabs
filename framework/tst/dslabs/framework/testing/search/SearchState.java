@@ -24,6 +24,7 @@ package dslabs.framework.testing.search;
 
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.collect.Streams;
 import dslabs.framework.Address;
 import dslabs.framework.Message;
@@ -48,6 +49,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 import java.util.stream.Collectors;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -56,11 +59,19 @@ import lombok.extern.java.Log;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Log
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 public final class SearchState extends AbstractState
         implements Serializable, Cloneable {
+
     private final Set<MessageEnvelope> network;
-    private final Map<Address, TimerQueue> timers;
+
+    /**
+     * Allows the state to store (temporarily) ignored messages, which are not
+     * considered as potential steps during search.
+     */
+    private final Set<MessageEnvelope> droppedNetwork;
+
+    @EqualsAndHashCode.Include private final Map<Address, TimerQueue> timers;
 
     @Getter private final transient SearchState previous;
     @Getter private final transient Event previousEvent;
@@ -75,6 +86,7 @@ public final class SearchState extends AbstractState
         super(servers, clientWorkers, Collections.emptySet(), stateGenerator);
 
         this.network = new HashSet<>();
+        this.droppedNetwork = new HashSet<>();
         this.timers = new HashMap<>();
         this.previous = null;
         this.previousEvent = null;
@@ -97,6 +109,7 @@ public final class SearchState extends AbstractState
         super(previous, addressToClone);
 
         network = new HashSet<>(previous.network);
+        droppedNetwork = new HashSet<>(previous.droppedNetwork);
         timers = new HashMap<>(previous.timers);
         this.previous = previous;
         this.previousEvent = previousEvent;
@@ -116,6 +129,7 @@ public final class SearchState extends AbstractState
         super(source, null);
 
         network = new HashSet<>(source.network);
+        droppedNetwork = new HashSet<>(source.droppedNetwork);
         timers = new HashMap<>(source.timers);
         this.previous = source.previous;
         this.previousEvent = source.previousEvent;
@@ -137,8 +151,9 @@ public final class SearchState extends AbstractState
     }
 
     @Override
+    @EqualsAndHashCode.Include
     public Iterable<MessageEnvelope> network() {
-        return network;
+        return Sets.union(network, droppedNetwork);
     }
 
     @Override
@@ -446,11 +461,70 @@ public final class SearchState extends AbstractState
         printTrace(System.err);
     }
 
+    /**
+     * Temporarily ignores all currently stored messages so that they are no
+     * longer considered as potential steps. Allows re-narrowing of a search.
+     * Use with caution.
+     */
+    public void dropPendingMessages() {
+        droppedNetwork.addAll(network);
+        network.clear();
+    }
+
+    public void undropMessages() {
+        network.addAll(droppedNetwork);
+    }
+
+    public void undropMessagesFrom(Address a) {
+        for (MessageEnvelope m : droppedNetwork) {
+            if (m.from().equals(a)) {
+                network.add(m);
+            }
+        }
+    }
+
+    public void undropMessagesTo(Address a) {
+        for (MessageEnvelope m : droppedNetwork) {
+            if (m.to().equals(a)) {
+                network.add(m);
+            }
+        }
+    }
+
+    /**
+     * A state wrapper designed to support a different equivalence relation,
+     * namely search-equivalence, in which the set of non-ignored messages must
+     * be equal. This wrapper is only used by {@link Search} and is not exposed
+     * outside this package. However, care must be taken within search
+     * strategies to use this equivalence relation and not the default one.
+     *
+     * TODO: only consider the non-ignored network and allow states with
+     * different sets of dropped messages to be equivalent?
+     */
+    @AllArgsConstructor(access = AccessLevel.PRIVATE)
+    @EqualsAndHashCode
+    static final class SearchEquivalenceWrappedSearchState {
+        @Getter @NonNull private final SearchState state;
+
+        @EqualsAndHashCode.Include
+        private Set<MessageEnvelope> network() {
+            return state.network;
+        }
+
+        public String toString() {
+            return state.toString();
+        }
+    }
+
+    SearchEquivalenceWrappedSearchState wrapped() {
+        return new SearchEquivalenceWrappedSearchState(this);
+    }
+
     @Override
     public String toString() {
         return String.format("State(nodes={%s}, network=%s, timers=%s)",
                 Streams.stream(addresses())
                        .map(a -> String.format("%s=%s", a, node(a)))
-                       .collect(Collectors.joining(", ")), network, timers);
+                       .collect(Collectors.joining(", ")), network(), timers);
     }
 }
