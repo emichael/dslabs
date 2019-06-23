@@ -413,8 +413,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     @PrettyTestName("Single client, single group")
     @Category(SearchTests.class)
     @TestPointValue(20)
-    public void test10SingleClientSingleGroupSearch()
-            throws InterruptedException {
+    public void test10SingleClientSingleGroupSearch() {
         setupStates(1, 1, 1, 10);
         initSearchState
                 .addClientWorker(client(1), KVStoreWorkload.putGetWorkload);
@@ -425,8 +424,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     @PrettyTestName("Single client, multi-group")
     @Category(SearchTests.class)
     @TestPointValue(20)
-    public void test11SingleClientMultiGroupSearch()
-            throws InterruptedException {
+    public void test11SingleClientMultiGroupSearch() {
         setupStates(2, 1, 1, 10);
         initSearchState
                 .addClientWorker(client(1), KVStoreWorkload.putGetWorkload);
@@ -437,8 +435,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     @PrettyTestName("Multi-client, multi-group")
     @Category(SearchTests.class)
     @TestPointValue(20)
-    public void test12MultiClientMultiGroupSearch()
-            throws InterruptedException {
+    public void test12MultiClientMultiGroupSearch() {
         setupStates(2, 1, 1, 2);
 
         Workload w1 = KVStoreWorkload.builder().commands(append("foo-1", "X1"),
