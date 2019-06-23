@@ -41,7 +41,7 @@ public class SearchResults {
     // Set by worker threads
     private final AtomicReference<SearchState> invariantViolatingState =
             new AtomicReference<>();
-    private StatePredicate invariantViolated;
+    private volatile StatePredicate invariantViolated;
 
     public SearchState invariantViolatingState() {
         return invariantViolatingState.get();
