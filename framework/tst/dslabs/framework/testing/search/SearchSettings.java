@@ -80,12 +80,6 @@ public class SearchSettings extends TestSettings {
     }
 
     @Override
-    public SearchSettings deliverTimers(boolean deliverTimers) {
-        super.deliverTimers(deliverTimers);
-        return this;
-    }
-
-    @Override
     public SearchSettings clear() {
         super.clear();
         maxDepth(-1);

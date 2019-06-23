@@ -297,6 +297,7 @@ public abstract class BaseJUnitTest {
 
     /* Utils */
     protected long nodesSize() {
+        // TODO: include timer queues?
         int total = 0;
         for (Node node : runState.nodes()) {
             total += Cloning.size(node);

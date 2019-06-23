@@ -53,8 +53,38 @@ public class TestSettings {
             new ConcurrentLinkedQueue<>();
 
     private volatile int maxTimeSecs = -1;
-    private volatile boolean deliverTimers = true;
     private volatile boolean singleThreaded = GlobalSettings.singleThreaded();
+
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private volatile boolean
+            deliverTimers = true;
+    @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
+    private final Map<Address, Boolean> timersActive =
+            new ConcurrentHashMap<>();
+
+    public final boolean deliverTimers() {
+        return deliverTimers;
+    }
+
+    public final TestSettings deliverTimers(Address a, boolean b) {
+        timersActive.put(a, b);
+        return this;
+    }
+
+    public final TestSettings clearDeliverTimers() {
+        deliverTimers = true;
+        timersActive.clear();
+        return this;
+    }
+
+    public final boolean deliverTimers(Address a) {
+        return timersActive.getOrDefault(a, deliverTimers);
+    }
+
+    public final TestSettings deliverTimers(boolean b) {
+        deliverTimers = b;
+        return this;
+    }
+
 
     // Network settings
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
@@ -241,8 +271,8 @@ public class TestSettings {
     public TestSettings clear() {
         clearInvariants();
         clearPrunes();
+        clearDeliverTimers();
         timeLimited(false);
-        deliverTimers(true);
         singleThreaded(false);
         resetNetwork();
         return this;

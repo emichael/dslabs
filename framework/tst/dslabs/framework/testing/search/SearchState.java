@@ -218,9 +218,9 @@ public final class SearchState extends AbstractState
             }
         }
 
-        if (settings.deliverTimers()) {
-            // Deliver all possible timers
-            for (Address address : addresses()) {
+        // Deliver all possible timers
+        for (Address address : addresses()) {
+            if (settings.deliverTimers(address)) {
                 for (TimerEnvelope timer : timers.get(address).deliverable()) {
                     events.add(new Event(timer));
                 }
@@ -299,7 +299,7 @@ public final class SearchState extends AbstractState
         Address toAddress = timer.to().rootAddress();
 
         if (!hasNode(timer.to().rootAddress()) || (!skipChecks &&
-                !(settings.deliverTimers() &&
+                !(settings.deliverTimers(toAddress) &&
                         timers.get(toAddress).isDeliverable(timer)))) {
             return null;
         }
