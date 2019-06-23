@@ -89,7 +89,7 @@ and set of server addresses. The `ShardMaster` should react by creating a new
 configuration that includes the new replica group. The new configuration should
 divide the shards as evenly as possible among the groups, and should move as few
 shards as possible to achieve that goal. The `ShardMaster` should return `OK`
-upon successful completion of a `Join` and `ERROR` if that group already exists
+upon successful completion of a `Join` and `Error` if that group already exists
 in the latest configuration.
 
 `Leave` contains the `groupId` of a previously joined group. The `ShardMaster`
@@ -97,7 +97,7 @@ should create a new configuration that does not include the group, and that
 assigns the group's shards to the remaining groups. The new configuration should
 divide the shards as evenly as possible among the groups, and should move as few
 shards as possible to achieve that goal. The `ShardMaster` should return `OK`
-upon successful completion of a `Leave` and `ERROR` if that group did not exist
+upon successful completion of a `Leave` and `Error` if that group did not exist
 in the latest configuration.
 
 `Move` contains a shard number and a `groupId`. The `ShardMaster` should create
@@ -107,7 +107,7 @@ allow us to test your software, but it might also be useful to load balance if
 some shards are more popular than others or some replica groups are slower than
 others. A `Join` or `Leave` following a `Move` could undo a `Move`, since `Join`
 and `Leave` re-balance. The `ShardMaster` should return `OK` upon successful
-completion of a `Move` (one which actually moved the shard) and `ERROR`
+completion of a `Move` (one which actually moved the shard) and `Error`
 otherwise (e.g., if the shard was already assigned to the group).
 
 `Query` contains configuration number. The `ShardMaster` replies with a
@@ -118,8 +118,8 @@ every `Join`, `Leave`, or `Move` that completed before the `Query(-1)` was sent.
 
 The very first configuration, created when the first `Join` is successfully
 executed, should be numbered `INITIAL_CONFIG_NUM`. Before this configuration is
-created, the result of a `Query` should be `NO_CONFIG` instead of a
-`ShardConfig` object.
+created, the result of a `Query` should be `Error` instead of a `ShardConfig`
+object.
 
 
 Our solution to part 1 took approximately 200 lines of code.
@@ -133,8 +133,8 @@ Now you'll build a sharded fault-tolerant key/value storage system.
 
 Each `ShardStoreServer` will operate as part of a replica group. Each replica
 group will serve operations for some of the key-space shards. Use `keyToShard()`
-in `ShardStoreEnvironment` to find which shard a key belongs to; you should use
-use `SingleKeyCommand.key()` (all of the operations you'll handle in part 2 are
+in `ShardStoreNode` to find which shard a key belongs to; you should use use
+`SingleKeyCommand.key()` (all of the operations you'll handle in part 2 are
 single-key operations) in `ShardStoreClient` to determine the key for a given
 operation.
 
@@ -233,10 +233,11 @@ You should pass the part 2 tests; execute them with `run-tests.py --lab 4 --part
   should update its `AMOApplication` state.
 - Think about when it is okay for a server to give shards to the other server
   during re-configuration.
-- The search tests for this lab assume that your Paxos implementation is correct
-  and only model check the new protocol. They do this by instantiating all Paxos
-  groups with a single server. Your Paxos implementation should be able to reach
-  agreement in a single step when there is only one server.
+- The majority of the search tests for this lab assume that your Paxos
+  implementation is correct and only model check the new protocol. They do this
+  by instantiating all Paxos groups with a single server. Your Paxos
+  implementation should be able to reach agreement in a single step when there
+  is only one server.
 
 
 ## Part 3: Transactions
@@ -265,7 +266,7 @@ node failure recovery protocol.
 Your system should guarantee linearizability of all transactions and be
 deadlock-free; it should never reach a state where it cannot make progress.
 Furthermore, it should always be able to process reconfigurations, and when
-there are no ongoing reconfigurations and no conflicting transactions, it should
+there are no ongoing reconfigurations are no conflicting transactions, it should
 be able to make progress and commit transactions (as long as the consensus
 protocol underlying each group continues to make progress, of course). You do
 not need to guarantee fairness, however (more on this below).
