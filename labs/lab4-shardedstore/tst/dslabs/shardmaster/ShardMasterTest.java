@@ -92,7 +92,7 @@ public class ShardMasterTest {
             if (checkIsNext) {
                 fail("Got an old configuration.");
             }
-            assertEquals(config, seen.get(config.configNum()));
+            assertEquals(seen.get(config.configNum()), config);
         } else {
             if (checkIsNext) {
                 assertEquals(maxConfigSeen + 1, config.configNum());
@@ -124,8 +124,8 @@ public class ShardMasterTest {
         assertTrue(max - min <= 1 + (2 * numMoved));
 
         // Check that groups have the right addresses
-        assertEquals(config.groupInfo().keySet(),
-                new HashSet<>(Arrays.asList(groupIds)));
+        assertEquals(new HashSet<>(Arrays.asList(groupIds)),
+                config.groupInfo().keySet());
         for (Integer gid : config.groupInfo().keySet()) {
             assertEquals(group(gid), config.groupInfo().get(gid).getLeft());
         }
@@ -170,9 +170,9 @@ public class ShardMasterTest {
                                   .filter(gid -> !previous.groupInfo().keySet()
                                                           .contains(gid))
                                   .findAny().orElseThrow(AssertionError::new);
-            assertEquals(numMoved,
-                    current.groupInfo().get(newGroup).getRight().size());
-            assertEquals(numMoved, numShards / current.groupInfo().size());
+            assertEquals(current.groupInfo().get(newGroup).getRight().size(),
+                    numMoved);
+            assertEquals(numShards / current.groupInfo().size(), numMoved);
         } else if (currentNumGroups < previousNumGroups) {
             int removedGroup = previous.groupInfo().keySet().stream()
                                        .filter(gid -> !current.groupInfo()
@@ -180,8 +180,9 @@ public class ShardMasterTest {
                                                               .contains(gid))
                                        .findAny()
                                        .orElseThrow(AssertionError::new);
-            assertEquals(numMoved,
-                    previous.groupInfo().get(removedGroup).getRight().size());
+            assertEquals(
+                    previous.groupInfo().get(removedGroup).getRight().size(),
+                    numMoved);
         } else {
             // Must have been a move operation
             assertEquals(1, numMoved);
