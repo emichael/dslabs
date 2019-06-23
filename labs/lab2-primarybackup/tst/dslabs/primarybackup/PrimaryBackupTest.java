@@ -891,4 +891,26 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         assertNotEndCondition(INVARIANT_VIOLATED,
                 Search.bfs(client1Done, searchSettings));
     }
+
+    @Test
+    @PrettyTestName("Multi-client, multi-server random depth-first search")
+    @Category(SearchTests.class)
+    @TestPointValue(20)
+    public void test20RandomSearch() {
+        initSearchState.addServer(server(1));
+        initSearchState.addServer(server(2));
+        initSearchState.addServer(server(3));
+
+        initSearchState.addClientWorker(client(1),
+                KVStoreWorkload.builder().commands(append("foo", "x")).build());
+        initSearchState.addClientWorker(client(2),
+                KVStoreWorkload.builder().commands(append("foo", "y")).build());
+
+        searchSettings.maxDepth(1000).maxTimeSecs(45)
+                      .addInvariant(APPENDS_LINEARIZABLE)
+                      .addPrune(CLIENTS_DONE);
+
+        SearchResults results = Search.dfs(initSearchState, searchSettings);
+        assertNotEndCondition(INVARIANT_VIOLATED, results);
+    }
 }
