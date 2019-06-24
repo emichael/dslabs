@@ -175,14 +175,6 @@ public abstract class AbstractState implements Serializable {
                 Collectors.toMap(Entry::getKey, e -> e.getValue().results()));
     }
 
-    public synchronized long maxWaitTimeMillis() {
-        // TODO: Maybe relocate this method to RunState or override and block in
-        //       SearchState. Doesn't make sense in SearchState
-        return clientWorkers.values().stream()
-                            .mapToLong(ClientWorker::maxWaitTimeMilis).max()
-                            .orElse(0);
-    }
-
     public synchronized Iterable<Node> nodes() {
         return Iterables.concat(servers.values(), clients.values());
     }

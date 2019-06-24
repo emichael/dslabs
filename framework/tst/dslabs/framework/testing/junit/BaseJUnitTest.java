@@ -27,6 +27,7 @@ import dslabs.framework.Client;
 import dslabs.framework.Command;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
+import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
@@ -283,16 +284,19 @@ public abstract class BaseJUnitTest {
     protected void assertMaxWaitTimeLessThan(long allowedMillis) {
         // TODO: maybe shut the runstate and threads down here
 
-        long maxWaitTimeMillis = runState.maxWaitTimeMillis();
-
-        if (maxWaitTimeMillis > allowedMillis) {
-            fail(String.format("Client waited too long, %s ms (%s ms allowed)",
-                    maxWaitTimeMillis, allowedMillis));
-        } else {
-            System.out.println(String.format(
-                    "Maximum client wait time %s ms (%s ms allowed)",
-                    maxWaitTimeMillis, allowedMillis));
+        long maxWaitTimeMillis = 0;
+        for (ClientWorker cw : runState.clientWorkers()) {
+            long t = cw.maxWaitTimeMilis();
+            if (t > allowedMillis) {
+                fail(String.format("%s waited too long, %s ms (%s ms allowed)",
+                        cw.address(), t, allowedMillis));
+            }
+            maxWaitTimeMillis = Math.max(maxWaitTimeMillis, t);
         }
+
+        System.out.println(
+                String.format("Maximum client wait time %s ms (%s ms allowed)",
+                        maxWaitTimeMillis, allowedMillis));
     }
 
     /* Utils */
