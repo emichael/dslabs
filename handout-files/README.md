@@ -183,8 +183,9 @@ forgetting about it frees the programmer from potential errors.
 You are free to use, or ignore, the rest of Lombok. You should note, however,
 that the labs are distributed with a `lombok.config` with a few settings; for
 instance, the field name for the logger you get when you apply the `@Log`
-annotation is `LOG`. Also note that in order to use IntelliJ when working on
-these labs, you'll need to install the Lombok plugin.
+annotation is `LOG`, and the getter methods are not prefixed with `get` or `is`.
+Also note that in order to use IntelliJ when working on these labs, you'll need
+to install the Lombok plugin.
 
 ## Tests
 To run tests, use the included `run-tests.py` script. It takes a number of
