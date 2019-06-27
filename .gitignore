@@ -1,12 +1,6 @@
 # Project build files
-.out-ant/
-.out-idea/
-libs/
-jars/
-doc/
-handout/
-handout.tar.gz
-oddity.jar
+build/
+deps/
 
 
 # Sublime files
@@ -14,6 +8,7 @@ oddity.jar
 
 
 # IntelliJ
+.out-idea/
 .idea/workspace.xml
 .idea/tasks.xml
 .idea/dictionaries/
@@ -38,3 +33,7 @@ Desktop.ini
 
 # Vim files
 *.swp
+
+
+# Gradle
+.gradle/

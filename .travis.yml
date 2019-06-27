@@ -13,7 +13,7 @@ before_install:
   - git config --global user.name "Deployment Bot (from Travis CI)"
   - git config --global user.email "deploy@travis-ci.org"
 
-install: ant download-libs
+install: make dependencies
 
 script: make all test
 
@@ -21,7 +21,7 @@ after_success:
   - DIR="`mktemp -d`"
   - cd "$DIR"
   - git init
-  - cp -r "$TRAVIS_BUILD_DIR/handout/." ./
+  - cp -r "$TRAVIS_BUILD_DIR/build/handout/." ./
   - git add ./
   - git commit -m "Committing built handout"
   - git remote add origin "git@github.com:$TRAVIS_REPO_SLUG.git"

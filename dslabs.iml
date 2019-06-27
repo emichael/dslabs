@@ -15,51 +15,38 @@
       <sourceFolder url="file://$MODULE_DIR$/labs/lab0-pingpong/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/labs/lab0-pingpong/tst" isTestSource="true" />
       <sourceFolder url="file://$MODULE_DIR$/framework/tst-self" isTestSource="true" />
-      <excludeFolder url="file://$MODULE_DIR$/.out-ant" />
-      <excludeFolder url="file://$MODULE_DIR$/doc" />
-      <excludeFolder url="file://$MODULE_DIR$/handout" />
-      <excludeFolder url="file://$MODULE_DIR$/handout-files" />
-      <excludeFolder url="file://$MODULE_DIR$/jars" />
+      <excludeFolder url="file://$MODULE_DIR$/.gradle" />
+      <excludeFolder url="file://$MODULE_DIR$/.gradle-wrapper" />
+      <excludeFolder url="file://$MODULE_DIR$/.idea" />
+      <excludeFolder url="file://$MODULE_DIR$/build" />
+      <excludeFolder url="file://$MODULE_DIR$/deps" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/libs/compile" />
+          <root url="file://$MODULE_DIR$/deps/compile" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="file://$MODULE_DIR$/libs/compile" />
+          <root url="file://$MODULE_DIR$/deps/compile" />
         </SOURCES>
-        <jarDirectory url="file://$MODULE_DIR$/libs/compile" recursive="false" />
-        <jarDirectory url="file://$MODULE_DIR$/libs/compile" recursive="false" type="SOURCES" />
-      </library>
-    </orderEntry>
-    <orderEntry type="module-library" scope="RUNTIME">
-      <library>
-        <CLASSES>
-          <root url="file://$MODULE_DIR$/libs/runtime" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/libs/runtime" />
-        </SOURCES>
-        <jarDirectory url="file://$MODULE_DIR$/libs/runtime" recursive="false" />
-        <jarDirectory url="file://$MODULE_DIR$/libs/runtime" recursive="false" type="SOURCES" />
+        <jarDirectory url="file://$MODULE_DIR$/deps/compile" recursive="false" />
+        <jarDirectory url="file://$MODULE_DIR$/deps/compile" recursive="false" type="SOURCES" />
       </library>
     </orderEntry>
     <orderEntry type="module-library" scope="TEST">
       <library>
         <CLASSES>
-          <root url="file://$MODULE_DIR$/libs/test" />
+          <root url="file://$MODULE_DIR$/deps/test" />
         </CLASSES>
         <JAVADOC />
         <SOURCES>
-          <root url="file://$MODULE_DIR$/libs/test" />
+          <root url="file://$MODULE_DIR$/deps/test" />
         </SOURCES>
-        <jarDirectory url="file://$MODULE_DIR$/libs/test" recursive="false" />
-        <jarDirectory url="file://$MODULE_DIR$/libs/test" recursive="false" type="SOURCES" />
+        <jarDirectory url="file://$MODULE_DIR$/deps/test" recursive="false" />
+        <jarDirectory url="file://$MODULE_DIR$/deps/test" recursive="false" type="SOURCES" />
       </library>
     </orderEntry>
   </component>

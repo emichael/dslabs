@@ -4,21 +4,18 @@
     {
       "path": "./",
       "folder_exclude_patterns": [
-        ".out-ant",
+        "build",
+        "deps",
         ".out-idea",
-        ".idea",
-        "handout",
-        "doc",
-        "libs",
-        "jars",
+        "/.idea",
+        ".gradle",
+        ".gradle-wrapper"
       ],
       "name": "Distributed Systems Labs",
       "file_exclude_patterns": [
-        "handout.tar.gz",
-        "dviz.jar",
         "*.sublime-workspace",
         "*.sublime-project",
-        "*.iml",
+        "dslabs.iml",
       ]
     }
   ]

@@ -1,0 +1,167 @@
+// Gradle 4.4.1
+
+plugins {
+  id 'java'
+  id 'com.github.johnrengelman.shadow' version '4.0.4'
+}
+
+import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+sourceSets {
+  main {
+    java {
+      srcDirs = ['framework/src']
+    }
+  }
+
+  grader {
+    java {
+      srcDirs = ['framework/tst']
+    }
+    compileClasspath += main.output
+    annotationProcessorPath += main.annotationProcessorPath
+  }
+
+  test {
+    java {
+      srcDirs = ['framework/tst-self']
+    }
+    compileClasspath += grader.compileClasspath + grader.output
+    runtimeClasspath += grader.runtimeClasspath
+    annotationProcessorPath += grader.annotationProcessorPath
+  }
+
+  labs {
+    java {
+      srcDirs = [ 'labs/lab0-pingpong/src',
+                  'labs/lab1-clientserver/src',
+                  'labs/lab2-primarybackup/src',
+                  'labs/lab3-paxos/src',
+                  'labs/lab4-shardedstore/src' ]
+    }
+    compileClasspath += main.compileClasspath + main.output
+    runtimeClasspath += main.runtimeClasspath
+    annotationProcessorPath += main.annotationProcessorPath
+  }
+
+  labsTests {
+    java {
+      srcDirs = [ 'labs/lab0-pingpong/tst',
+                  'labs/lab1-clientserver/tst',
+                  'labs/lab2-primarybackup/tst',
+                  'labs/lab3-paxos/tst',
+                  'labs/lab4-shardedstore/tst']
+    }
+    compileClasspath += grader.compileClasspath + grader.output + labs.output
+    runtimeClasspath += grader.runtimeClasspath + labs.output
+    annotationProcessorPath += grader.annotationProcessorPath
+  }
+}
+
+configurations {
+  sources
+  graderSources.extendsFrom sources
+
+  graderImplementation.extendsFrom implementation
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation      'org.projectlombok:lombok:1.18.6'
+  annotationProcessor 'org.projectlombok:lombok:1.18.6'
+  sources             'org.projectlombok:lombok:1.18.6:sources'
+
+  implementation 'com.google.guava:guava:23.0'
+  sources        'com.google.guava:guava:23.0:sources'
+  implementation 'org.apache.commons:commons-lang3:3.7'
+  sources        'org.apache.commons:commons-lang3:3.7:sources'
+
+  implementation 'com.fasterxml.jackson.core:jackson-core:2.9.3'
+  sources        'com.fasterxml.jackson.core:jackson-core:2.9.3:sources'
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.3'
+  sources        'com.fasterxml.jackson.core:jackson-databind:2.9.3:sources'
+
+  graderImplementation 'junit:junit:4.12'
+  graderSources        'junit:junit:4.12:sources'
+  graderImplementation 'uk.com.robust-it:cloning:1.9.10'
+  graderSources        'uk.com.robust-it:cloning:1.9.10:sources'
+
+  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.9.3'
+  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.9.3:sources'
+  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.3'
+  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.3:sources'
+  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.3'
+  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.3:sources'
+}
+
+// Create reproducible jars
+tasks.withType(AbstractArchiveTask) {
+  preserveFileTimestamps = false
+  reproducibleFileOrder = true
+}
+
+task scaffoldingJar(type: ShadowJar) {
+  baseName = 'framework'
+  classifier = 'compile'
+  from sourceSets.main.output
+  configurations = [ project.configurations.runtimeClasspath,
+                     project.configurations.sources ]
+}
+
+task graderJar(type: ShadowJar) {
+  baseName = 'framework'
+  from sourceSets.main.output,
+       sourceSets.grader.output
+  configurations = [ project.configurations.graderRuntimeClasspath,
+                     project.configurations.graderSources ]
+}
+
+task sourcesJar(type: ShadowJar) {
+  baseName = 'framework'
+  classifier = 'sources'
+  from sourceSets.main.java,
+       sourceSets.grader.java,
+  configurations = []
+}
+
+jar.enabled = false
+
+javadoc {
+  title = 'Distributed Systems Labs Framework'
+  destinationDir = file("$buildDir/doc")
+  options.addStringOption('notimestamp', '-quiet')
+}
+
+tasks.assemble.dependsOn tasks.scaffoldingJar
+tasks.assemble.dependsOn tasks.graderJar
+tasks.assemble.dependsOn tasks.sourcesJar
+tasks.assemble.dependsOn tasks.javadoc
+
+// copy dependencies into directories that IntelliJ can find
+task copyDependencies {
+  doLast {
+    copy {
+      from configurations.compileClasspath,
+           configurations.runtimeClasspath,
+           configurations.sources
+      into "deps/compile"
+    }
+    copy {
+      from configurations.graderCompileClasspath,
+           configurations.graderRuntimeClasspath,
+           configurations.graderSources
+      into "deps/test"
+    }
+  }
+}
+
+// Put gradle wrapper in a hidden folder
+wrapper {
+  jarFile = file('.gradle-wrapper/gradle-wrapper.jar')
+}

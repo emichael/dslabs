@@ -1,20 +1,16 @@
-.PHONY: all test clean clean-all
+.PHONY: all test dependencies clean clean-all
 
 ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.38a/oddity.jar
 
-FRAMEWORK_FILES_FOLDER = framework
-LAB_FILES_FOLDER = labs
-HANDOUT_FILES_FOLDER = handout-files
-
 FRAMEWORK_FILES = $(shell find framework -type f | sed 's/ /\\ /g')
-LAB_FILES = $(shell find $(LAB_FILES_FOLDER) -type f | sed 's/ /\\ /g')
-HANDOUT_FILES = $(shell find $(HANDOUT_FILES_FOLDER) -type f | sed 's/ /\\ /g')
-JAR_FILES = jars/framework.jar \
-						jars/framework-sources.jar \
-						jars/framework-compile.jar
-OTHER_FILES = lombok.config \
-						  doc/ \
-						  oddity.jar
+LAB_FILES = $(shell find labs -type f | sed 's/ /\\ /g')
+HANDOUT_FILES = $(shell find handout-files -type f | sed 's/ /\\ /g')
+
+JAR_FILES = build/libs/framework.jar \
+						build/libs/framework-compile.jar \
+						build/libs/framework-sources.jar
+
+OTHER_FILES = build/doc/ lombok.config deps/oddity.jar
 
 
 ifeq ($(shell uname -s),Darwin)
@@ -30,31 +26,32 @@ else
 endif
 
 
-all: handout/ handout.tar.gz
+all: build/handout/
 
+dependencies: deps/oddity.jar
+	./gradlew copyDependencies
 
-$(JAR_FILES) doc/: $(FRAMEWORK_FILES)
-	ant jar-framework jar-framework-sources jar-framework-compile javadoc
+$(JAR_FILES) build/doc/: $(FRAMEWORK_FILES)
+	./gradlew assemble
 	touch $@
 
-oddity.jar:
+deps/oddity.jar:
+	mkdir -p deps
 	wget -O $@ $(ODDITY_URL)
 
-handout/: $(LAB_FILES) $(JAR_FILES) $(HANDOUT_FILES) $(OTHER_FILES)
+build/handout/: $(LAB_FILES) $(JAR_FILES) $(HANDOUT_FILES) $(OTHER_FILES)
 	rm -rf $@
 	mkdir $@
-	$(CP) -r $(LAB_FILES_FOLDER) $(HANDOUT_FILES_FOLDER)/. $(JAR_FILES) $(OTHER_FILES) $@
+	$(CP) -r labs handout-files/. $(JAR_FILES) $(OTHER_FILES) $@
 
-handout.tar.gz: handout/
-	$(TAR) -czf $@ --transform "s/^handout/dslabs/" $^
+build/handout.tar.gz: build/handout/
+	$(TAR) -czf $@ --transform "s/^build\/handout/dslabs/" $^
 
 test:
-	ant self-test
+	./gradlew test
 
 clean:
-	ant clean
-	rm -rf handout handout.tar.gz
+	rm -rf build
 
 clean-all: clean
-	rm -rf oddity.jar
-	ant clean-all
+	rm -rf deps .gradle
