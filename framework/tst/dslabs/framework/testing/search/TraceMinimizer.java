@@ -52,6 +52,8 @@ abstract class TraceMinimizer {
                                            List<Event> events) {
         SearchState s = initialState;
         for (Event e : events) {
+            // TODO: don't use null settings here, it re-initialized every time
+            // TODO: do we need to use same settings as the search?
             SearchState next = s.stepEvent(e, null, false);
             if (next == null) {
                 break;
