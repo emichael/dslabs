@@ -107,7 +107,7 @@ import org.apache.commons.lang3.tuple.Triple;
  */
 @Log
 @EqualsAndHashCode(of = {"subNodes"})
-@ToString(of = {"subNodes"})
+@ToString(of = {"address", "subNodes"})
 public abstract class Node implements Serializable {
     @JsonIgnore @NonNull private final Address address;
 
