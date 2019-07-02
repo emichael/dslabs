@@ -46,11 +46,8 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
     @TestPointValue(20)
     public void test02SingleClient() throws InterruptedException {
         runState.addClientWorker(client(1), simpleWorkload);
-
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 10 * 1000)
@@ -65,10 +62,8 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
                     appendDifferentKeyWorkload(numRounds));
         }
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 10 * 1000)
@@ -83,10 +78,8 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
                     appendSameKeyWorkload(numRounds));
         }
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(APPENDS_LINEARIZABLE);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 30 * 1000)

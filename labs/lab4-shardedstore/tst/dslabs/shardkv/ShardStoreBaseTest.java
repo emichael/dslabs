@@ -47,16 +47,14 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
     /* Setup and cleanup */
 
     @Override
-    public void setupTest() {
-        super.setupTest();
+    protected void setupTest() {
         builder = StateGenerator.builder();
         builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
     }
 
     @Override
-    public void cleanupTest() throws InterruptedException {
+    protected void cleanupTest() {
         configController = null;
-        super.cleanupTest();
     }
 
     static void setupBuilder(StateGeneratorBuilder builder, int numGroups,
@@ -245,13 +243,12 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         // Now, check from the end of the Join
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
                       .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(joinFinished, searchSettings));
 
         // Search from the beginning with no timers (potentially not useful)
         searchSettings.deliverTimers(false);
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
     }
 
     /**
@@ -290,17 +287,15 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         // Search for invariant violations from there
         searchSettings.clearInvariants().addInvariant(RESULTS_OK).resetNetwork()
                       .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(ccaDone, searchSettings));
+        assertEndConditionValidAndContinue(Search.bfs(ccaDone, searchSettings));
 
         // Search for invariant violations from first Join
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(firstJoin, searchSettings));
 
         // Again without timers (potentially not useful)
         searchSettings.deliverTimers(false).maxTimeSecs(15);
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(firstJoin, searchSettings));
+        assertEndConditionValid(Search.bfs(firstJoin, searchSettings));
     }
 
     /**
@@ -349,12 +344,11 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         // Search for invariant violations from second join being done
         searchSettings.clearInvariants().resetNetwork().maxTimeSecs(30)
                       .addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(secondJoin, searchSettings));
 
         // Again without timers (potentially not useful)
         searchSettings.deliverTimers(false);
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(secondJoin, searchSettings));
+        assertEndConditionValid(Search.bfs(secondJoin, searchSettings));
     }
 }

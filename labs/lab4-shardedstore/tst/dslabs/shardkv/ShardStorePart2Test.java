@@ -26,7 +26,6 @@ import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.framework.testing.StatePredicate.resultsHaveType;
 import static dslabs.framework.testing.StatePredicate.statePredicate;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.kvstore.KVStoreWorkload.KEY_NOT_FOUND;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.MULTI_GETS_MATCH;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.OK;
@@ -60,7 +59,6 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         runState.stop();
 
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
     }
 
     @Test(timeout = 5 * 1000)
@@ -86,7 +84,6 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         runState.stop();
 
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
     }
 
     @Test(timeout = 10 * 1000)
@@ -167,7 +164,6 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         runSettings.addInvariant(RESULTS_OK).addInvariant(
                 resultsHaveType(client(2), MultiGetResult.class))
                    .addInvariant(MULTI_GETS_MATCH);
-        assertRunInvariantsHold();
     }
 
     private void repeatedPutsGetsInternal(boolean moveShards)
@@ -313,8 +309,7 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
                                             "foo-2", KEY_NOT_FOUND));
                 })).addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
 
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.dfs(initSearchState, searchSettings));
+        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
     }
 
     @Test

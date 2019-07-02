@@ -88,10 +88,8 @@ public final class PingTest extends BaseJUnitTest {
                         .results(new Pong("Hello, World!")).build();
         runState.addClientWorker(client(1), workload);
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 5 * 1000)
@@ -106,10 +104,8 @@ public final class PingTest extends BaseJUnitTest {
             runState.addClientWorker(client(i), workload);
         }
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 5 * 1000)
@@ -120,10 +116,8 @@ public final class PingTest extends BaseJUnitTest {
 
         runSettings.networkUnreliable(true);
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test

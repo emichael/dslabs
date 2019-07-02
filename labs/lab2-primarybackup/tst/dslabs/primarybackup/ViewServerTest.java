@@ -53,10 +53,11 @@ public class ViewServerTest extends BaseJUnitTest {
         // TODO: clone messages and timers!!!
 
         vs.config(me -> messages
-                .add(new MessageEnvelope(me.getLeft(), me.getMiddle(),
-                        me.getRight())), null, te -> timers
-                .add(new TimerEnvelope(te.getLeft(), te.getMiddle(),
-                        te.getRight().getLeft(), te.getRight().getRight())));
+                        .add(new MessageEnvelope(me.getLeft(), me.getMiddle(),
+                                me.getRight())), null, te -> timers
+                        .add(new TimerEnvelope(te.getLeft(), te.getMiddle(),
+                                te.getRight().getLeft(), te.getRight().getRight())),
+                null, true);
 
         vs.init();
     }

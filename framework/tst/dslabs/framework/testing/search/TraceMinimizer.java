@@ -25,11 +25,12 @@ package dslabs.framework.testing.search;
 import dslabs.framework.testing.StatePredicate;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 
 abstract class TraceMinimizer {
-    static SearchState minimizeTrace(SearchState state,
-                                     final StatePredicate predicate,
-                                     boolean expectedResult) {
+    static SearchState minimizeInvariantCausingTrace(SearchState state,
+                                                     final StatePredicate predicate,
+                                                     boolean expectedResult) {
         boolean shortenedEventsList;
         do {
             shortenedEventsList = false;
@@ -46,6 +47,33 @@ abstract class TraceMinimizer {
             }
         } while (shortenedEventsList);
         return state;
+    }
+
+    /**
+     * Returns a state that results in an exception of the same class as the
+     * original one.
+     *
+     * @param state
+     *         the state that throws an exception
+     * @return another state throwing the same type of exception
+     */
+    static SearchState minimizeExceptionCausingTrace(SearchState state) {
+        final Throwable exception = state.thrownException();
+        assert exception != null;
+
+        return minimizeInvariantCausingTrace(state,
+                StatePredicate.statePredicate(null, s -> {
+                    if (!(s instanceof SearchState)) {
+                        return false;
+                    }
+
+                    Throwable e = ((SearchState) s).thrownException();
+                    if (e == null) {
+                        return false;
+                    }
+
+                    return Objects.equals(e.getClass(), exception.getClass());
+                }), true);
     }
 
     private static SearchState applyEvents(SearchState initialState,

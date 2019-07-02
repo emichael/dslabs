@@ -43,6 +43,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 import lombok.NonNull;
 
+import static dslabs.framework.testing.search.SearchResults.EndCondition.EXCEPTION_THROWN;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_EXHAUSTED;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EXHAUSTED;
@@ -70,7 +71,7 @@ public abstract class Search {
      */
     private int numActiveWorkers = 0;
 
-    protected final SearchResults results = new SearchResults();
+    private final SearchResults results = new SearchResults();
 
     private long startTimeMillis;
 
@@ -136,7 +137,8 @@ public abstract class Search {
                     (settings.timeLimited() &&
                             ((System.currentTimeMillis() - startTimeMillis) >
                                     (settings.maxTimeSecs() * 1000))) ||
-                    (results.invariantViolated() != null);
+                    (results.invariantViolated() != null) ||
+                    (results.exceptionThrown());
         } finally {
             lock.unlock();
         }
@@ -169,33 +171,67 @@ public abstract class Search {
         return s1.wrapped().equals(s2.wrapped());
     }
 
+    protected enum StateStatus {
+        VALID, TERMINAL, PRUNED
+    }
+
     /**
      * Convenience method to be used by workers to execute checks for each state
      * encountered.
      *
-     * @param node
-     *         the initial state
-     * @param event
-     *         the event that transitions the initial state to the successor
-     *         state
-     * @param successor
-     *         the successor state
+     * @param s
+     *         the state to check
+     * @param shouldMinimize
+     *         whether or not traces should be run through the minimizer
      */
-    protected final void doChecks(SearchState node, Event event,
-                                  SearchState successor) {
+    protected final StateStatus checkState(SearchState s,
+                                           boolean shouldMinimize) {
+        if (s.thrownException() != null) {
+            if (shouldMinimize) {
+                // Log the exception to shut the other threads down
+                results.exceptionThrown(null);
+
+                // Minimize the trace and log the actual exception-causing state
+                s = TraceMinimizer.minimizeExceptionCausingTrace(s);
+            }
+            results.exceptionThrown(s);
+            return StateStatus.TERMINAL;
+        }
+
+        if (settings.invariantViolated(s)) {
+            StatePredicate inv = settings.whichInvariantViolated(s);
+            if (shouldMinimize) {
+                // Log the violation to shut the other threads down
+                results.invariantViolated(null, inv);
+
+                // Minimize the trace and log the actual invariant-violating state
+                s = TraceMinimizer.minimizeInvariantCausingTrace(s, inv, false);
+            }
+            results.invariantViolated(s, inv);
+            return StateStatus.TERMINAL;
+        }
+
         if (GlobalSettings.doChecks()) {
+            SearchState previous = s.previous();
+            Event e = s.previousEvent();
+
             // Check if event is deterministic
-            if (!statesEqual(successor,
-                    node.stepEvent(event, settings, true))) {
-                CheckLogger.notDeterministic(event, node);
+            if (!statesEqual(s, previous.stepEvent(e, settings, true))) {
+                CheckLogger.notDeterministic(e, previous);
             }
 
             // Check if event is idempotent
-            if (event.isMessage() && !statesEqual(successor,
-                    successor.stepEvent(event, settings, true))) {
-                CheckLogger.notIdempotent(event, node);
+            if (e.isMessage() &&
+                    !statesEqual(s, s.stepEvent(e, settings, true))) {
+                CheckLogger.notIdempotent(e, previous);
             }
         }
+
+        if (settings.shouldPrune(s)) {
+            return StateStatus.PRUNED;
+        }
+
+        return StateStatus.VALID;
     }
 
     SearchResults run(SearchState initialState) {
@@ -334,7 +370,9 @@ public abstract class Search {
 
         lock.lock();
         try {
-            if (results.invariantViolatingState() != null) {
+            if (results.exceptionalState() != null) {
+                results.endCondition(EXCEPTION_THROWN);
+            } else if (results.invariantViolatingState() != null) {
                 results.endCondition(INVARIANT_VIOLATED);
             } else if (numActiveWorkers == 0 && spaceExhausted()) {
                 results.endCondition(SPACE_EXHAUSTED);
@@ -364,6 +402,7 @@ public abstract class Search {
         return new RandomDFS(settings).run(initialState);
     }
 }
+
 
 class BFS extends Search {
     private final Queue<SearchState> queue = new ConcurrentLinkedQueue<>();
@@ -421,15 +460,11 @@ class BFS extends Search {
                 continue;
             }
 
-            if (settings.invariantViolated(successor)) {
-                results.invariantViolated(successor,
-                        settings.whichInvariantViolated(successor));
+            StateStatus status = checkState(successor, false);
+
+            if (status.equals(StateStatus.TERMINAL)) {
                 return;
-            }
-
-            doChecks(node, event, successor);
-
-            if (settings.shouldPrune(successor)) {
+            } else if (status.equals(StateStatus.PRUNED)) {
                 continue;
             }
 
@@ -439,6 +474,7 @@ class BFS extends Search {
         }
     }
 }
+
 
 class RandomDFS extends Search {
     private SearchState initialState;
@@ -500,25 +536,11 @@ class RandomDFS extends Search {
             for (Event event : events) {
                 SearchState s = current.stepEvent(event, settings, true);
 
-                if (s == null) {
-                    continue;
-                }
+                StateStatus status = checkState(s, true);
 
-                if (settings.invariantViolated(s)) {
-                    StatePredicate violatedInvariant =
-                            settings.whichInvariantViolated(s);
-
-                    // Log the violation to shut the other threads down
-                    results.invariantViolated(null, violatedInvariant);
-
-                    // Minimize the trace and log the actual invariant-violating state
-                    s = TraceMinimizer
-                            .minimizeTrace(s, violatedInvariant, false);
-                    results.invariantViolated(s, violatedInvariant);
+                if (status.equals(StateStatus.TERMINAL)) {
                     return;
-                }
-
-                if (settings.shouldPrune(s)) {
+                } else if (status.equals(StateStatus.PRUNED)) {
                     continue;
                 }
 

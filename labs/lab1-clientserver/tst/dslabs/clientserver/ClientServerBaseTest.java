@@ -15,9 +15,7 @@ abstract class ClientServerBaseTest extends BaseJUnitTest {
     static final Address sa = new LocalAddress("server");
 
     @Override
-    public void setupTest() {
-        super.setupTest();
-
+    protected void setupTest() {
         builder = builder();
 
         runState = new RunState(builder.build());

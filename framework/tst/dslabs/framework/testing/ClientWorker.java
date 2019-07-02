@@ -74,7 +74,8 @@ public final class ClientWorker extends Node {
     @JsonIgnore private long lastSendTimeMillis;
 
     // Resulting state
-    @Getter @JsonIgnore private final List<Command> sentCommands = new ArrayList<>();
+    @Getter @JsonIgnore private final List<Command> sentCommands =
+            new ArrayList<>();
     @Getter private final List<Result> results = new ArrayList<>();
     @Getter @JsonIgnore private boolean resultsOk = true;
     @Getter @JsonIgnore private Pair<Result, Result> expectedAndReceived = null;
@@ -265,9 +266,12 @@ public final class ClientWorker extends Node {
     public final void config(
             Consumer<Triple<Address, Address, Message>> messageAdder,
             Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-            Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder) {
+            Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder,
+            Consumer<Throwable> throwableCatcher, boolean logExceptions) {
         // TODO: make sure there's no overhead for having the config both places
-        super.config(messageAdder, batchMessageAdder, timerAdder);
-        clientNode().config(messageAdder, batchMessageAdder, timerAdder);
+        super.config(messageAdder, batchMessageAdder, timerAdder,
+                throwableCatcher, logExceptions);
+        clientNode().config(messageAdder, batchMessageAdder, timerAdder,
+                throwableCatcher, logExceptions);
     }
 }

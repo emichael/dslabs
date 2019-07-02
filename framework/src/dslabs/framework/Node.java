@@ -24,6 +24,7 @@ package dslabs.framework;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Collection;
@@ -116,6 +117,8 @@ public abstract class Node implements Serializable {
             batchMessageAdder;
     transient private Consumer<Triple<Address, Timer, Pair<Integer, Integer>>>
             timerAdder;
+    transient private Consumer<Throwable> throwableCatcher;
+    transient private boolean logExceptions = true;
 
     @JsonIgnore private Node parentNode;
 
@@ -499,9 +502,22 @@ public abstract class Node implements Serializable {
                     "Could not find method %s from %s with args %s", methodName,
                     n.getClass().getSimpleName(), Arrays.toString(args)));
         } catch (Exception e) {
-            LOG.log(Level.SEVERE, String.format(
-                    "Error invoking method %s from %s with args %s", methodName,
-                    n.getClass().getSimpleName(), Arrays.toString(args)), e);
+            Throwable t = e;
+
+            if (e instanceof InvocationTargetException) {
+                t = ((InvocationTargetException) e).getTargetException();
+            }
+
+            if (logExceptions) {
+                LOG.log(Level.SEVERE, String.format(
+                        "Error invoking method %s from %s with args %s",
+                        methodName, n.getClass().getSimpleName(),
+                        Arrays.toString(args)), t);
+            }
+
+            if (throwableCatcher != null) {
+                throwableCatcher.accept(t);
+            }
         }
 
         return null;
@@ -514,7 +530,9 @@ public abstract class Node implements Serializable {
      */
     public void config(Consumer<Triple<Address, Address, Message>> messageAdder,
                        Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-                       Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder) {
+                       @NonNull Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder,
+                       Consumer<Throwable> throwableCatcher,
+                       boolean logExceptions) {
         if (parentNode != null) {
             LOG.severe("Cannot configure Node already configured as sub-Node.");
         }
@@ -527,5 +545,7 @@ public abstract class Node implements Serializable {
         this.messageAdder = messageAdder;
         this.batchMessageAdder = batchMessageAdder;
         this.timerAdder = timerAdder;
+        this.throwableCatcher = throwableCatcher;
+        this.logExceptions = logExceptions;
     }
 }

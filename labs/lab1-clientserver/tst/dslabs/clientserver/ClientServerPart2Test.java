@@ -46,10 +46,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
 
         runState.addClientWorker(client(1), simpleWorkload);
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 15 * 1000)
@@ -64,10 +62,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         runState.addClientWorker(client(1),
                 appendDifferentKeyWorkload(numRounds));
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 30 * 1000)
@@ -84,10 +80,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
                     appendDifferentKeyWorkload(numRounds));
         }
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 15 * 1000)
@@ -104,10 +98,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
                     appendSameKeyWorkload(numRounds));
         }
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(APPENDS_LINEARIZABLE);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 10 * 1000)

@@ -64,8 +64,7 @@ import static org.junit.Assert.fail;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PaxosTest extends BaseJUnitTest {
     @Override
-    public void setupTest() {
-        super.setupTest();
+    protected void setupTest() {
         builder = StateGenerator.builder();
         builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
     }
@@ -303,10 +302,8 @@ public class PaxosTest extends BaseJUnitTest {
         setupStates(3);
         runState.addClientWorker(client(1), simpleWorkload);
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 5 * 1000)
@@ -435,7 +432,6 @@ public class PaxosTest extends BaseJUnitTest {
         runState.stop();
 
         runSettings.addInvariant(ALL_RESULTS_SAME);
-        assertRunInvariantsHold();
     }
 
     @Test(timeout = 10 * 1000)
@@ -450,11 +446,9 @@ public class PaxosTest extends BaseJUnitTest {
             runState.addClientWorker(client(i), appendSameKeyWorkload(nRounds));
         }
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(CLIENTS_DONE);
         runSettings.addInvariant(APPENDS_LINEARIZABLE);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 10 * 1000)
@@ -779,7 +773,6 @@ public class PaxosTest extends BaseJUnitTest {
         // Run the new batch of clients to make sure we're not in deadlock
         runSettings.reconnect();
         runState.run(runSettings);
-        assertRunInvariantsHold();
     }
 
 
@@ -808,11 +801,11 @@ public class PaxosTest extends BaseJUnitTest {
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
                       .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE)
                       .maxTimeSecs(30);
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(results.invariantViolatingState(), searchSettings));
 
         searchSettings.deliverTimers(false);
-        assertNotEndCondition(INVARIANT_VIOLATED,
+        assertEndConditionValid(
                 Search.bfs(results.invariantViolatingState(), searchSettings));
     }
 
@@ -828,12 +821,11 @@ public class PaxosTest extends BaseJUnitTest {
         // Check that no commands can be decided without a majority
         searchSettings.maxTimeSecs(30).addInvariant(NONE_DECIDED)
                       .partition(server(1), server(2), client(1));
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(initSearchState, searchSettings));
 
         searchSettings.deliverTimers(false);
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
     }
 
     @Test
@@ -875,24 +867,20 @@ public class PaxosTest extends BaseJUnitTest {
                       .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE)
                       .resetNetwork()
                       .partition(server(1), server(3), client(2));
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
+        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
+        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
 
         // Same checks but without timers (not necessarily useful)
         searchSettings.deliverTimers(false).resetNetwork()
                       .partition(server(1), server(3), client(2));
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
+        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
+        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
     }
 
     @Test
@@ -997,8 +985,7 @@ public class PaxosTest extends BaseJUnitTest {
 
         searchSettings.linkActive(server(3), server(4), true).clearInvariants()
                       .addInvariant(slotValid(1));
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(c1AtServer1, searchSettings));
+        assertEndConditionValid(Search.bfs(c1AtServer1, searchSettings));
     }
 
     private void randomSearch() {
@@ -1011,8 +998,7 @@ public class PaxosTest extends BaseJUnitTest {
                       .addInvariant(APPENDS_LINEARIZABLE)
                       .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE);
 
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.dfs(initSearchState, searchSettings));
+        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
     }
 
     @Test

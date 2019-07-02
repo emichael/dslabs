@@ -78,6 +78,8 @@ public final class SearchState extends AbstractState
     @Getter private final transient Event previousEvent;
     @Getter private final transient int depth;
 
+    @Getter private transient Throwable thrownException;
+
     // TODO: only return iterable for these in getter?
     @Getter private final transient Set<MessageEnvelope> newMessages;
     @Getter private final transient Set<TimerEnvelope> newTimers;
@@ -214,7 +216,11 @@ public final class SearchState extends AbstractState
                             bounds.getRight());
             timers.get(timerEnvelope.to().rootAddress()).add(timerEnvelope);
             newTimers.add(timerEnvelope);
-        });
+        }, t -> {
+            assert t != null;
+            assert thrownException == null;
+            thrownException = t;
+        }, false);
     }
 
     Collection<Event> events(SearchSettings settings) {

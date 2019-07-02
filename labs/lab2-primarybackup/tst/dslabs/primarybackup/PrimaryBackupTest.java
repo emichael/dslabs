@@ -78,9 +78,7 @@ import static org.junit.Assert.fail;
 public class PrimaryBackupTest extends BaseJUnitTest {
 
     @Override
-    public void setupTest() {
-        super.setupTest();
-
+    protected void setupTest() {
         builder = builder();
 
         runState = new RunState(builder.build());
@@ -315,10 +313,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         runState.addServer(server(1));
         runState.addClientWorker(client(1), simpleWorkload);
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 5 * 1000)
@@ -434,10 +430,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         runSettings.networkDeliverRate(0.8);
 
-        runState.run(runSettings);
-
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
+        runState.run(runSettings);
     }
 
     @Test(timeout = 10 * 1000)
@@ -524,11 +518,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Read from the old backup
         runState.addClientWorker(new LocalAddress("client-readbackup"),
                 readKeys);
-        runState.run(runSettings);
 
         // Ensure primary and backup had equal keys
         runSettings.addInvariant(ALL_RESULTS_SAME);
-        assertRunInvariantsHold();
+
+        runState.run(runSettings);
     }
 
     @Test(timeout = 10 * 1000)
@@ -571,11 +565,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Read from the old backup
         runState.addClientWorker(new LocalAddress("client-readbackup"),
                 readKeys);
-        runState.run(runSettings);
 
         // Ensure primary and backup had equal keys
         runSettings.clearInvariants().addInvariant(ALL_RESULTS_SAME);
-        assertRunInvariantsHold();
+
+        runState.run(runSettings);
     }
 
     @Test(timeout = 30 * 1000)
@@ -690,8 +684,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Make sure results match
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
                       .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
     }
 
     @Test
@@ -718,15 +711,15 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         searchSettings.clearInvariants().clearPrunes().addInvariant(RESULTS_OK)
                       .addPrune(CLIENTS_DONE)
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 3));
-        assertNotEndCondition(INVARIANT_VIOLATED,
+        assertEndConditionValid(
                 Search.bfs(viewInitializedState, searchSettings));
 
         searchSettings.clearPrunes().addPrune(CLIENTS_DONE);
-        assertNotEndCondition(INVARIANT_VIOLATED,
+        assertEndConditionValid(
                 Search.bfs(viewInitializedState, searchSettings));
 
         searchSettings.resetNetwork();
-        assertNotEndCondition(INVARIANT_VIOLATED,
+        assertEndConditionValid(
                 Search.bfs(viewInitializedState, searchSettings));
     }
 
@@ -818,7 +811,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 3)).addPrune(
                 hasViewReply(INITIAL_VIEWNUM + 2, server(1), null))
                       .maxTimeSecs(30);
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(forwardedReversed, searchSettings));
 
         // Do the same thing, but this time, only forward second request to backup
@@ -833,12 +826,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             onlySecondForwarded =
                     onlySecondForwarded.stepMessage(me, null, false);
         }
-        assertNotEndConditionAndContinue(INVARIANT_VIOLATED,
+        assertEndConditionValidAndContinue(
                 Search.bfs(onlySecondForwarded, searchSettings));
 
         // Finally, do one last BFS from the very beginning when requests were sent
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(requestsSent, searchSettings));
+        assertEndConditionValid(Search.bfs(requestsSent, searchSettings));
     }
 
     @Test
@@ -888,8 +880,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 Search.bfs(client1Done, searchSettings));
 
         searchSettings.clearInvariants().addInvariant(RESULTS_OK);
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.bfs(client1Done, searchSettings));
+        assertEndConditionValid(Search.bfs(client1Done, searchSettings));
     }
 
     @Test
@@ -911,6 +902,6 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                       .addPrune(CLIENTS_DONE);
 
         SearchResults results = Search.dfs(initSearchState, searchSettings);
-        assertNotEndCondition(INVARIANT_VIOLATED, results);
+        assertEndConditionValid(results);
     }
 }

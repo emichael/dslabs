@@ -52,6 +52,12 @@ public class RunState extends AbstractState {
 
     private volatile RunSettings settings;
 
+    /**
+     * Whether or not an exception has been thrown during the handling of any
+     * message or timer.
+     */
+    @Getter private volatile boolean exceptionThrown = false;
+
     // All accesses to these variables must be protected by synchronized(this)
     private Thread mainThread;
     private Map<Address, Thread> nodeThreads = new HashMap<>();
@@ -93,7 +99,9 @@ public class RunState extends AbstractState {
             Pair<Integer, Integer> bounds = te.getRight();
             inbox.set(new TimerEnvelope(te.getLeft(), t, bounds.getLeft(),
                     bounds.getRight()));
-        });
+        }, e -> {
+            exceptionThrown = true;
+        }, true);
         node.init();
 
         // If we're already running in multi-threaded mode start the new node

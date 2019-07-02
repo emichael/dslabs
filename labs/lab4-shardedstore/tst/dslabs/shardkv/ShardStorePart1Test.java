@@ -35,7 +35,6 @@ import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.kvstore.KVStoreWorkload.append;
 import static dslabs.kvstore.KVStoreWorkload.appendResult;
 import static dslabs.kvstore.KVStoreWorkload.appendsLinearizable;
@@ -66,7 +65,6 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         runState.stop();
 
         runSettings.addInvariant(RESULTS_OK);
-        assertRunInvariantsHold();
     }
 
     @Test(timeout = 20 * 1000)
@@ -271,7 +269,6 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                     }
                     return true;
                 }));
-        assertRunInvariantsHold();
     }
 
     @Test(timeout = 20 * 1000)
@@ -488,8 +485,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                       .addInvariant(appendsLinearizable(client(3), client(4)))
                       .addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
 
-        assertNotEndCondition(INVARIANT_VIOLATED,
-                Search.dfs(initSearchState, searchSettings));
+        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
     }
 
     @Test

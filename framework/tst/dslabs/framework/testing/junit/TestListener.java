@@ -50,6 +50,7 @@ public class TestListener extends RunListener {
     private long startMillis = 0;
 
     private final PrintStream out = System.out;
+    private final PrintStream err = System.err;
 
     public TestListener(RunNotifier runNotifier) {
         this.runNotifier = runNotifier;
@@ -88,13 +89,16 @@ public class TestListener extends RunListener {
     @Override
     public void testFailure(Failure failure) throws Exception {
         testFailed = true;
-        out.println(Throwables.getStackTraceAsString(failure.getException()));
 
         // If we dropped into the visualization client, halt other tests
         if (isInCategory(failure.getDescription(), SearchTests.class) &&
-                failure.getException() instanceof InvariantViolationError &&
+                failure.getException() instanceof VizClientStarted &&
                 GlobalSettings.startVisualization()) {
             runNotifier.pleaseStop();
+        } else {
+            // Otherwise print the exception
+            err.println(
+                    Throwables.getStackTraceAsString(failure.getException()));
         }
     }
 

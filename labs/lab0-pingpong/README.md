@@ -430,7 +430,7 @@ PingTimer(ping=PingApplication.Ping(value=ping-1))), Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-2))), Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-3)))]})
 
-dslabs.framework.testing.junit.InvariantViolationError: State violates "Clients got expected results"
+dslabs.framework.testing.junit.VizClientStarted: State violates "Clients got expected results"
 Error info: client1 got PingApplication.Pong(value=ping-1), expected PingApplication.Pong(value=ping-2)
 See above trace.
 

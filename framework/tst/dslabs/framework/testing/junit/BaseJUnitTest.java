@@ -46,10 +46,14 @@ import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import org.junit.After;
-import org.junit.Before;
+import lombok.SneakyThrows;
+import org.junit.Rule;
+import org.junit.rules.TestRule;
+import org.junit.runner.Description;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.Statement;
 
+import static dslabs.framework.testing.search.SearchResults.EndCondition.EXCEPTION_THROWN;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_EXHAUSTED;
 import static org.junit.Assert.assertEquals;
@@ -71,24 +75,43 @@ public abstract class BaseJUnitTest {
     /* Internal */
     private boolean failedSearchTest;
 
-    @Before
-    public void setupTest() {
+    private void baseSetupTest() {
         runSettings = new RunSettings();
         searchSettings = new SearchSettings();
         startedThreads = new HashSet<>();
         failedSearchTest = false;
     }
 
-    @After
-    public void cleanupTest() throws InterruptedException {
-        shutdownStartedThreads();
+    protected void setupTest() {
+    }
 
-        // TODO: timeout and log error?
+    private void baseShutdownTest() throws InterruptedException {
+        shutdownStartedThreads();
 
         if (runState != null) {
             runState.stop();
         }
+    }
 
+    protected void shutdownTest() throws InterruptedException {
+    }
+
+    private void baseVerifyTest() throws Throwable {
+        if (runState != null) {
+            if (runState.exceptionThrown()) {
+                fail("Exception(s) thrown by running nodes.");
+            }
+
+            assertRunInvariantsHold();
+        }
+
+        assertSearchTestsPassed();
+    }
+
+    protected void verifyTest() throws Throwable {
+    }
+
+    private void baseCleanupTest() {
         runSettings = null;
         searchSettings = null;
         builder = null;
@@ -104,6 +127,35 @@ public abstract class BaseJUnitTest {
             Thread.currentThread().interrupt();
         }
     }
+
+    protected void cleanupTest() {
+    }
+
+    @Rule public TestRule rule = new TestRule() {
+        @Override
+        public Statement apply(Statement base, Description description) {
+            return new Statement() {
+                @Override
+                public void evaluate() throws Throwable {
+                    try {
+                        baseSetupTest();
+                        setupTest();
+                        try {
+                            base.evaluate();
+                        } finally {
+                            shutdownTest();
+                            baseShutdownTest();
+                        }
+                        verifyTest();
+                        baseVerifyTest();
+                    } finally {
+                        cleanupTest();
+                        baseCleanupTest();
+                    }
+                }
+            };
+        }
+    };
 
     public void shutdownStartedThreads() throws InterruptedException {
         for (Thread thread : startedThreads) {
@@ -162,6 +214,8 @@ public abstract class BaseJUnitTest {
 
         if (searchResults.endCondition().equals(INVARIANT_VIOLATED)) {
             invariantViolated(searchResults);
+        } else if (searchResults.endCondition().equals(EXCEPTION_THROWN)) {
+            exceptionThrown(searchResults);
         } else if (expectedEndCondition.equals(INVARIANT_VIOLATED)) {
             List<StatePredicate> invariants =
                     new ArrayList<>(searchResults.invariantsTested());
@@ -190,33 +244,23 @@ public abstract class BaseJUnitTest {
         }
     }
 
-    protected void assertNotEndCondition(EndCondition unexpectedEndCondition,
-                                         SearchResults searchResults) {
-        assertNotEndCondition(unexpectedEndCondition, searchResults, true);
+    protected void assertEndConditionValid(SearchResults searchResults) {
+        assertEndConditionValid(searchResults, true);
     }
 
-    protected void assertNotEndConditionAndContinue(
-            EndCondition unexpectedEndCondition, SearchResults searchResults) {
-        assertNotEndCondition(unexpectedEndCondition, searchResults, false);
+    protected void assertEndConditionValidAndContinue(
+            SearchResults searchResults) {
+        assertEndConditionValid(searchResults, false);
     }
 
-    private void assertNotEndCondition(EndCondition unexpectedEndCondition,
-                                       SearchResults searchResults,
-                                       boolean endTestOnFailure) {
-        if (!unexpectedEndCondition.equals(searchResults.endCondition())) {
-            if (endTestOnFailure) {
-                assertSearchTestsPassed();
-            }
-
-            return;
-        }
-
-        if (unexpectedEndCondition.equals(INVARIANT_VIOLATED)) {
+    private void assertEndConditionValid(SearchResults searchResults,
+                                         boolean endTestOnFailure) {
+        if (searchResults.endCondition().equals(INVARIANT_VIOLATED)) {
             invariantViolated(searchResults);
-        } else if (unexpectedEndCondition.equals(SPACE_EXHAUSTED)) {
-            otherSearchFailure("Ran out of time.", endTestOnFailure);
-        } else {
-            otherSearchFailure("Exhausted search space.", endTestOnFailure);
+        } else if (searchResults.endCondition().equals(EXCEPTION_THROWN)) {
+            exceptionThrown(searchResults);
+        } else if (endTestOnFailure) {
+            assertSearchTestsPassed();
         }
     }
 
@@ -243,16 +287,10 @@ public abstract class BaseJUnitTest {
 
         humanReadable.printTrace();
 
-        StringBuilder sb = new StringBuilder();
         StatePredicate invariant = searchResults.invariantViolated();
-        if (invariant == null) {
-            // TODO: log the error
-            sb.append("Invariant violated.");
-        } else {
-            sb.append(searchResults.invariantViolated()
-                                   .errorMessage(humanReadable));
-        }
-        sb.append("\nSee above trace.");
+        assert invariant != null;
+
+        System.err.println(invariant.errorMessage(humanReadable) + "\n");
 
         if (GlobalSettings.startVisualization()) {
             Thread thread = new Thread(() -> {
@@ -266,10 +304,46 @@ public abstract class BaseJUnitTest {
             thread.setDaemon(false);
             thread.start();
 
-            sb.append("\nVisualization started.");
-            throw new InvariantViolationError(sb.toString());
+            System.err.println("Invariant violated. Visualization started.\n");
+            throw new VizClientStarted();
         } else {
-            throw new InvariantViolationError(sb.toString());
+            fail("Invariant violated (see above trace).");
+        }
+    }
+
+    @SneakyThrows
+    private void exceptionThrown(SearchResults searchResults) {
+        Throwable exception =
+                searchResults.exceptionalState().thrownException();
+        assert exception != null;
+
+        final SearchState humanReadable = SearchState
+                .humanReadableTraceEndState(searchResults.exceptionalState());
+        humanReadable.printTrace();
+        System.err.println();
+
+        if (GlobalSettings.startVisualization()) {
+            Thread thread = new Thread(() -> {
+                VizClient vc = new VizClient(humanReadable, null, true);
+                try {
+                    vc.run();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, "VizClient");
+            thread.setDaemon(false);
+            thread.start();
+
+            exception.printStackTrace();
+
+            System.err.println(
+                    "\nException thrown by nodes during search. Visualization started.\n");
+
+            throw new VizClientStarted();
+        } else {
+            System.err.println(
+                    "Exception thrown by nodes during search (see above trace).");
+            throw exception;
         }
     }
 
