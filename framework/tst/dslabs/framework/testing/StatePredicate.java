@@ -41,6 +41,11 @@ import org.apache.commons.lang3.tuple.Pair;
 
 @RequiredArgsConstructor
 public class StatePredicate implements Predicate<AbstractState> {
+    public static final Pair<Boolean, String> TRUE_NO_MESSAGE =
+            new ImmutablePair<>(true, null);
+    public static final Pair<Boolean, String> FALSE_NO_MESSAGE =
+            new ImmutablePair<>(false, null);
+
     /* Predicates */
 
     public static final StatePredicate RESULTS_OK =
@@ -60,7 +65,7 @@ public class StatePredicate implements Predicate<AbstractState> {
                         }
                     }
                 }
-                return new ImmutablePair<>(true, null);
+                return TRUE_NO_MESSAGE;
             });
 
     public static final StatePredicate NONE_DECIDED =
@@ -209,10 +214,10 @@ public class StatePredicate implements Predicate<AbstractState> {
             // TODO: add messages here??
             switch (quantifier) {
                 case ALL:
-                    return new ImmutablePair<>(true, null);
+                    return TRUE_NO_MESSAGE;
 
                 case ANY:
-                    return new ImmutablePair<>(false, null);
+                    return FALSE_NO_MESSAGE;
 
                 default:
                     throw new IllegalArgumentException();
