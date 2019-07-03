@@ -290,7 +290,7 @@ public abstract class BaseJUnitTest {
         StatePredicate invariant = searchResults.invariantViolated();
         assert invariant != null;
 
-        System.err.println(invariant.errorMessage(humanReadable) + "\n");
+        System.err.println("\n" + invariant.errorMessage(humanReadable) + "\n");
 
         if (GlobalSettings.startVisualization()) {
             Thread thread = new Thread(() -> {
@@ -307,7 +307,7 @@ public abstract class BaseJUnitTest {
             System.err.println("Invariant violated. Visualization started.\n");
             throw new VizClientStarted();
         } else {
-            fail("Invariant violated (see above trace).");
+            fail("Invariant violated (see above trace and information).");
         }
     }
 
@@ -342,7 +342,7 @@ public abstract class BaseJUnitTest {
             throw new VizClientStarted();
         } else {
             System.err.println(
-                    "Exception thrown by nodes during search (see above trace).");
+                    "Exception thrown by nodes during search (see above trace).\n");
             throw exception;
         }
     }
