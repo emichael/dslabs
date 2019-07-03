@@ -86,6 +86,17 @@ public abstract class Workload implements Serializable {
     public abstract void reset();
 
     /**
+     * Returns the number of commands in the workload. If the workload is
+     * infinite, the return value of this function is undefined.
+     *
+     * @return the number of commands in the workload
+     */
+    public abstract int size();
+
+
+    public abstract boolean infinite();
+
+    /**
      * Takes a command string and a result string and makes replacements.
      *
      * <p>Turns %r into random string of 8 characters, %rN into random string
@@ -468,6 +479,16 @@ public abstract class Workload implements Serializable {
         @Override
         public void reset() {
             i = 0;
+        }
+
+        @Override
+        public int size() {
+            return finite ? listSize() * numTimes : -1;
+        }
+
+        @Override
+        public boolean infinite() {
+            return !finite;
         }
     }
 

@@ -42,4 +42,14 @@ public abstract class InfiniteWorkload extends Workload {
         throw new UnsupportedOperationException(
                 "Cannot add to an infinite workload.");
     }
+
+    @Override
+    public int size() {
+        return -1;
+    }
+
+    @Override
+    public boolean infinite() {
+        return true;
+    }
 }
