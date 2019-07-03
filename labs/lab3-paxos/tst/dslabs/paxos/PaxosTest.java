@@ -1,9 +1,11 @@
 package dslabs.paxos;
 
 import com.google.common.collect.Lists;
+import dslabs.atmostonce.AMOCommand;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Command;
+import dslabs.framework.Node;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
@@ -23,11 +25,14 @@ import dslabs.kvstore.KVStore;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -37,6 +42,7 @@ import static dslabs.framework.testing.StatePredicate.ALL_RESULTS_SAME;
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.NONE_DECIDED;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
+import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
 import static dslabs.kvstore.KVStoreWorkload.append;
@@ -105,33 +111,83 @@ public class PaxosTest extends BaseJUnitTest {
 
     /* Predicates */
 
-    private static PaxosLogSlotStatus status(Address a, int i,
-                                             AbstractState s) {
-        PaxosServer p = (PaxosServer) s.server(a);
-        return p.status(i);
-    }
-
-    private static Command command(Address a, int i, AbstractState s) {
-        PaxosServer p = (PaxosServer) s.server(a);
-        return p.command(i);
-    }
-
     private static StatePredicate hasStatus(Address a, int i,
                                             PaxosLogSlotStatus s) {
         return StatePredicate.statePredicate(
                 String.format("%s has status %s in slot %s", a, s, i),
-                st -> status(a, i, st) == s);
+                st -> ((PaxosServer) st.server(a)).status(i) == s);
     }
 
     private static StatePredicate hasCommand(Address a, int i, Command c) {
         return StatePredicate.statePredicate(
                 String.format("%s has command %s in slot %s", a, c, i),
-                st -> Objects.equals(command(a, i, st), c));
+                st -> Objects
+                        .equals(((PaxosServer) st.server(a)).command(i), c));
     }
 
     /**
-     * Checks whether a single slot in the log is consistent. More specifically,
-     * it checks the following:
+     * Checks basic validity of the values returned by firstNonCleared and
+     * lastNonEmpty. This is included in the log consistency invariants and
+     * shouldn't be included by itself.
+     */
+    private static final StatePredicate MARKERS_VALID = StatePredicate
+            .statePredicateWithMessage(
+                    "First non-cleared and last non-empty valid", st -> {
+                        for (Node n : st.servers()) {
+                            PaxosServer p = (PaxosServer) n;
+                            Address a = p.address();
+                            int nc = p.firstNonCleared();
+                            int ne = p.lastNonEmpty();
+
+                            if (nc < 1) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned %s as first non-cleared slot",
+                                        a, nc));
+                            }
+
+                            if (ne < 0) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned %s as last non-empty slot",
+                                        a, ne));
+                            }
+
+                            if (p.status(nc) == CLEARED) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned %s as first non-cleared slot, but slot has status cleared",
+                                        a, nc));
+                            }
+
+                            if (ne > 0 && p.status(ne) == EMPTY) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned %s as last non-empty slot, but slot has status empty",
+                                        a, ne));
+                            }
+
+                            if (nc > 1 && p.status(nc - 1) != CLEARED) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned %s as first non-cleared slot, but the previous slot isn't cleared",
+                                        a, nc));
+                            }
+
+                            if (p.status(ne + 1) != EMPTY) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned %s as last non-empty slot, but the next slot isn't empty",
+                                        a, ne));
+                            }
+
+                            if (nc > ne + 1) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s returned first non-cleared slot %s but last non-empty slot %s",
+                                        a, nc, ne));
+                            }
+                        }
+
+                        return TRUE_NO_MESSAGE;
+                    });
+
+    /**
+     * Checks whether a single slot in the log is consistent. Namely, it checks
+     * the following:
      *
      * 1) No two different commands are chosen.
      *
@@ -144,132 +200,151 @@ public class PaxosTest extends BaseJUnitTest {
      * This predicate is not completely exhaustive. In particular, the third
      * check above should not count acceptances of different commands towards
      * the same majority.
+     *
+     * This predicate also checks:
+     *
+     * - That if i is less than the first non-cleared or greater than the last
+     * non-empty slot for a node, it returns status CLEARED or EMPTY
+     * respectively.
+     *
+     * - That CLEARED and EMPTY slots return null.
+     *
+     * - That nodes don't return AMOCommands.
      */
+    private static Pair<Boolean, String> slotValid(AbstractState st, int i) {
+        Command chosen = null;
+        boolean isChosen = false, isCleared = false;
+
+        for (Node n : st.servers()) {
+            PaxosServer p = (PaxosServer) n;
+            Address a = p.address();
+            int nc = p.firstNonCleared();
+            int ne = p.lastNonEmpty();
+            PaxosLogSlotStatus s = p.status(i);
+            Command c = p.command(i);
+
+            if (i < nc && s != CLEARED) {
+                return new ImmutablePair<>(false, String.format(
+                        "%s has status %s for slot %s but the firstNonCleared slot is %s",
+                        a, s, i, nc));
+            }
+
+            if (i > ne && s != EMPTY) {
+                return new ImmutablePair<>(false, String.format(
+                        "%s has status %s for slot %s but the lastNonEmpty slot is %s",
+                        a, s, i, ne));
+            }
+
+            if ((s == EMPTY || s == CLEARED) && c != null) {
+                return new ImmutablePair<>(false, String.format(
+                        "%s has status %s for slot %s but returned command %s",
+                        a, s, i, c));
+            }
+
+            if (c instanceof AMOCommand) {
+                return new ImmutablePair<>(false,
+                        String.format("%s returned an AMOCommand for slot %s",
+                                a, i));
+            }
+
+            if (s == CLEARED) {
+                isCleared = true;
+            }
+
+            if (s == CHOSEN) {
+                if (isChosen && !Objects.equals(chosen, c)) {
+                    // There are two different commands chosen in the same slot
+                    return new ImmutablePair<>(false, String.format(
+                            "Two different commands (%s and %s) chosen for slot %s",
+                            chosen, c, i));
+                }
+                chosen = c;
+                isChosen = true;
+            }
+        }
+
+        if (!isChosen && !isCleared) {
+            return TRUE_NO_MESSAGE;
+        }
+
+        int count = 0;
+        for (Node n : st.servers()) {
+            PaxosServer p = (PaxosServer) n;
+            PaxosLogSlotStatus s = p.status(i);
+            Command c = p.command(i);
+
+            if (s != EMPTY &&
+                    (s != ACCEPTED || !isChosen || Objects.equals(chosen, c))) {
+                count++;
+            }
+        }
+
+        if (2 * count <= st.numServers()) {
+            if (isChosen) {
+                return new ImmutablePair<>(false, String.format(
+                        "%s chosen for slot %s without a majority accepting",
+                        chosen, i));
+            }
+
+            return new ImmutablePair<>(false, String.format(
+                    "Slot %s cleared without a majority accepting", i));
+        }
+
+        return TRUE_NO_MESSAGE;
+    }
+
     private static StatePredicate slotValid(int i) {
         return StatePredicate
                 .statePredicateWithMessage("Logs consistent for slot " + i,
-                        st -> {
-                            Command chosen = null;
-                            boolean isChosen = false, isCleared = false;
-
-                            for (Address a : st.serverAddresses()) {
-                                PaxosLogSlotStatus s = status(a, i, st);
-
-                                if (s == CLEARED) {
-                                    isCleared = true;
-                                }
-
-                                if (s == CHOSEN) {
-                                    Command c = command(a, i, st);
-                                    if (isChosen &&
-                                            !Objects.equals(chosen, c)) {
-                                        // There are two different commands chosen in the same slot
-                                        return new ImmutablePair<>(false,
-                                                String.format(
-                                                        "Two different commands (%s and %s) chosen for slot %s",
-                                                        chosen, c, i));
-                                    }
-                                    chosen = c;
-                                    isChosen = true;
-                                }
-                            }
-
-                            if (!isChosen && !isCleared) {
-                                return new ImmutablePair<>(true, "");
-                            }
-
-                            int count = 0;
-                            for (Address a : st.serverAddresses()) {
-                                PaxosLogSlotStatus s = status(a, i, st);
-                                if (s != EMPTY && (s != ACCEPTED || !isChosen ||
-                                        Objects.equals(chosen,
-                                                command(a, i, st)))) {
-                                    count++;
-                                }
-                            }
-
-                            if (2 * count <= st.numServers()) {
-                                if (isChosen) {
-                                    return new ImmutablePair<>(false,
-                                            String.format(
-                                                    "Command chosen for slot %s without a majority accepting",
-                                                    i));
-                                }
-
-                                return new ImmutablePair<>(false, String.format(
-                                        "Slot %s cleared without a majority accepting",
-                                        i));
-
-                            }
-
-                            return new ImmutablePair<>(true, "");
-                        });
+                        st -> slotValid(st, i));
     }
 
     /**
-     * Checks that all of the non-empty and non-cleared log slots are valid.
-     * Also performs some checks on the first non-cleared and last non-empty
-     * methods.
+     * Checks that all non-empty, non-cleared log slots are valid.
      */
-    private static StatePredicate LOGS_CONSISTENT =
-            StatePredicate.statePredicateWithMessage("Logs consistent", st -> {
+    private static StatePredicate LOGS_CONSISTENT = StatePredicate
+            .statePredicateWithMessage("Active log slots consistent", st -> {
                 int minNonCleared = Integer.MAX_VALUE, maxNonEmpty = 0;
 
-                for (Address a : st.serverAddresses()) {
-                    PaxosServer p = (PaxosServer) st.server(a);
-
-                    int nc = p.firstNonCleared(), ne = p.lastNonEmpty();
-
+                for (Node n : st.servers()) {
+                    PaxosServer p = (PaxosServer) n;
                     minNonCleared =
                             Math.min(minNonCleared, p.firstNonCleared());
                     maxNonEmpty = Math.max(maxNonEmpty, p.lastNonEmpty());
-
-                    if (nc < 1) {
-                        return new ImmutablePair<>(false, String.format(
-                                "%s returned %s as first non-cleared slot", a,
-                                nc));
-                    }
-
-                    if (ne < 0) {
-                        return new ImmutablePair<>(false, String.format(
-                                "%s returned %s as last non-empty slot", a,
-                                ne));
-                    }
-
-                    if (p.status(nc) == CLEARED) {
-                        return new ImmutablePair<>(false, String.format(
-                                "%s returned %s as first non-cleared slot, but slot has status cleared",
-                                a, nc));
-                    }
-
-                    if (ne > 0 && p.status(ne) == EMPTY) {
-                        return new ImmutablePair<>(false, String.format(
-                                "%s returned %s as last non-empty slot, but slot has status empty",
-                                a, ne));
-                    }
-
-                    if (nc > 1 && p.status(nc - 1) != CLEARED) {
-                        return new ImmutablePair<>(false, String.format(
-                                "%s returned %s as first non-cleared slot, but the previous slot isn't cleared",
-                                a, nc));
-                    }
-
-                    if (p.status(ne + 1) != EMPTY) {
-                        return new ImmutablePair<>(false, String.format(
-                                "%s returned %s as last non-empty slot, but the next slot isn't empty",
-                                a, ne));
-                    }
                 }
 
                 for (int i = minNonCleared; i <= maxNonEmpty; i++) {
-                    StatePredicate sv = slotValid(i);
-                    if (!sv.test(st)) {
-                        return new ImmutablePair<>(false, sv.detail(st));
+                    Pair<Boolean, String> r = slotValid(st, i);
+                    if (!r.getLeft()) {
+                        return new ImmutablePair<>(false, r.getRight());
                     }
                 }
 
-                return new ImmutablePair<>(true, "");
-            });
+                return TRUE_NO_MESSAGE;
+            }).and(MARKERS_VALID);
+
+    /**
+     * Checks that all non-empty slots log slots are valid. Also checks validity
+     * of markers.
+     */
+    private static StatePredicate LOGS_CONSISTENT_ALL_SLOTS = StatePredicate
+            .statePredicateWithMessage("Non-empty log slots consistent", st -> {
+                int maxNonEmpty = 0;
+
+                for (Node n : st.servers()) {
+                    PaxosServer p = (PaxosServer) n;
+                    maxNonEmpty = Math.max(maxNonEmpty, p.lastNonEmpty());
+                }
+
+                for (int i = 1; i <= maxNonEmpty; i++) {
+                    Pair<Boolean, String> r = slotValid(st, i);
+                    if (!r.getLeft()) {
+                        return new ImmutablePair<>(false, r.getRight());
+                    }
+                }
+
+                return TRUE_NO_MESSAGE;
+            }).and(MARKERS_VALID);
 
     /* Tests */
 
@@ -302,8 +377,46 @@ public class PaxosTest extends BaseJUnitTest {
         setupStates(3);
         runState.addClientWorker(client(1), simpleWorkload);
 
+        for (Node s : runState.servers()) {
+            PaxosServer p = (PaxosServer) s;
+            assertEquals(1, p.firstNonCleared());
+            assertEquals(0, p.lastNonEmpty());
+        }
+
         runSettings.addInvariant(RESULTS_OK);
+        runSettings.addInvariant(LOGS_CONSISTENT_ALL_SLOTS);
+
+        // Also check the first 100 slots just to make sure
+        for (int i = 1; i <= 100; i++) {
+            runSettings.addInvariant(slotValid(i));
+        }
+
+        assertRunInvariantsHold();
+
         runState.run(runSettings);
+
+        assertRunInvariantsHold();
+
+        int numLogsFull = 0;
+        Set<Integer> clearedOrChosenSlots = new HashSet<>();
+
+        for (Node n : runState.servers()) {
+            PaxosServer p = (PaxosServer) n;
+            if (p.lastNonEmpty() >= simpleWorkload.size()) {
+                numLogsFull++;
+            }
+            for (int i = 1; i <= simpleWorkload.size(); i++) {
+                PaxosLogSlotStatus s = p.status(i);
+                if (s == CLEARED || s == CHOSEN) {
+                    clearedOrChosenSlots.add(i);
+                }
+            }
+        }
+
+        assertTrue(2 * numLogsFull > runState.numServers());
+        for (int i = 1; i <= simpleWorkload.size(); i++) {
+            assertTrue(clearedOrChosenSlots.contains(i));
+        }
     }
 
     @Test(timeout = 5 * 1000)
@@ -432,6 +545,7 @@ public class PaxosTest extends BaseJUnitTest {
         runState.stop();
 
         runSettings.addInvariant(ALL_RESULTS_SAME);
+        runSettings.addInvariant(LOGS_CONSISTENT_ALL_SLOTS);
     }
 
     @Test(timeout = 10 * 1000)
@@ -448,6 +562,7 @@ public class PaxosTest extends BaseJUnitTest {
 
         runSettings.addInvariant(CLIENTS_DONE);
         runSettings.addInvariant(APPENDS_LINEARIZABLE);
+        runSettings.addInvariant(LOGS_CONSISTENT_ALL_SLOTS);
         runState.run(runSettings);
     }
 
@@ -585,6 +700,7 @@ public class PaxosTest extends BaseJUnitTest {
         setupStates(nServers);
 
         runSettings.addInvariant(RESULTS_OK);
+        runSettings.addInvariant(LOGS_CONSISTENT);
         runState.start(runSettings);
 
         // Startup the clients
@@ -677,6 +793,7 @@ public class PaxosTest extends BaseJUnitTest {
         runState.stop();
 
         runSettings.addInvariant(RESULTS_OK);
+        runSettings.addInvariant(LOGS_CONSISTENT);
         assertRunInvariantsHold();
 
         // Make sure maximum wait is below 2s (should be much less)
@@ -761,6 +878,7 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Make sure that all clients got the correct results
         runSettings.addInvariant(RESULTS_OK);
+        runSettings.addInvariant(LOGS_CONSISTENT);
         assertRunInvariantsHold();
 
         // Kill the old clients and add a new batch
@@ -799,8 +917,8 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Check that linearizability is preserved (with and without timers)
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE)
-                      .maxTimeSecs(30);
+                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
+                      .addPrune(CLIENTS_DONE).maxTimeSecs(30);
         assertEndConditionValidAndContinue(
                 Search.bfs(results.invariantViolatingState(), searchSettings));
 
@@ -864,8 +982,8 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Checking that linearizability is preserved in both other partitions
         searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE)
-                      .resetNetwork()
+                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
+                      .addPrune(CLIENTS_DONE).resetNetwork()
                       .partition(server(1), server(3), client(2));
         assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
 
