@@ -109,6 +109,7 @@ public class TestSettings {
         return this;
     }
 
+    // TODO: move to SearchSettings
     public final TestSettings addPrune(StatePredicate prune) {
         prunes.add(prune);
         return this;

@@ -280,4 +280,26 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         assertEndCondition(SPACE_EXHAUSTED,
                 Search.bfs(initSearchState, searchSettings));
     }
+
+    @Test
+    @PrettyTestName("Infinite workload searches")
+    @TestPointValue(20)
+    @Category(SearchTests.class)
+    public void test11RandomSearchInfiniteWorkloads() {
+        initSearchState
+                .addClientWorker(client(1), differentKeysInfiniteWorkload);
+
+        System.out.println("Checking that all reachable states are good\n");
+
+        searchSettings.maxTimeSecs(15).addInvariant(RESULTS_OK);
+        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
+
+        searchSettings.maxDepth(1000);
+        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
+
+        initSearchState
+                .addClientWorker(client(2), differentKeysInfiniteWorkload);
+
+        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
+    }
 }
