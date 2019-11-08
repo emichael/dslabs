@@ -519,10 +519,10 @@ class RandomDFS extends Search {
 
     @Override
     protected Runnable getWorker() {
-        return this::exploreNode;
+        return this::runProbe;
     }
 
-    private void exploreNode() {
+    private void runProbe() {
         probes.incrementAndGet();
 
         for (SearchState current = initialState, next = null;
