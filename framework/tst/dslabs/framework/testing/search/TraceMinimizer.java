@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Objects;
 
 abstract class TraceMinimizer {
-    static SearchState minimizeInvariantCausingTrace(SearchState state,
-                                                     final StatePredicate predicate,
-                                                     boolean expectedResult) {
+    static SearchState minimizeInvariantViolatingTrace(SearchState state,
+                                                       final StatePredicate predicate,
+                                                       boolean expectedResult) {
         boolean shortenedEventsList;
         do {
             shortenedEventsList = false;
@@ -61,7 +61,7 @@ abstract class TraceMinimizer {
         final Throwable exception = state.thrownException();
         assert exception != null;
 
-        return minimizeInvariantCausingTrace(state,
+        return minimizeInvariantViolatingTrace(state,
                 StatePredicate.statePredicate(null, s -> {
                     if (!(s instanceof SearchState)) {
                         return false;

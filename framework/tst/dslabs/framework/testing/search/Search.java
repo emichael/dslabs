@@ -205,7 +205,7 @@ public abstract class Search {
                 results.invariantViolated(null, inv);
 
                 // Minimize the trace and log the actual invariant-violating state
-                s = TraceMinimizer.minimizeInvariantCausingTrace(s, inv, false);
+                s = TraceMinimizer.minimizeInvariantViolatingTrace(s, inv, false);
             }
             results.invariantViolated(s, inv);
             return StateStatus.TERMINAL;
