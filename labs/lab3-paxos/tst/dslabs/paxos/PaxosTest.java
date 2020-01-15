@@ -700,7 +700,6 @@ public class PaxosTest extends BaseJUnitTest {
         setupStates(nServers);
 
         runSettings.addInvariant(RESULTS_OK);
-        runSettings.addInvariant(LOGS_CONSISTENT);
         runState.start(runSettings);
 
         // Startup the clients
@@ -729,7 +728,9 @@ public class PaxosTest extends BaseJUnitTest {
         // Shut the clients down
         runState.stop();
 
-        assertRunInvariantsHold();
+        runSettings.addInvariant(LOGS_CONSISTENT);
+
+        assertRunInvariantsHold(); // report invariant errors first
         assertMaxWaitTimeLessThan(3000);
     }
 
