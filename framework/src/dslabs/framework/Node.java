@@ -118,7 +118,7 @@ public abstract class Node implements Serializable {
     transient private Consumer<Triple<Address, Timer, Pair<Integer, Integer>>>
             timerAdder;
     transient private Consumer<Throwable> throwableCatcher;
-    transient private boolean logExceptions = true;
+    transient private Boolean logExceptions = true;
 
     @JsonIgnore private Node parentNode;
 
