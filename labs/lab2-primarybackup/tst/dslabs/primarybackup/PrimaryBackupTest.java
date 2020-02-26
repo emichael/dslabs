@@ -747,11 +747,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                       .linkActive(client(1), server(1), true)
                       .linkActive(client(2), server(1), true).addInvariant(
                 statePredicate("Both clients sent messages to primary",
-                        s -> !Streams.stream(s.network())
+                        s -> Streams.stream(s.network())
                                      .filter(e -> e.to().equals(server(1)))
                                      .map(MessageEnvelope::from)
                                      .collect(Collectors.toSet())
-                                     .containsAll(senders)));
+                                     .containsAll(senders)).negate());
         SearchResults results = Search.bfs(viewInitialized, searchSettings);
         assertEndCondition(INVARIANT_VIOLATED, results);
         SearchState requestsSent = results.invariantViolatingState();
