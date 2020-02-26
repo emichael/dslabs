@@ -279,7 +279,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
 
         // From there, finish the second Join and the Leave
         searchSettings.resetNetwork().partition(cca, shardMaster(1))
-                      .addInvariant(clientDone(cca).negate());
+                      .clearInvariants().addInvariant(clientDone(cca).negate());
         results = Search.bfs(putDone, searchSettings);
         assertEndCondition(INVARIANT_VIOLATED, results);
         SearchState ccaDone = results.invariantViolatingState();
