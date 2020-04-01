@@ -198,6 +198,7 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
 
     private static class DifferentKeysInfiniteWorkload
             extends InfiniteWorkload {
+        private final Random rand = new Random();
         private final int numShards;
         private final List<Integer> shardNums;
 
@@ -213,8 +214,6 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
         @Override
         public Pair<Command, Result> nextCommandAndResult(
                 Address clientAddress) {
-            Random rand = new Random();
-
             // Randomly choose the key set
             Set<String> keys = new HashSet<>();
             Collections.shuffle(shardNums);
@@ -226,8 +225,8 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
 
             if (lastWasGet) {
                 Map<String, String> puts = new HashMap<>();
-                keys.forEach(s -> puts
-                        .put(s, RandomStringUtils.randomAlphanumeric(8)));
+                keys.forEach(s -> puts.put(s, RandomStringUtils
+                        .random(8, 0, 0, true, true, null, rand)));
                 data.putAll(puts);
                 lastWasGet = false;
                 return new ImmutablePair<>(multiPut(puts), multiPutOk());

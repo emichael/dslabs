@@ -199,6 +199,7 @@ public abstract class KVStoreWorkload extends Workload {
 
     private static class DifferentKeysInfiniteWorkload
             extends InfiniteWorkload {
+        private final Random rand = new Random();
         private final Map<String, String> data = new HashMap<>();
         private boolean lastWasGet = true;
         private String lastPutKey = null;
@@ -216,12 +217,12 @@ public abstract class KVStoreWorkload extends Workload {
         @Override
         public Pair<Command, Result> nextCommandAndResult(
                 Address clientAddress) {
-            Random rand = new Random();
 
             if (lastWasGet) {
                 lastPutKey =
                         clientAddress.toString() + "-" + (rand.nextInt(5) + 1);
-                String v = RandomStringUtils.randomAlphanumeric(8);
+                String v = RandomStringUtils
+                        .random(8, 0, 0, true, true, null, rand);
                 data.put(lastPutKey, v);
                 lastWasGet = false;
                 return new ImmutablePair<>(put(lastPutKey, v), putOk());
