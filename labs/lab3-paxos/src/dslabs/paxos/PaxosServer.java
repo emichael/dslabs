@@ -39,7 +39,13 @@ public class PaxosServer extends Node {
        -----------------------------------------------------------------------*/
 
     /**
-     * Return the status of a given slot in the servers's local log.
+     * Return the status of a given slot in the server's local log.
+     * 
+     * If this server has cleared the slot, it should return {@link
+     * PaxosLogSlotStatus#CLEARED} even if it has accepted or chosen a
+     * command in the past that was since garbage-collected. If this server has
+     * both accepted and chosen a command for this slot, it should return {@link
+     * PaxosLogSlotStatus#CHOSEN}.
      *
      * Log slots are numbered starting with 1.
      *
@@ -55,12 +61,16 @@ public class PaxosServer extends Node {
     /**
      * Return the command associated with a given slot in the server's local
      * log. If the slot has status {@link PaxosLogSlotStatus#CLEARED} or {@link
-     * PaxosLogSlotStatus#EMPTY}, this method should return {@code null}. If
-     * clients wrapped commands in {@link dslabs.atmostonce.AMOCommand}, this
+     * PaxosLogSlotStatus#EMPTY}, this method should return {@code null}.
+     * Otherwise, return the command this server has chosen or accepted,
+     * according to {@link PaxosServer#status}.
+     * 
+     * If clients wrapped commands in {@link dslabs.atmostonce.AMOCommand}, this
      * method should unwrap them before returning.
      *
      * Log slots are numbered starting with 1.
      *
+     * @see PaxosLogSlotStatus
      * @param logSlotNum
      *         the index of the log slot
      * @return the slot's contents or {@code null}
@@ -72,10 +82,12 @@ public class PaxosServer extends Node {
 
     /**
      * Return the index of the first non-cleared slot in the server's local
-     * log.
+     * log. The first non-cleared slot is the first slot which has not yet been
+     * garbage-collected. By default, the first non-cleared slot is 1.
      *
      * Log slots are numbered starting with 1.
      *
+     * @see PaxosLogSlotStatus
      * @return the index in the log
      */
     public int firstNonCleared() {
@@ -84,11 +96,13 @@ public class PaxosServer extends Node {
     }
 
     /**
-     * Return the index of the last non-empty slot in the server's local log. If
-     * there are no non-empty slots in the log, this method should return 0.
+     * Return the index of the last non-empty slot in the server's local log,
+     * according to the defined states in {@link PaxosLogSlotStatus}. If there
+     * are no non-empty slots in the log, this method should return 0.
      *
      * Log slots are numbered starting with 1.
      *
+     * @see PaxosLogSlotStatus
      * @return the index in the log
      */
     public int lastNonEmpty() {
