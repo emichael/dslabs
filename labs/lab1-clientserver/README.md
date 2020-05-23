@@ -159,6 +159,12 @@ this framework only have one outstanding `Request` at a time. The test
 infrastructure will never call `sendCommand` twice in a row without getting the
 result for the first command.
 
+One potential pitfall is that non-static inner classes implicitly contain a
+reference to the enclosing object. If they are serialized, this reference will
+be serialized as well. This can cause your implementation to fail the garbage
+collection tests. You should prefer to make all inner classes you create static
+unless you have a good reason not to and you understand the implications.
+
 
 ### Designing with Timers
 The test suite also makes sure that your clients and server continue to perform

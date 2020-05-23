@@ -191,3 +191,8 @@ You should pass the lab 3 tests; execute them with `./run-tests.py --lab 3`.
   process.
 * You might find the `Multimap` classes from Guava useful for storing P2B
   messages for each slot.
+* Non-static inner classes implicitly contain a reference to the enclosing
+  object. If they are serialized, this reference will be serialized as well.
+  This can cause your implementation to fail the garbage collection tests. You
+  should prefer to make all inner classes you create static unless you have a
+  good reason not to and you understand the implications.
