@@ -29,7 +29,7 @@ need to be moved to balance the load. Another reason is that replica groups may
 join and leave the system: new replica groups may be added to increase capacity,
 or existing replica groups may be taken offline for repair or retirement.
 
-The main challenge in part 1 of this lab will be handling reconfiguration in the
+The main challenge in part 2 of this lab will be handling reconfiguration in the
 replica groups. Within a single replica group, all group members must agree on
 when a reconfiguration occurs relative to client `Put`/`Append`/`Get` requests.
 For example, a `Put` may arrive at about the same time as a reconfiguration that
@@ -54,7 +54,7 @@ to actively hand off responsibility to another group during reconfiguration.
 This is simpler than the situation in primary/backup replication, where the old
 primary is often not reachable and may still think it is primary.
 
-In part 2 you will extend your key-value store to handle multi-key transactions.
+In part 3 you will extend your key-value store to handle multi-key transactions.
 When these transactions touch shards held by different replica groups, you will
 use two-phase commit with locking to ensure linearizability of operations.
 
@@ -238,6 +238,12 @@ You should pass the part 2 tests; execute them with `run-tests.py --lab 4 --part
   by instantiating all Paxos groups with a single server. Your Paxos
   implementation should be able to reach agreement in a single step when there
   is only one server.
+- You may have implemented optimizations in lab 3 by making assumptions which
+  were valid but do not hold for this lab. In particular, you should be very
+  cautious about dropping proposals when Paxos is running as a sub-node. As a
+  sub-node, Paxos should be oblivious to `AMOApplication` logic and should be
+  able to decide same command for different slots. Some de-duplication at the
+  `PaxosServer` level is possible, but it must be done carefully.
 
 
 ## Part 3: Transactions
