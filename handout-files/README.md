@@ -110,13 +110,13 @@ included in each repo), which also has plugin support for Project Lombok (see
 below).
 
 In order to run the tests from the terminal, however, you also will need Python
-2.7 and Make.
+3 and Make.
 
 
 ### On Windows
 Because of the messy terminal situation on Windows, we would strongly recommend
 using the Bash on Ubuntu on Windows terminal, which will give you a Linux
-environment. We recommend installing `python2` and `java8` through `apt-get`.
+environment. We recommend installing `python3` and `java8` through `apt-get`.
 For IntelliJ, you would have to separately install Java 8 to be able to run
 tests, but even though you'd end up with two Java 8 installations (one on the
 Linux subsystem and one on native Windows), it'll make your life a lot easier in

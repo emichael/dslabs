@@ -1,6 +1,4 @@
-#!/usr/bin/env python2.7
-# coding: utf-8
-
+#!/usr/bin/env python3
 
 """Runs JUnit tests with given options."""
 
@@ -23,8 +21,9 @@ VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
 
 def make():
     """Compile the source files, return True if successful."""
-    with open(os.devnull, "w") as devnull:
-        return not subprocess.call(['make'], stdout=devnull, stderr=devnull)
+    return not subprocess.call(['make'],
+                               stdout=subprocess.DEVNULL,
+                               stderr=subprocess.DEVNULL)
 
 
 def run_tests(lab, part=None, no_run=False, no_search=False,
@@ -33,7 +32,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
               test_num=None, assertions=False):
     """Run the specified tests."""
     if not make():
-        print "Could not compile sources."
+        print("Could not compile sources.")
         return
 
     command = ['java']
@@ -82,7 +81,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     test_file = os.path.join('out/tst', *test_suite.split('.')) + '.class'
     if not os.path.isfile(test_file):
-        print "Count not find test file %s" % test_file
+        print("Count not find test file %s" % test_file)
         return
 
     command.append(test_suite)
@@ -93,7 +92,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 def run_viz_debugger(lab, args, no_viz_server=False):
     """Start the visual debugger."""
     if not make():
-        print "Could not compile sources."
+        print("Could not compile sources.")
         return
 
     command = ['java']
