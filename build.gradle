@@ -1,14 +1,14 @@
-// Gradle 4.4.1
+// Gradle 6.4.1
 
 plugins {
   id 'java'
-  id 'com.github.johnrengelman.shadow' version '4.0.4'
+  id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = '14'
+targetCompatibility = '14'
 
 sourceSets {
   main {
@@ -73,31 +73,31 @@ repositories {
 }
 
 dependencies {
-  implementation      'org.projectlombok:lombok:1.18.6'
-  annotationProcessor 'org.projectlombok:lombok:1.18.6'
-  sources             'org.projectlombok:lombok:1.18.6:sources'
+  implementation      'org.projectlombok:lombok:1.18.12'
+  annotationProcessor 'org.projectlombok:lombok:1.18.12'
+  sources             'org.projectlombok:lombok:1.18.12:sources'
 
-  implementation 'com.google.guava:guava:23.0'
-  sources        'com.google.guava:guava:23.0:sources'
-  implementation 'org.apache.commons:commons-lang3:3.7'
-  sources        'org.apache.commons:commons-lang3:3.7:sources'
+  implementation 'com.google.guava:guava:29.0-jre'
+  sources        'com.google.guava:guava:29.0-jre:sources'
+  implementation 'org.apache.commons:commons-lang3:3.10'
+  sources        'org.apache.commons:commons-lang3:3.10:sources'
 
-  implementation 'com.fasterxml.jackson.core:jackson-core:2.9.3'
-  sources        'com.fasterxml.jackson.core:jackson-core:2.9.3:sources'
-  implementation 'com.fasterxml.jackson.core:jackson-databind:2.9.3'
-  sources        'com.fasterxml.jackson.core:jackson-databind:2.9.3:sources'
+  implementation 'com.fasterxml.jackson.core:jackson-core:2.11.0'
+  sources        'com.fasterxml.jackson.core:jackson-core:2.11.0:sources'
+  implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
+  sources        'com.fasterxml.jackson.core:jackson-databind:2.11.0:sources'
 
-  graderImplementation 'junit:junit:4.12'
-  graderSources        'junit:junit:4.12:sources'
-  graderImplementation 'uk.com.robust-it:cloning:1.9.10'
-  graderSources        'uk.com.robust-it:cloning:1.9.10:sources'
+  graderImplementation 'junit:junit:4.13'
+  graderSources        'junit:junit:4.13:sources'
+  graderImplementation 'io.github.kostaskougios:cloning:1.10.3'
+  graderSources        'io.github.kostaskougios:cloning:1.10.3:sources'
 
-  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.9.3'
-  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.9.3:sources'
-  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.3'
-  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.9.3:sources'
-  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.3'
-  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.9.3:sources'
+  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.11.0'
+  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.11.0:sources'
+  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.11.0'
+  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.11.0:sources'
+  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.0'
+  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.0:sources'
 }
 
 // Create reproducible jars
@@ -107,7 +107,7 @@ tasks.withType(AbstractArchiveTask) {
 }
 
 task scaffoldingJar(type: ShadowJar) {
-  baseName = 'framework'
+  archiveBaseName = 'framework'
   classifier = 'compile'
   from sourceSets.main.output
   configurations = [ project.configurations.runtimeClasspath,
@@ -115,7 +115,7 @@ task scaffoldingJar(type: ShadowJar) {
 }
 
 task graderJar(type: ShadowJar) {
-  baseName = 'framework'
+  archiveBaseName = 'framework'
   from sourceSets.main.output,
        sourceSets.grader.output
   configurations = [ project.configurations.graderRuntimeClasspath,
@@ -123,7 +123,7 @@ task graderJar(type: ShadowJar) {
 }
 
 task sourcesJar(type: ShadowJar) {
-  baseName = 'framework'
+  archiveBaseName = 'framework'
   classifier = 'sources'
   from sourceSets.main.java,
        sourceSets.grader.java,
@@ -165,3 +165,11 @@ task copyDependencies {
 wrapper {
   jarFile = file('.gradle-wrapper/gradle-wrapper.jar')
 }
+
+// Run tests with illegal-access=deny to ensure that these warnings are caught
+test.jvmArgs(['-ea',
+              '--illegal-access=deny',
+              '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
+              '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+              '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+              '--add-opens','java.base/java.util.concurrent.atomic=ALL-UNNAMED'])

@@ -312,7 +312,9 @@ public class VizClient {
     public static void main(String[] args) throws Exception {
         int labNum = Integer.parseInt(args[0]);
         String className = "dslabs.vizconfigs.Lab" + labNum + "VizConfig";
-        VizConfig config = (VizConfig) Class.forName(className).newInstance();
+        VizConfig config =
+                (VizConfig) Class.forName(className).getDeclaredConstructor()
+                                 .newInstance();
         String[] vizArgs = Arrays.copyOfRange(args, 1, args.length);
         SearchState state = config.getInitialState(vizArgs);
         VizClient client = new VizClient(state, false);

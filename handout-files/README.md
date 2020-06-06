@@ -102,8 +102,8 @@ and/or failures that might lead to a violation of the invariants of the system.
 
 
 ## Getting Started
-The only dependency for these labs is Java 8. Installing `openjdk-8-jdk` on most
-Linux distros should be sufficient.
+The only dependency for these labs is Java 14. Installing `openjdk-14-jdk` on
+most Linux distros should be sufficient.
 
 For the primary IDE, we also recommend using IntelliJ (a configuration file is
 included in each repo), which also has plugin support for Project Lombok (see
@@ -116,11 +116,11 @@ In order to run the tests from the terminal, however, you also will need Python
 ### On Windows
 Because of the messy terminal situation on Windows, we would strongly recommend
 using the Bash on Ubuntu on Windows terminal, which will give you a Linux
-environment. We recommend installing `python3` and `java8` through `apt-get`.
-For IntelliJ, you would have to separately install Java 8 to be able to run
-tests, but even though you'd end up with two Java 8 installations (one on the
-Linux subsystem and one on native Windows), it'll make your life a lot easier in
-the long run.
+environment. We recommend installing `python3` and `java14` through `apt-get`.
+For IntelliJ, you would have to separately install Java to be able to run tests,
+but even though you'd end up with two Java installations (one on the Linux
+subsystem and one on native Windows), it'll make your life a lot easier in the
+long run.
 
 
 ## Framework Overview and Documentation

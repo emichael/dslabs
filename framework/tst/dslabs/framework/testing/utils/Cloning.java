@@ -44,18 +44,17 @@ public abstract class Cloning {
     static {
         jdclCloner.registerCloningStrategy(new ICloningStrategy() {
             /*
-                This cloning library works for most things. However, since it's
-                not using default serializers, it's only safe to ignore
-                transient fields in this package.
-
-                TODO: don't use transient fields at all??
+             * This cloning library works for most things. However, since it's
+             * not using default serializers, it's only safe to null
+             * transient fields declared in this package. Otherwise, ignore this
+             * strategy and do whatever the default in the cloning library is.
              */
             @Override
             public Strategy strategyFor(Object toBeCloned, Field field) {
                 final int modifiers = field.getModifiers();
                 if (Modifier.isTransient(modifiers) &&
-                        toBeCloned.getClass().getPackage().getName()
-                                  .startsWith("dslabs")) {
+                        field.getDeclaringClass().getPackage().getName()
+                             .startsWith("dslabs")) {
                     return Strategy.NULL_INSTEAD_OF_CLONE;
                 }
                 return Strategy.IGNORE;

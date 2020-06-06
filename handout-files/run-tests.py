@@ -35,7 +35,12 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
         print("Could not compile sources.")
         return
 
-    command = ['java']
+    command = ['java',
+               '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
+               '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+               '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+               '--add-opens',
+               'java.base/java.util.concurrent.atomic=ALL-UNNAMED']
 
     if assertions:
         command.append('-ea')
