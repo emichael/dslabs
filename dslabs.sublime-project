@@ -7,7 +7,7 @@
         "build",
         "deps",
         ".out-idea",
-        "/.idea",
+        ".idea",
         ".gradle",
         ".gradle-wrapper"
       ],
