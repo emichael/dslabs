@@ -18,8 +18,6 @@ import dslabs.framework.testing.junit.SearchTests;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunState;
-import dslabs.framework.testing.search.Search;
-import dslabs.framework.testing.search.SearchResults;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.kvstore.KVStore;
 import dslabs.kvstore.KVStoreWorkload;
@@ -43,7 +41,6 @@ import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.NONE_DECIDED;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
 import static dslabs.kvstore.KVStoreWorkload.append;
 import static dslabs.kvstore.KVStoreWorkload.appendDifferentKeyWorkload;
@@ -69,10 +66,13 @@ import static org.junit.Assert.fail;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PaxosTest extends BaseJUnitTest {
-    @Override
-    protected void setupTest() {
-        builder = StateGenerator.builder();
+    static StateGeneratorBuilder builder(Address[] servers) {
+        final StateGeneratorBuilder builder = StateGenerator.builder();
+        builder.serverSupplier(
+                a -> new PaxosServer(a, servers.clone(), new KVStore()));
+        builder.clientSupplier(a -> new PaxosClient(a, servers.clone()));
         builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
+        return builder;
     }
 
     static Address[] servers(int numServers) {
@@ -83,31 +83,33 @@ public class PaxosTest extends BaseJUnitTest {
         return servers;
     }
 
-    private static void setupBuilder(StateGeneratorBuilder builder,
-                                     Address[] servers) {
-        builder.serverSupplier(
-                a -> new PaxosServer(a, servers.clone(), new KVStore()));
-        builder.clientSupplier(a -> new PaxosClient(a, servers.clone()));
-    }
+    private void setupStates(int numServers, Workload workload) {
+        Address[] servers = servers(numServers);
+        StateGeneratorBuilder builder = builder(servers);
+        if (workload != null) {
+            builder.workloadSupplier(workload);
+        }
+        StateGenerator stateGenerator = builder.build();
 
-    static StateGeneratorBuilder builder(Address[] servers) {
-        StateGeneratorBuilder builder = StateGenerator.builder();
-        builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
-        setupBuilder(builder, servers);
-        return builder;
+        if (isRunTest()) {
+            runState = new RunState(stateGenerator);
+            for (Address server : servers) {
+                runState.addServer(server);
+            }
+        }
+
+        if (isSearchTest()) {
+            initSearchState = new SearchState(stateGenerator);
+            for (Address server : servers) {
+                initSearchState.addServer(server);
+            }
+        }
     }
 
     private void setupStates(int numServers) {
-        setupBuilder(builder, servers(numServers));
-
-        runState = new RunState(builder.build());
-        initSearchState = new SearchState(builder.build());
-
-        for (Address server : servers(numServers)) {
-            runState.addServer(server);
-            initSearchState.addServer(server);
-        }
+        setupStates(numServers, null);
     }
+
 
     /* Predicates */
 
@@ -302,7 +304,7 @@ public class PaxosTest extends BaseJUnitTest {
     /**
      * Checks that all non-empty, non-cleared log slots are valid.
      */
-    private static StatePredicate LOGS_CONSISTENT = StatePredicate
+    private static final StatePredicate LOGS_CONSISTENT = StatePredicate
             .statePredicateWithMessage("Active log slots consistent", st -> {
                 int minNonCleared = Integer.MAX_VALUE, maxNonEmpty = 0;
 
@@ -327,35 +329,40 @@ public class PaxosTest extends BaseJUnitTest {
      * Checks that all non-empty slots log slots are valid. Also checks validity
      * of markers.
      */
-    private static StatePredicate LOGS_CONSISTENT_ALL_SLOTS = StatePredicate
-            .statePredicateWithMessage("Non-empty log slots consistent", st -> {
-                int maxNonEmpty = 0;
+    private static final StatePredicate LOGS_CONSISTENT_ALL_SLOTS =
+            StatePredicate
+                    .statePredicateWithMessage("Non-empty log slots consistent",
+                            st -> {
+                                int maxNonEmpty = 0;
 
-                for (Node n : st.servers()) {
-                    PaxosServer p = (PaxosServer) n;
-                    maxNonEmpty = Math.max(maxNonEmpty, p.lastNonEmpty());
-                }
+                                for (Node n : st.servers()) {
+                                    PaxosServer p = (PaxosServer) n;
+                                    maxNonEmpty = Math.max(maxNonEmpty,
+                                            p.lastNonEmpty());
+                                }
 
-                for (int i = 1; i <= maxNonEmpty; i++) {
-                    Pair<Boolean, String> r = slotValid(st, i);
-                    if (!r.getLeft()) {
-                        return new ImmutablePair<>(false, r.getRight());
-                    }
-                }
+                                for (int i = 1; i <= maxNonEmpty; i++) {
+                                    Pair<Boolean, String> r = slotValid(st, i);
+                                    if (!r.getLeft()) {
+                                        return new ImmutablePair<>(false,
+                                                r.getRight());
+                                    }
+                                }
 
-                return TRUE_NO_MESSAGE;
-            }).and(MARKERS_VALID);
+                                return TRUE_NO_MESSAGE;
+                            }).and(MARKERS_VALID);
 
     /* Tests */
 
     @Test(timeout = 2 * 1000, expected = InterruptedException.class)
     @PrettyTestName("Client throws InterruptedException")
+    @Category(RunTests.class)
     @TestPointValue(5)
     public void test01ThrowsException() throws InterruptedException {
         setupStates(3);
         final Thread mainThread = Thread.currentThread();
         Client client = runState.addClient(client(1));
-        new Thread(() -> {
+        startThread(() -> {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -363,7 +370,7 @@ public class PaxosTest extends BaseJUnitTest {
             }
 
             mainThread.interrupt();
-        }, "Interrupter").start();
+        });
         client.sendCommand(get("foo"));
         // Should never return since the runState wasn't started
         client.getResult();
@@ -524,10 +531,7 @@ public class PaxosTest extends BaseJUnitTest {
     public void test08SynchronousClients() throws InterruptedException {
         int nIters = 20, nClients = 15;
 
-        builder.workloadSupplier(
-                KVStoreWorkload.builder().commandStrings().build());
-
-        setupStates(3);
+        setupStates(3, KVStoreWorkload.builder().commandStrings().build());
         for (int i = 0; i < nClients; i++) {
             runState.addClientWorker(client(i));
         }
@@ -749,7 +753,7 @@ public class PaxosTest extends BaseJUnitTest {
         }
 
         // Re-partition -> 2s -> re-partition -> 2s -> heal -> 2s
-        Thread partition = new Thread(() -> {
+        startThread(() -> {
             List<Address> clients = new ArrayList<>();
             for (int i = 1; i <= nClients; i++) {
                 clients.add(client(i));
@@ -763,8 +767,7 @@ public class PaxosTest extends BaseJUnitTest {
             try {
                 while (!Thread.interrupted()) {
                     for (int i = 0; i < 2; i++) {
-                        List<Address> newPartition = new LinkedList<>();
-                        newPartition.addAll(clients);
+                        List<Address> newPartition = new LinkedList<>(clients);
                         Collections.shuffle(servers);
 
                         // Grab a majority
@@ -781,9 +784,7 @@ public class PaxosTest extends BaseJUnitTest {
                 }
             } catch (InterruptedException ignored) {
             }
-        }, "Repartition system");
-        startedThreads.add(partition);
-        partition.start();
+        });
 
         // Let the clients run
         runState.start(runSettings);
@@ -828,7 +829,7 @@ public class PaxosTest extends BaseJUnitTest {
         }
 
         // Re-partition -> 5s -> re-partition -> 1s -> heal -> 5s
-        Thread partition = new Thread(() -> {
+        startThread(() -> {
             List<Address> clients = new ArrayList<>();
             for (int i = 1; i <= nClients; i++) {
                 clients.add(client(i));
@@ -842,8 +843,7 @@ public class PaxosTest extends BaseJUnitTest {
             try {
                 while (!Thread.interrupted()) {
                     for (int i = 0; i < 2; i++) {
-                        List<Address> newPartition = new LinkedList<>();
-                        newPartition.addAll(clients);
+                        List<Address> newPartition = new LinkedList<>(clients);
                         Collections.shuffle(servers);
 
                         // Grab a majority
@@ -865,9 +865,7 @@ public class PaxosTest extends BaseJUnitTest {
                 }
             } catch (InterruptedException ignored) {
             }
-        }, "Repartition system");
-        startedThreads.add(partition);
-        partition.start();
+        });
 
         // Let the clients run
         runState.start(runSettings);
@@ -906,26 +904,23 @@ public class PaxosTest extends BaseJUnitTest {
         // First, check that Paxos can execute a single command
         searchSettings.maxTimeSecs(15)
                       .partition(server(1), server(2), client(1))
-                      .addInvariant(NONE_DECIDED);
-        SearchResults results = Search.bfs(initSearchState, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
+                      .addInvariant(RESULTS_OK)
+                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
+                      .addGoal(NONE_DECIDED.negate());
+        bfs(initSearchState);
+        final SearchState oneCommandExecuted = goalMatchingState();
 
         // From there, make sure the second command can be executed
-        searchSettings.resetNetwork().clearInvariants()
-                      .addInvariant(CLIENTS_DONE.negate());
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(results.invariantViolatingState(), searchSettings));
+        searchSettings.resetNetwork().clearGoals().addGoal(CLIENTS_DONE);
+        bfs(oneCommandExecuted);
+        assertGoalFound();
 
         // Check that linearizability is preserved (with and without timers)
-        searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
-                      .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertEndConditionValidAndContinue(
-                Search.bfs(results.invariantViolatingState(), searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);
+        bfs(oneCommandExecuted);
 
         searchSettings.deliverTimers(false);
-        assertEndConditionValid(
-                Search.bfs(results.invariantViolatingState(), searchSettings));
+        bfs(oneCommandExecuted);
     }
 
     @Test
@@ -940,11 +935,10 @@ public class PaxosTest extends BaseJUnitTest {
         // Check that no commands can be decided without a majority
         searchSettings.maxTimeSecs(30).addInvariant(NONE_DECIDED)
                       .partition(server(1), server(2), client(1));
-        assertEndConditionValidAndContinue(
-                Search.bfs(initSearchState, searchSettings));
+        bfs(initSearchState);
 
         searchSettings.deliverTimers(false);
-        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
+        bfs(initSearchState);
     }
 
     @Test
@@ -962,44 +956,41 @@ public class PaxosTest extends BaseJUnitTest {
                         .results(appendResult("XY")).build());
 
         // Send first append to one partition
-        searchSettings.maxTimeSecs(30).addInvariant(NONE_DECIDED)
+        searchSettings.maxTimeSecs(30).addInvariant(RESULTS_OK)
+                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
+                      .addGoal(NONE_DECIDED.negate())
                       .partition(server(1), server(2), client(1));
-        SearchResults results = Search.bfs(initSearchState, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-
-        SearchState firstAppendSent = results.invariantViolatingState();
+        bfs(initSearchState);
+        final SearchState firstAppendSent = goalMatchingState();
 
         // Check that second append can happen in both other partitions
-        searchSettings.clearInvariants().addInvariant(CLIENTS_DONE.negate())
-                      .resetNetwork()
+        searchSettings.clearGoals().addGoal(CLIENTS_DONE).resetNetwork()
                       .partition(server(1), server(3), client(2));
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
+        bfs(firstAppendSent);
+        assertGoalFound();
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(firstAppendSent, searchSettings));
+        bfs(firstAppendSent);
+        assertGoalFound();
 
         // Checking that linearizability is preserved in both other partitions
-        searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
-                      .addPrune(CLIENTS_DONE).resetNetwork()
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE).resetNetwork()
                       .partition(server(1), server(3), client(2));
-        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
+        bfs(firstAppendSent);
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
-        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
+        bfs(firstAppendSent);
 
         // Same checks but without timers (not necessarily useful)
         searchSettings.deliverTimers(false).resetNetwork()
                       .partition(server(1), server(3), client(2));
-        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
+        bfs(firstAppendSent);
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
-        assertEndConditionValid(Search.bfs(firstAppendSent, searchSettings));
+        bfs(firstAppendSent);
     }
 
     @Test
@@ -1017,7 +1008,7 @@ public class PaxosTest extends BaseJUnitTest {
         initSearchState.addClientWorker(client(2),
                 Workload.builder().commands(c2).build());
 
-        searchSettings.maxTimeSecs(30);
+        searchSettings.maxTimeSecs(30).addInvariant(slotValid(1));
 
         // Nothing ever cleared, nothing in slot 2
         for (Address a : servers(5)) {
@@ -1042,32 +1033,29 @@ public class PaxosTest extends BaseJUnitTest {
                       .deliverTimers(server(1), false)
                       .deliverTimers(server(5), false)
                       .deliverTimers(client(2), false)
-                      .addInvariant(hasCommand(server(4), 1, c1).negate());
-        SearchResults results = Search.bfs(initSearchState, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState c1AtServer4 = results.invariantViolatingState();
-        searchSettings.clearInvariants()
-                      .addInvariant(hasCommand(server(3), 1, c1).negate());
-        results = Search.bfs(c1AtServer4, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState c1AtServer3 = results.invariantViolatingState();
+                      .addGoal(hasCommand(server(4), 1, c1));
+        bfs(initSearchState);
+        final SearchState c1AtServer4 = goalMatchingState();
+
+        searchSettings.clearGoals().addGoal(hasCommand(server(3), 1, c1));
+        bfs(c1AtServer4);
+        final SearchState c1AtServer3 = goalMatchingState();
 
         // Now, find a state where server 3 has client 2's command
         searchSettings.nodeActive(server(4), false).nodeActive(server(3), false)
                       .nodeActive(server(1), true).nodeActive(server(5), true)
                       .clearDeliverTimers().deliverTimers(server(4), false)
                       .deliverTimers(server(3), false)
-                      .deliverTimers(client(1), false).clearInvariants()
-                      .addInvariant(hasCommand(server(5), 1, c2).negate());
-        results = Search.bfs(c1AtServer3, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState c2AtServer5 = results.invariantViolatingState();
+                      .deliverTimers(client(1), false).clearGoals()
+                      .addGoal(hasCommand(server(5), 1, c2));
+        bfs(c1AtServer3);
+        final SearchState c2AtServer5 = goalMatchingState();
+
         searchSettings.nodeActive(server(3), true)
-                      .deliverTimers(server(3), true).clearInvariants()
-                      .addInvariant(hasCommand(server(3), 1, c2).negate());
-        results = Search.bfs(c2AtServer5, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState c2AtServer3 = results.invariantViolatingState();
+                      .deliverTimers(server(3), true).clearGoals()
+                      .addGoal(hasCommand(server(3), 1, c2));
+        bfs(c2AtServer5);
+        final SearchState c2AtServer3 = goalMatchingState();
 
         // Now, clear the prunes and find a state where server 2 has c1
         searchSettings.clear().maxTimeSecs(30).maxDepth(1000);
@@ -1088,23 +1076,20 @@ public class PaxosTest extends BaseJUnitTest {
                       .deliverTimers(server(5), false)
                       .deliverTimers(server(3), false)
                       .deliverTimers(client(2), false)
-                      .addInvariant(hasCommand(server(1), 1, c1).negate());
-        results = Search.bfs(c2AtServer3, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState c1AtServer1 = results.invariantViolatingState();
+                      .addGoal(hasCommand(server(1), 1, c1));
+        bfs(c2AtServer3);
+        final SearchState c1AtServer1 = goalMatchingState();
 
         // Make sure server 4 can get c1 chosen
-        searchSettings.clearInvariants()
-                      .addInvariant(hasStatus(server(4), 1, CHOSEN).negate());
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(c1AtServer1, searchSettings));
+        searchSettings.clearGoals().addGoal(hasStatus(server(4), 1, CHOSEN));
+        bfs(c1AtServer1);
+        assertGoalFound();
 
         // Re-add ignored messages
         c1AtServer1.undropMessagesFrom(server(3));
 
-        searchSettings.linkActive(server(3), server(4), true).clearInvariants()
-                      .addInvariant(slotValid(1));
-        assertEndConditionValid(Search.bfs(c1AtServer1, searchSettings));
+        searchSettings.linkActive(server(3), server(4), true).clearGoals();
+        bfs(c1AtServer1);
     }
 
     private void randomSearch() {
@@ -1117,7 +1102,7 @@ public class PaxosTest extends BaseJUnitTest {
                       .addInvariant(APPENDS_LINEARIZABLE)
                       .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE);
 
-        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
+        dfs(initSearchState);
     }
 
     @Test

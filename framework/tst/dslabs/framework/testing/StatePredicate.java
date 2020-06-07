@@ -259,7 +259,7 @@ public class StatePredicate implements Predicate<AbstractState> {
 
         StringBuilder sb = new StringBuilder("State violates ").append("\"");
         if (name.length() > 100) {
-            sb.append(name.substring(0, 100));
+            sb.append(name, 0, 100);
             sb.append("...");
         } else {
             sb.append(name);

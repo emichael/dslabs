@@ -167,8 +167,8 @@ public class ShardMasterTest {
 
         if (previousNumGroups < currentNumGroups) {
             int newGroup = current.groupInfo().keySet().stream()
-                                  .filter(gid -> !previous.groupInfo().keySet()
-                                                          .contains(gid))
+                                  .filter(gid -> !previous.groupInfo()
+                                                          .containsKey(gid))
                                   .findAny().orElseThrow(AssertionError::new);
             assertEquals(current.groupInfo().get(newGroup).getRight().size(),
                     numMoved);
@@ -176,8 +176,7 @@ public class ShardMasterTest {
         } else if (currentNumGroups < previousNumGroups) {
             int removedGroup = previous.groupInfo().keySet().stream()
                                        .filter(gid -> !current.groupInfo()
-                                                              .keySet()
-                                                              .contains(gid))
+                                                              .containsKey(gid))
                                        .findAny()
                                        .orElseThrow(AssertionError::new);
             assertEquals(

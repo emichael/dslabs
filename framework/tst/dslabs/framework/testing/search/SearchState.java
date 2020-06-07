@@ -532,10 +532,7 @@ public final class SearchState extends AbstractState
                     other.state.droppedNetwork.isEmpty()) {
                 return true;
             }
-            if (!Objects.equals(state.network, other.state.network)) {
-                return false;
-            }
-            return true;
+            return Objects.equals(state.network, other.state.network);
         }
 
         public int hashCode() {

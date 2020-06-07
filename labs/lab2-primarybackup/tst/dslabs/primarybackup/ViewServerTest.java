@@ -5,7 +5,6 @@ import dslabs.framework.Message;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
-import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.junit.PrettyTestName;
 import dslabs.framework.testing.junit.TestPointValue;
 import java.lang.reflect.Field;
@@ -16,14 +15,15 @@ import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runners.MethodSorters;
 
+import static dslabs.framework.testing.junit.BaseJUnitTest.server;
 import static dslabs.primarybackup.ViewServer.STARTUP_VIEWNUM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
-public class ViewServerTest extends BaseJUnitTest {
-    static final Address vsa = new LocalAddress("viewserver"), ta =
+public class ViewServerTest {
+    static final Address VSA = new LocalAddress("viewserver"), TA =
             new LocalAddress("testserver");
 
     static final int INITIAL_VIEWNUM;
@@ -45,7 +45,7 @@ public class ViewServerTest extends BaseJUnitTest {
     @Before
     public void setup() throws NoSuchMethodException, InvocationTargetException,
             IllegalAccessException {
-        vs = new ViewServer(vsa);
+        vs = new ViewServer(VSA);
 
         messages = new LinkedList<>();
         timers = new LinkedList<>();
@@ -70,7 +70,7 @@ public class ViewServerTest extends BaseJUnitTest {
     }
 
     private void sendMessage(Message m, Address from) {
-        vs.handleMessage(m, from, vsa);
+        vs.handleMessage(m, from, VSA);
     }
 
     private void sendPing(int viewNum, Address from) {
@@ -78,11 +78,11 @@ public class ViewServerTest extends BaseJUnitTest {
     }
 
     private View getView() {
-        vs.handleMessage(new GetView(), ta, vsa);
+        vs.handleMessage(new GetView(), TA, VSA);
         assertFalse(messages.isEmpty());
         MessageEnvelope me = messages.getLast();
-        assertEquals(vsa, me.from());
-        assertEquals(ta, me.to());
+        assertEquals(VSA, me.from());
+        assertEquals(TA, me.to());
         assertTrue(me.message() instanceof ViewReply);
         ViewReply m = (ViewReply) me.message();
         return m.view();

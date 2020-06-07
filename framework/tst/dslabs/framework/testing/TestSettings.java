@@ -42,14 +42,12 @@ import org.apache.commons.lang3.tuple.Pair;
  */
 @Getter
 @Setter
-public class TestSettings {
+public abstract class TestSettings<T extends TestSettings<T>> {
     /* Defaults */
     private static final int DEFAULT_TIME_LIMIT_SECS = 5;
 
     /* Settings */
     private final Collection<StatePredicate> invariants =
-            new ConcurrentLinkedQueue<>();
-    private final Collection<StatePredicate> prunes =
             new ConcurrentLinkedQueue<>();
 
     private volatile int maxTimeSecs = -1;
@@ -57,32 +55,41 @@ public class TestSettings {
 
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE) private volatile boolean
             deliverTimers = true;
+
     @Getter(AccessLevel.NONE) @Setter(AccessLevel.NONE)
     private final Map<Address, Boolean> timersActive =
             new ConcurrentHashMap<>();
+
+    /**
+     * Helper method for creating builder-type functions that have the same
+     * return type as the original method receiver.
+     *
+     * @return the settings object unmodified
+     */
+    protected abstract T self();
 
     public final boolean deliverTimers() {
         return deliverTimers;
     }
 
-    public final TestSettings deliverTimers(Address a, boolean b) {
+    public final T deliverTimers(Address a, boolean b) {
         timersActive.put(a, b);
-        return this;
+        return self();
     }
 
-    public final TestSettings clearDeliverTimers() {
+    public final T clearDeliverTimers() {
         deliverTimers = true;
         timersActive.clear();
-        return this;
+        return self();
     }
 
     public final boolean deliverTimers(Address a) {
         return timersActive.getOrDefault(a, deliverTimers);
     }
 
-    public final TestSettings deliverTimers(boolean b) {
+    public final T deliverTimers(boolean b) {
         deliverTimers = b;
-        return this;
+        return self();
     }
 
 
@@ -99,26 +106,16 @@ public class TestSettings {
     @Getter(AccessLevel.NONE) private volatile boolean networkActive = true;
 
 
-    public final TestSettings addInvariant(StatePredicate invariant) {
+    public T addInvariant(StatePredicate invariant) {
         invariants.add(invariant);
-        return this;
+        return self();
     }
 
-    public final TestSettings clearInvariants() {
+    public T clearInvariants() {
         invariants.clear();
-        return this;
+        return self();
     }
 
-    // TODO: move to SearchSettings
-    public final TestSettings addPrune(StatePredicate prune) {
-        prunes.add(prune);
-        return this;
-    }
-
-    public final TestSettings clearPrunes() {
-        prunes.clear();
-        return this;
-    }
 
     public final StatePredicate whichInvariantViolated(AbstractState state) {
         for (StatePredicate inv : invariants) {
@@ -140,15 +137,6 @@ public class TestSettings {
 
     public final boolean invariantViolated(AbstractState state) {
         return !invariantsHold(state);
-    }
-
-    public final boolean shouldPrune(AbstractState state) {
-        for (StatePredicate prune : prunes) {
-            if (prune.test(state)) {
-                return true;
-            }
-        }
-        return false;
     }
 
 
@@ -175,33 +163,31 @@ public class TestSettings {
     }
 
 
-    public final TestSettings linkActive(Address from, Address to,
-                                         boolean linkActive) {
+    public final T linkActive(Address from, Address to, boolean linkActive) {
         this.linkActive
                 .put(new ImmutablePair<>(from.rootAddress(), to.rootAddress()),
                         linkActive);
-        return this;
+        return self();
     }
 
-    public final TestSettings senderActive(Address from, boolean senderActive) {
+    public final T senderActive(Address from, boolean senderActive) {
         this.senderActive.put(from.rootAddress(), senderActive);
-        return this;
+        return self();
     }
 
-    public final TestSettings receiverActive(Address to,
-                                             boolean receiverActive) {
+    public final T receiverActive(Address to, boolean receiverActive) {
         this.receiverActive.put(to.rootAddress(), receiverActive);
-        return this;
+        return self();
     }
 
-    public final TestSettings nodeActive(Address node, boolean nodeActive) {
+    public final T nodeActive(Address node, boolean nodeActive) {
         receiverActive(node, nodeActive);
         senderActive(node, nodeActive);
-        return this;
+        return self();
     }
 
     @SafeVarargs
-    public final TestSettings partition(Collection<Address>... partitions) {
+    public final T partition(Collection<Address>... partitions) {
         networkActive(false);
         for (Collection<Address> partition : partitions) {
             for (Address from : partition) {
@@ -212,10 +198,10 @@ public class TestSettings {
                 }
             }
         }
-        return this;
+        return self();
     }
 
-    public final TestSettings partition(Address... partition) {
+    public final T partition(Address... partition) {
         return partition(Arrays.asList(partition));
     }
 
@@ -224,15 +210,15 @@ public class TestSettings {
      * all receivers. Does <i>not</i> change the deliver rate/reliability of any
      * of the above (in RunSettings).
      */
-    public final TestSettings reconnect() {
+    public final T reconnect() {
         networkActive = true;
         linkActive.clear();
         senderActive.clear();
         receiverActive.clear();
-        return this;
+        return self();
     }
 
-    public TestSettings resetNetwork() {
+    public T resetNetwork() {
         return reconnect();
     }
 
@@ -269,13 +255,12 @@ public class TestSettings {
         return networkActive;
     }
 
-    public TestSettings clear() {
+    public T clear() {
         clearInvariants();
-        clearPrunes();
         clearDeliverTimers();
         timeLimited(false);
         singleThreaded(false);
         resetNetwork();
-        return this;
+        return self();
     }
 }

@@ -44,6 +44,7 @@ import java.util.concurrent.locks.ReentrantLock;
 import lombok.NonNull;
 
 import static dslabs.framework.testing.search.SearchResults.EndCondition.EXCEPTION_THROWN;
+import static dslabs.framework.testing.search.SearchResults.EndCondition.GOAL_FOUND;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_EXHAUSTED;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EXHAUSTED;
@@ -63,9 +64,9 @@ import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EX
 public abstract class Search {
     protected final SearchSettings settings;
 
-    private Lock lock = new ReentrantLock();
-    private Condition searchFinished = lock.newCondition(), workerFinished =
-            lock.newCondition();
+    private final Lock lock = new ReentrantLock();
+    private final Condition searchFinished = lock.newCondition(),
+            workerFinished = lock.newCondition();
     /**
      * Protected by lock.
      */
@@ -78,6 +79,7 @@ public abstract class Search {
     Search(SearchSettings settings) {
         this.settings = settings;
         results.invariantsTested(new LinkedList<>(settings.invariants()));
+        results.goalsSought(new LinkedList<>(settings.goals()));
     }
 
     /**
@@ -138,7 +140,8 @@ public abstract class Search {
                             ((System.currentTimeMillis() - startTimeMillis) >
                                     (settings.maxTimeSecs() * 1000))) ||
                     (results.invariantViolated() != null) ||
-                    (results.exceptionThrown());
+                    (results.exceptionThrown()) ||
+                    (results.goalMatched() != null);
         } finally {
             lock.unlock();
         }
@@ -205,9 +208,22 @@ public abstract class Search {
                 results.invariantViolated(null, inv);
 
                 // Minimize the trace and log the actual invariant-violating state
-                s = TraceMinimizer.minimizeInvariantViolatingTrace(s, inv, false);
+                s = TraceMinimizer.minimizeTrace(s, inv, false);
             }
             results.invariantViolated(s, inv);
+            return StateStatus.TERMINAL;
+        }
+
+        if (settings.goalMatched(s)) {
+            StatePredicate goal = settings.whichGoalMatched(s);
+            if (shouldMinimize) {
+                // Log the goal to shut the other threads down
+                results.goalFound(null, goal);
+
+                // Minimize the trace and log the actual goal-matching state
+                s = TraceMinimizer.minimizeTrace(s, goal, true);
+            }
+            results.goalFound(s, goal);
             return StateStatus.TERMINAL;
         }
 
@@ -374,6 +390,8 @@ public abstract class Search {
                 results.endCondition(EXCEPTION_THROWN);
             } else if (results.invariantViolatingState() != null) {
                 results.endCondition(INVARIANT_VIOLATED);
+            } else if (results.goalMatchingState() != null) {
+                results.endCondition(GOAL_FOUND);
             } else if (numActiveWorkers == 0 && spaceExhausted()) {
                 results.endCondition(SPACE_EXHAUSTED);
             } else {
@@ -479,7 +497,8 @@ class BFS extends Search {
 class RandomDFS extends Search {
     private SearchState initialState;
 
-    private AtomicLong states = new AtomicLong(), probes = new AtomicLong();
+    private final AtomicLong states = new AtomicLong(), probes =
+            new AtomicLong();
 
     RandomDFS(SearchSettings settings) {
         super(settings);

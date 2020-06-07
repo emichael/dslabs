@@ -22,8 +22,6 @@ import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
-import dslabs.framework.testing.search.Search;
-import dslabs.framework.testing.search.SearchResults;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.Either;
@@ -50,7 +48,6 @@ import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.framework.testing.StatePredicate.clientDone;
 import static dslabs.framework.testing.StatePredicate.statePredicate;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
 import static dslabs.kvstore.KVStoreWorkload.append;
 import static dslabs.kvstore.KVStoreWorkload.appendDifferentKeyWorkload;
@@ -67,8 +64,8 @@ import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
 import static dslabs.primarybackup.PingCheckTimer.PING_CHECK_MILLIS;
 import static dslabs.primarybackup.PingTimer.PING_MILLIS;
 import static dslabs.primarybackup.ViewServerTest.INITIAL_VIEWNUM;
-import static dslabs.primarybackup.ViewServerTest.ta;
-import static dslabs.primarybackup.ViewServerTest.vsa;
+import static dslabs.primarybackup.ViewServerTest.TA;
+import static dslabs.primarybackup.ViewServerTest.VSA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -77,34 +74,34 @@ import static org.junit.Assert.fail;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PrimaryBackupTest extends BaseJUnitTest {
 
-    @Override
-    protected void setupTest() {
-        builder = builder();
-
-        runState = new RunState(builder.build());
-        runState.addServer(vsa);
-
-        initSearchState = new SearchState(builder.build());
-        initSearchState.addServer(vsa);
-    }
-
     static StateGeneratorBuilder builder() {
         StateGeneratorBuilder builder = StateGenerator.builder();
         builder.serverSupplier(a -> {
-            if (a.equals(vsa)) {
+            if (a.equals(VSA)) {
                 return new ViewServer(a);
             } else {
-                return new PBServer(a, vsa, new KVStore());
+                return new PBServer(a, VSA, new KVStore());
             }
         });
-        builder.clientSupplier(a -> new PBClient(a, vsa));
+        builder.clientSupplier(a -> new PBClient(a, VSA));
         builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
-
         return builder;
     }
 
-    /* Predicates */
+    @Override
+    protected void setupRunTest() {
+        runState = new RunState(builder().build());
+        runState.addServer(VSA);
+    }
 
+    @Override
+    protected void setupSearchTest() {
+        initSearchState = new SearchState(builder().build());
+        initSearchState.addServer(VSA);
+    }
+
+
+    /* Predicates */
     private static StatePredicate hasViewReply(final int viewNum) {
         return StatePredicate
                 .containsMessageMatching("ViewReply with viewNum: " + viewNum,
@@ -162,32 +159,31 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             return viewReplyFound.containsAll(toInit) && ackFound;
         });
 
-        SearchSettings temp = new SearchSettings();
-        temp.maxTimeSecs(30).outputFreqSecs(-1).addInvariant(
-                viewRepliesSent.and(hasViewReply(viewNum + 1).negate())
-                               .negate()).addPrune(hasViewReply(viewNum + 1))
-            .addPrune(hasViewReply(viewNum)
-                    .and(hasViewReply(viewNum, primary, backup).negate()))
-            .networkActive(false).nodeActive(vsa, true);
+        final SearchSettings temp = new SearchSettings();
+        temp.maxTimeSecs(30).outputFreqSecs(-1)
+            .addPrune(hasViewReply(viewNum + 1)).addPrune(hasViewReply(viewNum)
+                .and(hasViewReply(viewNum, primary, backup).negate()))
+            .networkActive(false).nodeActive(VSA, true)
+            .addGoal(viewRepliesSent.and(hasViewReply(viewNum + 1).negate()));
         if (backup != null) {
             temp.linkActive(primary, backup, true)
                 .linkActive(backup, primary, true);
         }
 
-        SearchResults results = Search.bfs(startState, temp);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState current = results.invariantViolatingState();
+        bfs(startState, temp);
+        SearchState current = goalMatchingState();
+        clearSearchResults();
 
         // Deliver each of the view replies in turn
         for (Address a : toInit) {
             current = current.stepMessage(
-                    new MessageEnvelope(vsa, a, new ViewReply(toStart)), null,
+                    new MessageEnvelope(VSA, a, new ViewReply(toStart)), null,
                     false);
         }
 
         // Deliver the Ack from the primary
         current = current.stepMessage(
-                new MessageEnvelope(primary, vsa, new Ping(toStart.viewNum())),
+                new MessageEnvelope(primary, VSA, new Ping(toStart.viewNum())),
                 null, false);
 
         System.out.println("View initialized.\n");
@@ -201,6 +197,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 backup, clients);
     }
 
+
     /* Run Test Helper Methods */
 
     /**
@@ -210,10 +207,10 @@ public class PrimaryBackupTest extends BaseJUnitTest {
      * @return the view from the ViewServer
      */
     private View getView() {
-        runState.network().send(new MessageEnvelope(ta, vsa, new GetView()));
+        runState.network().send(new MessageEnvelope(TA, VSA, new GetView()));
         Either<MessageEnvelope, TimerEnvelope> p = null;
         try {
-            p = runState.network().take(ta);
+            p = runState.network().take(TA);
         } catch (InterruptedException e) {
             fail("Interrupted while waiting for view");
         }
@@ -283,15 +280,17 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         runState.stop();
     }
 
+
     /* Tests */
 
     @Test(timeout = 2 * 1000, expected = InterruptedException.class)
     @PrettyTestName("Client throws InterruptedException")
+    @Category(RunTests.class)
     @TestPointValue(5)
     public void test01ThrowsException() throws InterruptedException {
         final Thread mainThread = Thread.currentThread();
         Client client = runState.addClient(client(1));
-        new Thread(() -> {
+        startThread(() -> {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -299,7 +298,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             }
 
             mainThread.interrupt();
-        }, "Interrupter").start();
+        });
         client.sendCommand(get("foo"));
         // Should never return since the runState wasn't started
         client.getResult();
@@ -352,7 +351,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         }
 
         long t2 = System.currentTimeMillis();
-        int received = runState.network().numMessagesSentTo(vsa);
+        int received = runState.network().numMessagesSentTo(VSA);
 
         double allowed =
                 ((double) (t2 - t1)) / PING_MILLIS * runState.numNodes() * 2;
@@ -579,7 +578,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     public void test12ConcurrentPutUnreliable() throws InterruptedException {
         // Just re-run the previous test with an unreliable network
         runSettings.networkDeliverRate(0.8);
-        runSettings.nodeUnreliable(ta, false);
+        runSettings.nodeUnreliable(TA, false);
         test10ConcurrentPut();
     }
 
@@ -590,7 +589,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     public void test13ConcurrentAppendUnreliable() throws InterruptedException {
         // Just re-run the previous test with an unreliable network
         runSettings.networkDeliverRate(0.8);
-        runSettings.nodeUnreliable(ta, false);
+        runSettings.nodeUnreliable(TA, false);
         test11ConcurrentAppend();
     }
 
@@ -611,7 +610,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         runState.start(runSettings);
 
         // Randomly crash and restart servers
-        Thread restarts = new Thread(() -> {
+        startThread(() -> {
             Random rand = new Random();
             int totalServers = nServers;
 
@@ -634,9 +633,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 }
             } catch (InterruptedException ignored) {
             }
-        }, "Crash nodes");
-        restarts.start();
-        startedThreads.add(restarts);
+        });
 
         for (int i = 0; i < nClients; i++) {
             runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
@@ -663,8 +660,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(20)
     public void test15RepeatedCrashesUnreliable() throws InterruptedException {
-        runSettings.networkDeliverRate(0.8).nodeUnreliable(vsa, false)
-                   .nodeUnreliable(ta, false);
+        runSettings.networkDeliverRate(0.8).nodeUnreliable(VSA, false)
+                   .nodeUnreliable(TA, false);
         test14RepeatedCrashes();
     }
 
@@ -677,14 +674,14 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         initSearchState.addClientWorker(client(1), putAppendGetWorkload);
 
         // Make sure clients can finish
-        searchSettings.addInvariant(CLIENTS_DONE.negate()).maxTimeSecs(30);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(30);
+        bfs(initSearchState);
+        assertGoalFound();
 
         // Make sure results match
-        searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);
+        bfs(initSearchState);
     }
 
     @Test
@@ -697,30 +694,26 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         initSearchState.addServer(server(3));
         initSearchState.addClientWorker(client(1), putGetWorkload);
 
-        SearchState viewInitializedState =
+        final SearchState viewInitializedState =
                 initView(server(1), server(2), client(1));
 
         // Make sure clients can finish
-        searchSettings.addInvariant(CLIENTS_DONE.negate())
+        searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 2))
                       .maxTimeSecs(20).nodeActive(server(3), false);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(viewInitializedState, searchSettings));
+        bfs(viewInitializedState);
+        assertGoalFound();
 
         // Make sure results match
-        searchSettings.clearInvariants().clearPrunes().addInvariant(RESULTS_OK)
-                      .addPrune(CLIENTS_DONE)
+        searchSettings.clearGoals().clearPrunes().addPrune(CLIENTS_DONE)
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 3));
-        assertEndConditionValid(
-                Search.bfs(viewInitializedState, searchSettings));
+        bfs(viewInitializedState);
 
         searchSettings.clearPrunes().addPrune(CLIENTS_DONE);
-        assertEndConditionValid(
-                Search.bfs(viewInitializedState, searchSettings));
+        bfs(viewInitializedState);
 
         searchSettings.resetNetwork();
-        assertEndConditionValid(
-                Search.bfs(viewInitializedState, searchSettings));
+        bfs(viewInitializedState);
     }
 
     @Test
@@ -737,37 +730,37 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 Workload.workload(append("foo", "y")));
 
         // Get a state w/ primary and backup initialized
-        SearchState viewInitialized =
+        final SearchState viewInitialized =
                 initView(server(1), server(2), client(1), client(2));
 
         // Find a state where clients have sent messages to primary
         System.out.println("Sending client requests...");
-        List<Address> senders = Lists.newArrayList(client(1), client(2));
+        final List<Address> senders = Lists.newArrayList(client(1), client(2));
         searchSettings.outputFreqSecs(-1).maxTimeSecs(20).networkActive(false)
                       .linkActive(client(1), server(1), true)
-                      .linkActive(client(2), server(1), true).addInvariant(
+                      .linkActive(client(2), server(1), true)
+                      .addInvariant(APPENDS_LINEARIZABLE).addGoal(
                 statePredicate("Both clients sent messages to primary",
                         s -> Streams.stream(s.network())
-                                     .filter(e -> e.to().equals(server(1)))
-                                     .map(MessageEnvelope::from)
-                                     .collect(Collectors.toSet())
-                                     .containsAll(senders)).negate());
-        SearchResults results = Search.bfs(viewInitialized, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState requestsSent = results.invariantViolatingState();
+                                    .filter(e -> e.to().equals(server(1)))
+                                    .map(MessageEnvelope::from)
+                                    .collect(Collectors.toSet())
+                                    .containsAll(senders)));
+        bfs(viewInitialized);
+        final SearchState requestsSent = goalMatchingState();
         System.out.println("Client requests sent.\n");
 
         // Grab the messages sent by the clients
-        Map<Address, Set<MessageEnvelope>> sentMessages =
+        final Map<Address, Set<MessageEnvelope>> sentMessages =
                 Streams.stream(requestsSent.network().iterator())
                        .filter(e -> e.to().equals(server(1)))
                        .filter(e -> senders.contains(e.from())).collect(
                         Collectors.toMap(MessageEnvelope::from,
-                                Sets::<MessageEnvelope>newHashSet,
+                                Sets::newHashSet,
                                 Sets::union));
 
         // Send the requests to the primary, keep track of the resulting messages
-        Map<Address, List<MessageEnvelope>> pToB = new HashMap<>();
+        final Map<Address, List<MessageEnvelope>> pToB = new HashMap<>();
         SearchState deliveredToP = requestsSent.clone();
         for (Address sender : senders) {
             List<MessageEnvelope> rs = new LinkedList<>();
@@ -780,7 +773,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         // Forward the messages to the backup in reverse order
         SearchState forwardedReversed = deliveredToP.clone();
-        Map<Address, List<MessageEnvelope>> bToP = new HashMap<>();
+        final Map<Address, List<MessageEnvelope>> bToP = new HashMap<>();
         for (Address sender : Lists.reverse(senders)) {
             List<MessageEnvelope> rs = new LinkedList<>();
             for (MessageEnvelope me : pToB.get(sender)) {
@@ -800,23 +793,21 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         }
 
         // Make sure clients can finish from here
-        searchSettings.clear().addInvariant(CLIENTS_DONE.negate())
-                      .maxTimeSecs(20);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(forwardedReversed, searchSettings));
+        searchSettings.clear().addInvariant(APPENDS_LINEARIZABLE)
+                      .addGoal(CLIENTS_DONE).maxTimeSecs(20);
+        bfs(forwardedReversed);
+        assertGoalFound();
 
         // Make sure linearizability is preserved
-        searchSettings.clearInvariants().addInvariant(APPENDS_LINEARIZABLE)
-                      .addPrune(CLIENTS_DONE)
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE)
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 3)).addPrune(
                 hasViewReply(INITIAL_VIEWNUM + 2, server(1), null))
                       .maxTimeSecs(30);
-        assertEndConditionValidAndContinue(
-                Search.bfs(forwardedReversed, searchSettings));
+        bfs(forwardedReversed);
 
         // Do the same thing, but this time, only forward second request to backup
         SearchState onlySecondForwarded = deliveredToP.clone();
-        List<MessageEnvelope> bToP2 = new LinkedList<>();
+        final List<MessageEnvelope> bToP2 = new LinkedList<>();
         for (MessageEnvelope me : pToB.get(client(2))) {
             onlySecondForwarded =
                     onlySecondForwarded.stepMessage(me, null, false);
@@ -826,11 +817,10 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             onlySecondForwarded =
                     onlySecondForwarded.stepMessage(me, null, false);
         }
-        assertEndConditionValidAndContinue(
-                Search.bfs(onlySecondForwarded, searchSettings));
+        bfs(onlySecondForwarded);
 
         // Finally, do one last BFS from the very beginning when requests were sent
-        assertEndConditionValid(Search.bfs(requestsSent, searchSettings));
+        bfs(requestsSent);
     }
 
     @Test
@@ -849,26 +839,25 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                                .results(appendResult("xy")).build());
 
         // Add primary and fail to it
-        SearchState firstView =
+        final SearchState firstView =
                 initView(initSearchState, INITIAL_VIEWNUM + 1, server(1),
                         server(2));
-        SearchState primaryAlone =
+        final SearchState primaryAlone =
                 initView(firstView, INITIAL_VIEWNUM + 2, server(1), null,
                         client(1));
 
         // Have the client commit the operation to only the primary
-        searchSettings.maxTimeSecs(10).partition(server(1), client(1), vsa)
-                      .addInvariant(clientDone(client(1)).negate());
-        SearchResults results = Search.bfs(primaryAlone, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState client1Done = results.invariantViolatingState();
+        searchSettings.maxTimeSecs(10).partition(server(1), client(1), VSA)
+                      .addInvariant(RESULTS_OK).addGoal(clientDone(client(1)));
+        bfs(primaryAlone);
+        final SearchState client1Done = goalMatchingState();
 
         // Make sure that the second client can finish, sending message to backup
-        searchSettings.maxTimeSecs(30).resetNetwork().clearInvariants()
-                      .partition(server(1), server(2), client(2), vsa)
+        searchSettings.maxTimeSecs(30).resetNetwork()
+                      .partition(server(1), server(2), client(2), VSA)
                       .linkActive(server(1), client(2), false)
-                      .linkActive(client(2), server(1), false)
-                      .addInvariant(CLIENTS_DONE.negate()).addPrune(
+                      .linkActive(client(2), server(1), false).clearGoals()
+                      .addGoal(CLIENTS_DONE).addPrune(
                 hasViewReply(INITIAL_VIEWNUM + 3).implies(
                         hasViewReply(INITIAL_VIEWNUM + 3, server(1), server(2)))
                                                  .negate()).addPrune(
@@ -876,11 +865,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                         hasViewReply(INITIAL_VIEWNUM + 4, server(2), null))
                                                  .negate())
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 5));
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(client1Done, searchSettings));
+        bfs(client1Done);
+        assertGoalFound();
 
-        searchSettings.clearInvariants().addInvariant(RESULTS_OK);
-        assertEndConditionValid(Search.bfs(client1Done, searchSettings));
+        searchSettings.clearGoals();
+        bfs(client1Done);
     }
 
     @Test
@@ -901,7 +890,6 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                       .addInvariant(APPENDS_LINEARIZABLE)
                       .addPrune(CLIENTS_DONE);
 
-        SearchResults results = Search.dfs(initSearchState, searchSettings);
-        assertEndConditionValid(results);
+        dfs(initSearchState);
     }
 }

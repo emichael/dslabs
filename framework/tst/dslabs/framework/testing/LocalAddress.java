@@ -34,7 +34,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode
 @AllArgsConstructor
 public class LocalAddress implements Address, JsonSerializable {
-    private String address;
+    private final String address;
 
     @Override
     public int compareTo(Address o) {

@@ -39,7 +39,7 @@ import org.apache.commons.lang3.tuple.Pair;
  *
  * Safe for concurrent access.
  */
-public class RunSettings extends TestSettings {
+public class RunSettings extends TestSettings<RunSettings> {
     private final static Random rand = new Random();
 
     /* Defaults */
@@ -56,6 +56,11 @@ public class RunSettings extends TestSettings {
     private final Map<Address, Double> receiverDeliverRate =
             new ConcurrentHashMap<>();
     private volatile Double networkDeliverRate = null;
+
+    @Override
+    protected final RunSettings self() {
+        return this;
+    }
 
     public RunSettings networkDeliverRate(double networkDeliverRate) {
         if (networkDeliverRate < 0.0 || networkDeliverRate > 1.0) {

@@ -52,6 +52,11 @@ public class TestListener extends RunListener {
     private final PrintStream out = System.out;
     private final PrintStream err = System.err;
 
+    static boolean isInCategory(Description description, Class<?> category) {
+        Category cat = description.getAnnotation(Category.class);
+        return cat != null && Arrays.asList(cat.value()).contains(category);
+    }
+
     public TestListener(RunNotifier runNotifier) {
         this.runNotifier = runNotifier;
     }
@@ -152,11 +157,6 @@ public class TestListener extends RunListener {
         }
 
         return name;
-    }
-
-    private boolean isInCategory(Description description, Class<?> category) {
-        Category cat = description.getAnnotation(Category.class);
-        return cat != null && Arrays.asList(cat.value()).contains(category);
     }
 
     private int totalPoints(Description description) {

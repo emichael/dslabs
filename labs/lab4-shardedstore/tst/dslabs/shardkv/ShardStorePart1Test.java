@@ -11,7 +11,6 @@ import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
-import dslabs.framework.testing.search.Search;
 import dslabs.kvstore.KVStoreWorkload;
 import dslabs.shardmaster.ShardMaster.Join;
 import dslabs.shardmaster.ShardMaster.Leave;
@@ -311,7 +310,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         }
 
         // Re-partition -> 2s -> unpartition -> 2s
-        Thread partition = new Thread(() -> {
+        startThread(() -> {
             try {
                 while (!Thread.interrupted()) {
                     runSettings.reconnect();
@@ -337,9 +336,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                 }
             } catch (InterruptedException ignored) {
             }
-        }, "Repartition server groups");
-        partition.start();
-        startedThreads.add(partition);
+        });
 
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
@@ -378,9 +375,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         }
 
         // Constantly move shards around
-        Thread t = moveShards(numGroups, numShards);
-        t.start();
-        startedThreads.add(t);
+        startThread(moveShards(numGroups, numShards));
 
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
@@ -462,7 +457,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                 new Join(2, servers(2, numServersPerGroup)), new Leave(1))
                                       .results(new Ok(), new Ok(), new Ok())
                                       .build();
-        initSearchState.addClientWorker(cca, ccWorkload);
+        initSearchState.addClientWorker(CCA, ccWorkload);
 
         Workload w1 = KVStoreWorkload.builder().commands(append("foo-1", "X"),
                 append("foo-1", "Y")).build();
@@ -485,7 +480,8 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                       .addInvariant(appendsLinearizable(client(3), client(4)))
                       .addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
 
-        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
+        dfs(initSearchState);
+
     }
 
     @Test

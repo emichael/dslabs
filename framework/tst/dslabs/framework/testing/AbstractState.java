@@ -273,20 +273,6 @@ public abstract class AbstractState implements Serializable {
         return client;
     }
 
-    public synchronized void restartNode(Address address)
-            throws InterruptedException {
-        if (servers.containsKey(address)) {
-            removeNode(address);
-            addServer(address);
-        } else if (clientWorkers.containsKey(address)) {
-            removeNode(address);
-            addClientWorker(address);
-        } else if (clients.containsKey(address)) {
-            removeNode(address);
-            addClient(address);
-        }
-    }
-
     // TODO: maybe simplify some of these methods???
     public synchronized void addCommand(Command command) {
         for (Address clientAddress : clientWorkers.keySet()) {

@@ -22,11 +22,12 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
 
     @Test(timeout = 2 * 1000, expected = InterruptedException.class)
     @PrettyTestName("Client throws InterruptedException")
+    @Category(RunTests.class)
     @TestPointValue(5)
     public void test01ThrowsException() throws InterruptedException {
         final Thread mainThread = Thread.currentThread();
         Client client = runState.addClient(client(1));
-        new Thread(() -> {
+        startThread(() -> {
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
@@ -34,7 +35,7 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
             }
 
             mainThread.interrupt();
-        }, "Interrupter").start();
+        });
         client.sendCommand(get("FOO"));
         // Should never return since the runState wasn't started
         client.getResult();

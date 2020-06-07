@@ -12,31 +12,31 @@ import dslabs.kvstore.KVStoreWorkload;
 import java.util.Objects;
 
 abstract class ClientServerBaseTest extends BaseJUnitTest {
-    static final Address sa = new LocalAddress("server");
+    static final Address SA = new LocalAddress("server");
 
-    @Override
-    protected void setupTest() {
-        builder = builder();
-
-        runState = new RunState(builder.build());
-        runState.addServer(sa);
-
-        initSearchState = new SearchState(builder.build());
-        initSearchState.addServer(sa);
-    }
-
-    protected static StateGeneratorBuilder builder() {
+    static StateGeneratorBuilder builder() {
         StateGeneratorBuilder builder = StateGenerator.builder();
         builder.serverSupplier(a -> {
-            if (!Objects.equals(a, sa)) {
+            if (!Objects.equals(a, SA)) {
                 throw new IllegalArgumentException();
             }
-            return new SimpleServer(sa, new KVStore());
+            return new SimpleServer(SA, new KVStore());
         });
-        builder.clientSupplier(a -> new SimpleClient(a, sa));
+        builder.clientSupplier(a -> new SimpleClient(a, SA));
         builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
-
         return builder;
+    }
+
+    @Override
+    protected void setupRunTest() {
+        runState = new RunState(builder().build());
+        runState.addServer(SA);
+    }
+
+    @Override
+    protected void setupSearchTest() {
+        initSearchState = new SearchState(builder().build());
+        initSearchState.addServer(SA);
     }
 }
 

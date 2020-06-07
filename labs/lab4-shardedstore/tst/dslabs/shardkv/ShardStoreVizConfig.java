@@ -14,8 +14,8 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import static dslabs.shardkv.ShardStoreBaseTest.CCA;
 import static dslabs.shardkv.ShardStoreBaseTest.addServers;
-import static dslabs.shardkv.ShardStoreBaseTest.cca;
 import static dslabs.shardkv.ShardStoreBaseTest.servers;
 
 public class ShardStoreVizConfig extends VizConfig {
@@ -27,14 +27,11 @@ public class ShardStoreVizConfig extends VizConfig {
         switch (split[0]) {
             case "JOIN":
                 return new Join(groupId, servers(groupId, numServersPerGroup));
-
             case "LEAVE":
                 return new Leave(groupId);
-
             case "MOVE":
                 int shardNum = Integer.parseInt(split[2]);
                 return new Move(groupId, shardNum);
-
             default:
                 throw new IllegalArgumentException();
         }
@@ -75,7 +72,7 @@ public class ShardStoreVizConfig extends VizConfig {
                                       .collect(Collectors.toList());
         }
 
-        state.addClientWorker(cca, Workload.builder().commands(
+        state.addClientWorker(CCA, Workload.builder().commands(
                 configCommands.stream().map(s -> parse(s, numServersPerGroup))
                               .collect(Collectors.toList())).build());
 

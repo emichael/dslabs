@@ -5,7 +5,6 @@ import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
-import dslabs.framework.testing.search.Search;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,8 +17,6 @@ import org.junit.runners.MethodSorters;
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.NONE_DECIDED;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_EXHAUSTED;
 import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
 import static dslabs.kvstore.KVStoreWorkload.append;
 import static dslabs.kvstore.KVStoreWorkload.appendAppendGet;
@@ -56,7 +53,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     @Category({RunTests.class, UnreliableTests.class})
     public void test02SingleClientAppendsUnreliable()
             throws InterruptedException {
-        int numRounds = 50;
+        final int numRounds = 50;
         runSettings.networkDeliverRate(0.8);
 
         runState.addClientWorker(client(1),
@@ -72,7 +69,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     @Category({RunTests.class, UnreliableTests.class})
     public void test03MultiClientDifferentKeyUnreliable()
             throws InterruptedException {
-        int numRounds = 100, numClients = 10;
+        final int numRounds = 100, numClients = 10;
         runSettings.networkDeliverRate(0.8);
 
         for (int i = 1; i <= numClients; i++) {
@@ -90,7 +87,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     @Category({RunTests.class, UnreliableTests.class})
     public void test04MultiClientSameKeyUnreliable()
             throws InterruptedException {
-        int numRounds = 5, numClients = 10;
+        final int numRounds = 5, numClients = 10;
         runSettings.networkDeliverRate(0.8);
 
         for (int i = 1; i <= numClients; i++) {
@@ -107,7 +104,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     @TestPointValue(20)
     @Category({RunTests.class})
     public void test05GarbageCollection() throws InterruptedException {
-        int valueSize = 1000000, items = 5, iters = 3, numClients = 5;
+        final int valueSize = 1000000, items = 5, iters = 3, numClients = 5;
 
         for (int c = 1; c <= numClients; c++) {
             runState.addClient(client(c));
@@ -167,7 +164,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     @TestPointValue(20)
     @Category({RunTests.class})
     public void test06LongRunningWorkload() throws InterruptedException {
-        int numClients = 4, testLengthSecs = 30;
+        final int numClients = 4, testLengthSecs = 30;
 
         for (int i = 1; i <= numClients; i++) {
             runState.addClientWorker(client(i), differentKeysInfiniteWorkload,
@@ -194,23 +191,23 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         initSearchState.addClientWorker(client(1), putAppendGetWorkload);
 
         System.out.println("Checking that an end state is reachable");
-        searchSettings.addInvariant(CLIENTS_DONE.negate()).maxTimeSecs(10);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(10);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
-        searchSettings.clearInvariants().addPrune(CLIENTS_DONE)
-                      .addInvariant(RESULTS_OK);
-        assertEndConditionAndContinue(SPACE_EXHAUSTED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE);
+        bfs(initSearchState);
+        assertSpaceExhausted();
 
         System.out.println(
                 "Checking that there is no progress if client and server " +
                         "cannot communicate");
-        searchSettings.clearInvariants().addInvariant(NONE_DECIDED)
-                      .networkActive(false).maxTimeSecs(5);
-        assertEndCondition(SPACE_EXHAUSTED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(NONE_DECIDED).networkActive(false)
+                      .maxTimeSecs(5);
+        bfs(initSearchState);
+        assertSpaceExhausted();
     }
 
     @Test
@@ -221,15 +218,15 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         initSearchState.addClientWorker(client(1), appendAppendGet);
 
         System.out.println("Checking that an end state is reachable");
-        searchSettings.addInvariant(CLIENTS_DONE.negate()).maxTimeSecs(10);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(10);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
-        searchSettings.clearInvariants().addPrune(CLIENTS_DONE)
-                      .addInvariant(RESULTS_OK);
-        assertEndCondition(SPACE_EXHAUSTED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE);
+        bfs(initSearchState);
+        assertSpaceExhausted();
     }
 
     @Test
@@ -245,15 +242,15 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         }
 
         System.out.println("Checking that an end state is reachable");
-        searchSettings.addInvariant(CLIENTS_DONE.negate()).maxTimeSecs(30);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(30);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
-        searchSettings.clearInvariants().addPrune(CLIENTS_DONE)
-                      .addInvariant(RESULTS_OK);
-        assertEndCondition(SPACE_EXHAUSTED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE);
+        bfs(initSearchState);
+        assertSpaceExhausted();
     }
 
     @Test
@@ -271,14 +268,15 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         }
 
         System.out.println("Checking that an end state is reachable");
-        searchSettings.addInvariant(CLIENTS_DONE.negate()).maxTimeSecs(30);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(APPENDS_LINEARIZABLE).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(30);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
-        searchSettings.clearInvariants().addInvariant(APPENDS_LINEARIZABLE);
-        assertEndCondition(SPACE_EXHAUSTED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE);
+        bfs(initSearchState);
+        assertSpaceExhausted();
     }
 
     @Test
@@ -292,14 +290,13 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         System.out.println("Checking that all reachable states are good\n");
 
         searchSettings.maxTimeSecs(15).addInvariant(RESULTS_OK);
-        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
+        bfs(initSearchState);
 
         searchSettings.maxDepth(1000);
-        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
+        dfs(initSearchState);
 
         initSearchState
                 .addClientWorker(client(2), differentKeysInfiniteWorkload);
-
-        assertEndConditionValid(Search.dfs(initSearchState, searchSettings));
+        dfs(initSearchState);
     }
 }

@@ -7,8 +7,8 @@ import dslabs.framework.testing.visualization.VizConfig;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.List;
 
+import static dslabs.clientserver.ClientServerBaseTest.SA;
 import static dslabs.clientserver.ClientServerBaseTest.builder;
-import static dslabs.clientserver.ClientServerBaseTest.sa;
 
 public class CSVizConfig extends VizConfig {
     @Override
@@ -16,7 +16,7 @@ public class CSVizConfig extends VizConfig {
                                        List<String> commands) {
         SearchState searchState =
                 super.getInitialState(0, numClients, commands);
-        searchState.addServer(sa);
+        searchState.addServer(SA);
         return searchState;
     }
 

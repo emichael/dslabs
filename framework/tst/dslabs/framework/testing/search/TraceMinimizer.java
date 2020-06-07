@@ -28,9 +28,9 @@ import java.util.List;
 import java.util.Objects;
 
 abstract class TraceMinimizer {
-    static SearchState minimizeInvariantViolatingTrace(SearchState state,
-                                                       final StatePredicate predicate,
-                                                       boolean expectedResult) {
+    static SearchState minimizeTrace(SearchState state,
+                                     final StatePredicate predicate,
+                                     boolean expectedResult) {
         boolean shortenedEventsList;
         do {
             shortenedEventsList = false;
@@ -61,26 +61,25 @@ abstract class TraceMinimizer {
         final Throwable exception = state.thrownException();
         assert exception != null;
 
-        return minimizeInvariantViolatingTrace(state,
-                StatePredicate.statePredicate(null, s -> {
-                    if (!(s instanceof SearchState)) {
-                        return false;
-                    }
+        return minimizeTrace(state, StatePredicate.statePredicate(null, s -> {
+            if (!(s instanceof SearchState)) {
+                return false;
+            }
 
-                    Throwable e = ((SearchState) s).thrownException();
-                    if (e == null) {
-                        return false;
-                    }
+            Throwable e = ((SearchState) s).thrownException();
+            if (e == null) {
+                return false;
+            }
 
-                    return Objects.equals(e.getClass(), exception.getClass());
-                }), true);
+            return Objects.equals(e.getClass(), exception.getClass());
+        }), true);
     }
 
     private static SearchState applyEvents(SearchState initialState,
                                            List<Event> events) {
         SearchState s = initialState;
         for (Event e : events) {
-            // TODO: don't use null settings here, it re-initialized every time
+            // TODO: don't use null settings here, it's re-initialized every time
             // TODO: do we need to use same settings as the search?
             SearchState next = s.stepEvent(e, null, false);
             if (next == null) {

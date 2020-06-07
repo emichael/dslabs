@@ -1,7 +1,5 @@
 package dslabs.primarybackup;
 
-import dslabs.framework.Address;
-import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.search.SearchState;
@@ -10,16 +8,15 @@ import dslabs.kvstore.KVStoreWorkload;
 import java.util.List;
 
 import static dslabs.primarybackup.PrimaryBackupTest.builder;
+import static dslabs.primarybackup.ViewServerTest.VSA;
 
 public class PBVizConfig extends VizConfig {
-    private static final Address vsa = new LocalAddress("viewserver");
-
     @Override
     public SearchState getInitialState(int numServers, int numClients,
                                        List<String> commands) {
         SearchState searchState =
                 super.getInitialState(numServers, numClients, commands);
-        searchState.addServer(vsa);
+        searchState.addServer(VSA);
         return searchState;
     }
 

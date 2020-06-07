@@ -31,14 +31,26 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
+/**
+ * In order to support starting the visualizer from an initial state from the
+ * command-line, each lab needs a way to convert a list of argument into a
+ * concrete state.
+ *
+ * Sub-classes only need override {@link VizConfig#getInitialState(String[])}.
+ * The other methods are provided for convenience. However, the instructions in
+ * the READMEs describing how to start the visualizer specify the default
+ * behavior as taking the arguments: "numServers numClients WORKLOAD_STRING".
+ * And deviation from that convention should be clearly documented in that lab's
+ * README.
+ */
 public abstract class VizConfig {
     public SearchState getInitialState(String[] args) {
         return getInitialState(Integer.parseInt(args[0]),
                 Integer.parseInt(args[1]), commands(args[2]));
     }
 
-    public SearchState getInitialState(int numServers, int numClients,
-                                       List<String> commands) {
+    protected SearchState getInitialState(int numServers, int numClients,
+                                          List<String> commands) {
         List<Address> servers = new LinkedList<>();
         if (numServers == 1) {
             servers.add(new LocalAddress("server"));

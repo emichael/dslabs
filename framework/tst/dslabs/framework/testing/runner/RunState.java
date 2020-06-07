@@ -60,7 +60,7 @@ public class RunState extends AbstractState {
 
     // All accesses to these variables must be protected by synchronized(this)
     private Thread mainThread;
-    private Map<Address, Thread> nodeThreads = new HashMap<>();
+    private final Map<Address, Thread> nodeThreads = new HashMap<>();
     private long startTimeMillis;
     private boolean running = false, shuttingDown = false;
 

@@ -13,7 +13,6 @@ import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunState;
-import dslabs.framework.testing.search.Search;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.SerializableFunction;
 import dslabs.pingpong.PingApplication.Ping;
@@ -22,7 +21,6 @@ import java.util.Objects;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -30,8 +28,6 @@ import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_EXHAUSTED;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public final class PingTest extends BaseJUnitTest {
@@ -48,6 +44,12 @@ public final class PingTest extends BaseJUnitTest {
         }
     }
 
+    static Workload repeatedPings(int numPings) {
+        return Workload.builder().parser(new PingParser())
+                       .commandStrings("ping-%i").resultStrings("ping-%i")
+                       .numTimes(numPings).build();
+    }
+
     static StateGeneratorBuilder builder() {
         StateGeneratorBuilder builder = StateGenerator.builder();
         builder.serverSupplier(a -> {
@@ -58,25 +60,19 @@ public final class PingTest extends BaseJUnitTest {
         });
         builder.clientSupplier(a -> new PingClient(a, sa));
         builder.workloadSupplier(Workload.emptyWorkload());
-
         return builder;
     }
 
-    @Before
-    public void setup() {
-        builder = builder();
-
-        runState = new RunState(builder.build());
+    @Override
+    protected void setupRunTest() {
+        runState = new RunState(builder().build());
         runState.addServer(sa);
-
-        initSearchState = new SearchState(builder.build());
-        initSearchState.addServer(sa);
     }
 
-    static Workload repeatedPings(int numPings) {
-        return Workload.builder().parser(new PingParser())
-                       .commandStrings("ping-%i").resultStrings("ping-%i")
-                       .numTimes(numPings).build();
+    @Override
+    protected void setupSearchTest() {
+        initSearchState = new SearchState(builder().build());
+        initSearchState.addServer(sa);
     }
 
     @Test(timeout = 5 * 1000)
@@ -127,15 +123,15 @@ public final class PingTest extends BaseJUnitTest {
         initSearchState.addClientWorker(client(1), repeatedPings(10));
 
         System.out.println("Checking that the client can finish all pings");
-        searchSettings.addInvariant(CLIENTS_DONE.negate()).maxTimeSecs(10);
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(10);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out
                 .println("Checking that all of the returned pongs match pings");
-        searchSettings.clearInvariants().addPrune(CLIENTS_DONE)
-                      .addInvariant(RESULTS_OK);
-        assertEndCondition(SPACE_EXHAUSTED,
-                Search.bfs(initSearchState, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE);
+        bfs(initSearchState);
+        assertSpaceExhausted();
     }
 }

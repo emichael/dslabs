@@ -9,8 +9,6 @@ import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.runner.RunState;
-import dslabs.framework.testing.search.Search;
-import dslabs.framework.testing.search.SearchResults;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.kvstore.KVStoreWorkload;
 import dslabs.paxos.PaxosClient;
@@ -35,31 +33,21 @@ import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.framework.testing.StatePredicate.clientDone;
 import static dslabs.framework.testing.StatePredicate.clientHasResults;
-import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static org.junit.Assert.assertTrue;
 
 public abstract class ShardStoreBaseTest extends BaseJUnitTest {
-    static final Address cca = new LocalAddress("configController");
+    static final Address CCA = new LocalAddress("configController");
 
     Client configController;
 
 
     /* Setup and cleanup */
 
-    @Override
-    protected void setupTest() {
-        builder = StateGenerator.builder();
-        builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
-    }
-
-    @Override
-    protected void cleanupTest() {
-        configController = null;
-    }
-
-    static void setupBuilder(StateGeneratorBuilder builder, int numGroups,
-                             int numServersPerGroup, int numShardMasters,
-                             int numShards) {
+    static StateGeneratorBuilder builder(final int numGroups,
+                                         final int numServersPerGroup,
+                                         final int numShardMasters,
+                                         final int numShards) {
+        final StateGeneratorBuilder builder = StateGenerator.builder();
         final Address[] shardMasters = IntStream.rangeClosed(1, numShardMasters)
                                                 .mapToObj(
                                                         ShardStoreBaseTest::shardMaster)
@@ -92,20 +80,13 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         });
 
         builder.clientSupplier(a -> {
-            if (a.equals(cca)) {
+            if (a.equals(CCA)) {
                 return new PaxosClient(a, shardMasters.clone());
             }
 
             return new ShardStoreClient(a, shardMasters.clone(), numShards);
         });
-    }
-
-    static StateGeneratorBuilder builder(int numGroups, int numServersPerGroup,
-                                         int numShardMasters, int numShards) {
-        StateGeneratorBuilder builder = StateGenerator.builder();
         builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
-        setupBuilder(builder, numGroups, numServersPerGroup, numShardMasters,
-                numShards);
         return builder;
     }
 
@@ -122,19 +103,29 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         }
     }
 
+    @Override
+    protected void cleanupTest() {
+        configController = null;
+    }
+
     void setupStates(int numGroups, int numServersPerGroup, int numShardMasters,
                      int numShards) {
-        setupBuilder(builder, numGroups, numServersPerGroup, numShardMasters,
-                numShards);
+        StateGenerator stateGenerator =
+                builder(numGroups, numServersPerGroup, numShardMasters,
+                        numShards).build();
 
-        runState = new RunState(builder.build());
-        initSearchState = new SearchState(builder.build());
+        if (isRunTest()) {
+            runState = new RunState(stateGenerator);
+            addServers(runState, numGroups, numServersPerGroup,
+                    numShardMasters);
+            configController = runState.addClient(CCA);
+        }
 
-        configController = runState.addClient(cca);
-
-        addServers(runState, numGroups, numServersPerGroup, numShardMasters);
-        addServers(initSearchState, numGroups, numServersPerGroup,
-                numShardMasters);
+        if (isSearchTest()) {
+            initSearchState = new SearchState(stateGenerator);
+            addServers(initSearchState, numGroups, numServersPerGroup,
+                    numShardMasters);
+        }
     }
 
 
@@ -191,8 +182,8 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         assertTrue(max - min <= 1);
     }
 
-    Thread moveShards(int numGroups, int numShards) {
-        return new Thread(() -> {
+    Runnable moveShards(int numGroups, int numShards) {
+        return () -> {
             Random rand = new Random();
 
             try {
@@ -205,7 +196,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
                 }
             } catch (InterruptedException ignored) {
             }
-        }, "Constantly move shards");
+        };
     }
 
 
@@ -223,32 +214,28 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
      * client(1). Must call setupStates(1, 1, 1, N) before calling this method.
      */
     void singleClientSingleGroupSearch() {
-        initSearchState.addClientWorker(cca,
+        initSearchState.addClientWorker(CCA,
                 Workload.builder().commands(new Join(1, servers(1, 1)))
                         .results(new Ok()).build());
 
         // First, just get the Join finished
-        searchSettings.maxTimeSecs(15).partition(cca, shardMaster(1))
-                      .addInvariant(clientDone(cca).negate());
-        SearchResults results = Search.bfs(initSearchState, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState joinFinished = results.invariantViolatingState();
+        searchSettings.maxTimeSecs(15).partition(CCA, shardMaster(1))
+                      .addInvariant(RESULTS_OK).addGoal(clientDone(CCA));
+        bfs(initSearchState);
+        final SearchState joinFinished = goalMatchingState();
 
         // From there, make sure the client can finish all operations
-        searchSettings.resetNetwork().clearInvariants()
-                      .addInvariant(CLIENTS_DONE.negate());
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(joinFinished, searchSettings));
+        searchSettings.resetNetwork().clearGoals().addGoal(CLIENTS_DONE);
+        bfs(joinFinished);
+        assertGoalFound();
 
         // Now, check from the end of the Join
-        searchSettings.clearInvariants().addInvariant(RESULTS_OK)
-                      .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertEndConditionValidAndContinue(
-                Search.bfs(joinFinished, searchSettings));
+        searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);
+        bfs(joinFinished);
 
         // Search from the beginning with no timers (potentially not useful)
         searchSettings.deliverTimers(false);
-        assertEndConditionValid(Search.bfs(initSearchState, searchSettings));
+        bfs(initSearchState);
     }
 
     /**
@@ -257,45 +244,41 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
      */
     void singleClientMultiGroupSearch() {
         // Group 1 joins -> group 2 joins -> group 1 leaves
-        initSearchState.addClientWorker(cca, Workload.builder().commands(
+        initSearchState.addClientWorker(CCA, Workload.builder().commands(
                 new Join(1, servers(1, 1)), new Join(2, servers(2, 1)),
                 new Leave(1)).results(new Ok(), new Ok(), new Ok()).build());
 
         // Find state where first Join is finished
-        searchSettings.maxTimeSecs(15).partition(cca, shardMaster(1))
-                      .addInvariant(clientHasResults(cca, 1).negate());
-        SearchResults results = Search.bfs(initSearchState, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState firstJoin = results.invariantViolatingState();
+        searchSettings.maxTimeSecs(15).partition(CCA, shardMaster(1))
+                      .addInvariant(RESULTS_OK)
+                      .addGoal(clientHasResults(CCA, 1));
+        bfs(initSearchState);
+        final SearchState firstJoin = goalMatchingState();
 
         // Then, find a state where the Put is finished
         searchSettings.resetNetwork()
                       .partition(client(1), shardMaster(1), server(1, 1))
-                      .clearInvariants()
-                      .addInvariant(clientHasResults(client(1), 1).negate());
-        results = Search.bfs(firstJoin, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState putDone = results.invariantViolatingState();
+                      .clearGoals().addGoal(clientHasResults(client(1), 1));
+        bfs(firstJoin);
+        final SearchState putDone = goalMatchingState();
 
         // From there, finish the second Join and the Leave
-        searchSettings.resetNetwork().partition(cca, shardMaster(1))
-                      .clearInvariants().addInvariant(clientDone(cca).negate());
-        results = Search.bfs(putDone, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState ccaDone = results.invariantViolatingState();
+        searchSettings.resetNetwork().partition(CCA, shardMaster(1))
+                      .clearGoals().addGoal(clientDone(CCA));
+        bfs(putDone);
+        final SearchState ccaDone = goalMatchingState();
 
         // Search for invariant violations from there
-        searchSettings.clearInvariants().addInvariant(RESULTS_OK).resetNetwork()
-                      .addPrune(CLIENTS_DONE).maxTimeSecs(30);
-        assertEndConditionValidAndContinue(Search.bfs(ccaDone, searchSettings));
+        searchSettings.clearGoals().resetNetwork().addPrune(CLIENTS_DONE)
+                      .maxTimeSecs(30);
+        bfs(ccaDone);
 
         // Search for invariant violations from first Join
-        assertEndConditionValidAndContinue(
-                Search.bfs(firstJoin, searchSettings));
+        bfs(firstJoin);
 
         // Again without timers (potentially not useful)
         searchSettings.deliverTimers(false).maxTimeSecs(15);
-        assertEndConditionValid(Search.bfs(firstJoin, searchSettings));
+        bfs(firstJoin);
     }
 
     /**
@@ -306,49 +289,45 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
      */
     void multiClientMultiGroupSearch() {
         // Both groups join
-        initSearchState.addClientWorker(cca, Workload.builder().commands(
+        initSearchState.addClientWorker(CCA, Workload.builder().commands(
                 new Join(1, servers(1, 1)), new Join(2, servers(2, 1)))
                                                      .build());
 
         // Find state where first join is finished
-        searchSettings.maxTimeSecs(15).partition(cca, shardMaster(1))
-                      .addInvariant(clientHasResults(cca, 1).negate());
-        SearchResults results = Search.bfs(initSearchState, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState firstJoin = results.invariantViolatingState();
+        searchSettings.maxTimeSecs(15).partition(CCA, shardMaster(1))
+                      .addInvariant(RESULTS_OK)
+                      .addGoal(clientHasResults(CCA, 1));
+        bfs(initSearchState);
+        SearchState firstJoin = goalMatchingState();
 
         // Find state where client1 is done
-        searchSettings.clearInvariants().resetNetwork()
+        searchSettings.resetNetwork()
                       .partition(client(1), shardMaster(1), server(1, 1))
-                      .maxTimeSecs(30)
-                      .addInvariant(clientDone(client(1)).negate());
-        results = Search.bfs(firstJoin, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState client1Done = results.invariantViolatingState();
+                      .maxTimeSecs(30).clearGoals()
+                      .addGoal(clientDone(client(1)));
+        bfs(firstJoin);
+        SearchState client1Done = goalMatchingState();
 
         // Make sure we can find a state where client2 has finished
-        searchSettings.clearInvariants().resetNetwork()
+        searchSettings.resetNetwork()
                       .partition(client(2), shardMaster(1), server(1, 1))
-                      .addInvariant(clientDone(client(2)).negate());
-        assertEndConditionAndContinue(INVARIANT_VIOLATED,
-                Search.bfs(client1Done, searchSettings));
+                      .clearGoals().addGoal(clientDone(client(2)));
+        bfs(client1Done);
 
         // From here, finish the other join
-        searchSettings.clearInvariants().resetNetwork().maxTimeSecs(15)
-                      .partition(cca, shardMaster(1))
-                      .addInvariant(clientDone(cca));
-        results = Search.bfs(client1Done, searchSettings);
-        assertEndCondition(INVARIANT_VIOLATED, results);
-        SearchState secondJoin = results.invariantViolatingState();
+        searchSettings.resetNetwork().maxTimeSecs(15)
+                      .partition(CCA, shardMaster(1)).clearGoals()
+                      .addGoal(clientDone(CCA));
+        bfs(client1Done);
+        SearchState secondJoin = goalMatchingState();
 
         // Search for invariant violations from second join being done
-        searchSettings.clearInvariants().resetNetwork().maxTimeSecs(30)
-                      .addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
-        assertEndConditionValidAndContinue(
-                Search.bfs(secondJoin, searchSettings));
+        searchSettings.clearGoals().resetNetwork().maxTimeSecs(30)
+                      .addPrune(CLIENTS_DONE);
+        bfs(secondJoin);
 
         // Again without timers (potentially not useful)
         searchSettings.deliverTimers(false);
-        assertEndConditionValid(Search.bfs(secondJoin, searchSettings));
+        bfs(secondJoin);
     }
 }

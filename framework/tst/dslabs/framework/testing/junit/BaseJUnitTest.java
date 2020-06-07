@@ -29,10 +29,10 @@ import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
+import dslabs.framework.testing.search.Search;
 import dslabs.framework.testing.search.SearchResults;
 import dslabs.framework.testing.search.SearchResults.EndCondition;
 import dslabs.framework.testing.search.SearchSettings;
@@ -54,8 +54,10 @@ import org.junit.runner.RunWith;
 import org.junit.runners.model.Statement;
 
 import static dslabs.framework.testing.search.SearchResults.EndCondition.EXCEPTION_THROWN;
+import static dslabs.framework.testing.search.SearchResults.EndCondition.GOAL_FOUND;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.INVARIANT_VIOLATED;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.SPACE_EXHAUSTED;
+import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EXHAUSTED;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -66,66 +68,37 @@ public abstract class BaseJUnitTest {
     protected SearchSettings searchSettings;
 
     /* States */
-    protected StateGeneratorBuilder builder;
     protected RunState runState;
     protected SearchState initSearchState;
 
-    protected Set<Thread> startedThreads;
-
     /* Internal */
+    private Set<Thread> startedThreads;
     private boolean failedSearchTest;
+    private SearchResults searchResults;
+    private Description testDescription;
 
-    private void baseSetupTest() {
-        runSettings = new RunSettings();
-        searchSettings = new SearchSettings();
-        startedThreads = new HashSet<>();
-        failedSearchTest = false;
+
+    protected final boolean isRunTest() {
+        return TestListener.isInCategory(testDescription, RunTests.class);
+    }
+
+    protected final boolean isSearchTest() {
+        return TestListener.isInCategory(testDescription, SearchTests.class);
     }
 
     protected void setupTest() {
     }
 
-    private void baseShutdownTest() throws InterruptedException {
-        shutdownStartedThreads();
+    protected void setupRunTest() {
+    }
 
-        if (runState != null) {
-            runState.stop();
-        }
+    protected void setupSearchTest() {
     }
 
     protected void shutdownTest() throws InterruptedException {
     }
 
-    private void baseVerifyTest() throws Throwable {
-        if (runState != null) {
-            if (runState.exceptionThrown()) {
-                fail("Exception(s) thrown by running nodes.");
-            }
-
-            assertRunInvariantsHold();
-        }
-
-        assertSearchTestsPassed();
-    }
-
     protected void verifyTest() throws Throwable {
-    }
-
-    private void baseCleanupTest() {
-        runSettings = null;
-        searchSettings = null;
-        builder = null;
-        runState = null;
-        initSearchState = null;
-        startedThreads = null;
-
-        // Do garbage collection and take a quick nap to limit cross-test interference
-        System.gc();
-        try {
-            Thread.sleep(50);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
     }
 
     protected void cleanupTest() {
@@ -133,31 +106,73 @@ public abstract class BaseJUnitTest {
 
     @Rule public TestRule rule = new TestRule() {
         @Override
-        public Statement apply(Statement base, Description description) {
+        public Statement apply(final Statement base,
+                               final Description description) {
             return new Statement() {
                 @Override
                 public void evaluate() throws Throwable {
                     try {
-                        baseSetupTest();
+                        testDescription = description;
+                        startedThreads = new HashSet<>();
+                        failedSearchTest = false;
+
                         setupTest();
+                        if (isRunTest()) {
+                            runSettings = new RunSettings();
+                            setupRunTest();
+                        }
+                        if (isSearchTest()) {
+                            searchSettings = new SearchSettings();
+                            setupSearchTest();
+                        }
+
                         try {
                             base.evaluate();
                         } finally {
                             shutdownTest();
-                            baseShutdownTest();
+                            shutdownStartedThreads();
+
+                            if (runState != null) {
+                                runState.stop();
+                            }
                         }
+
                         verifyTest();
-                        baseVerifyTest();
+                        if (runState != null) {
+                            if (runState.exceptionThrown()) {
+                                fail("Exception(s) thrown by running nodes.");
+                            }
+
+                            assertRunInvariantsHold();
+                        }
+
+                        if (failedSearchTest) {
+                            fail("Search test failed.");
+                        }
                     } finally {
                         cleanupTest();
-                        baseCleanupTest();
+                        runSettings = null;
+                        searchSettings = null;
+                        runState = null;
+                        initSearchState = null;
+                        startedThreads = null;
+                        searchResults = null;
+                        testDescription = null;
+
+                        // Do garbage collection and take a quick nap to limit cross-test interference
+                        System.gc();
+                        try {
+                            Thread.sleep(50);
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                        }
                     }
                 }
             };
         }
     };
 
-    public void shutdownStartedThreads() throws InterruptedException {
+    protected void shutdownStartedThreads() throws InterruptedException {
         for (Thread thread : startedThreads) {
             thread.interrupt();
         }
@@ -167,17 +182,21 @@ public abstract class BaseJUnitTest {
         }
     }
 
+
     /* Addresses */
-    protected static Address client(int i) {
+
+    public static Address client(int i) {
         return new LocalAddress("client" + i);
     }
 
-    protected static Address server(int i) {
+    public static Address server(int i) {
         return new LocalAddress("server" + i);
     }
 
-    /* Assertions */
-    protected void assertRunInvariantsHold() {
+
+    /* Run test helper methods */
+
+    protected final void assertRunInvariantsHold() {
         if (runSettings.invariantsHold(runState)) {
             return;
         }
@@ -191,171 +210,21 @@ public abstract class BaseJUnitTest {
         }
     }
 
-    protected void assertEndCondition(EndCondition expectedEndCondition,
-                                      SearchResults searchResults) {
-        assertEndCondition(expectedEndCondition, searchResults, true);
+    protected final void startThread(Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        startedThreads.add(thread);
+        thread.start();
     }
 
-    protected void assertEndConditionAndContinue(
-            EndCondition expectedEndCondition, SearchResults searchResults) {
-        assertEndCondition(expectedEndCondition, searchResults, false);
-    }
-
-    private void assertEndCondition(EndCondition expectedEndCondition,
-                                    SearchResults searchResults,
-                                    boolean endTestOnFailure) {
-        if (expectedEndCondition.equals(searchResults.endCondition())) {
-            if (endTestOnFailure) {
-                assertSearchTestsPassed();
-            }
-
-            return;
-        }
-
-        if (searchResults.endCondition().equals(INVARIANT_VIOLATED)) {
-            invariantViolated(searchResults);
-        } else if (searchResults.endCondition().equals(EXCEPTION_THROWN)) {
-            exceptionThrown(searchResults);
-        } else if (expectedEndCondition.equals(INVARIANT_VIOLATED)) {
-            List<StatePredicate> invariants =
-                    new ArrayList<>(searchResults.invariantsTested());
-
-            StringBuilder sb =
-                    new StringBuilder("Could not find state matching");
-            if (invariants.size() == 1) {
-                sb.append(" \"").append(invariants.get(0).negate().name())
-                  .append("\"");
-            } else {
-                sb.append(" one of the following:");
-                for (StatePredicate inv : invariants) {
-                    sb.append("\n\t- \"").append(inv.negate()).append("\"");
-                }
-            }
-
-            otherSearchFailure(sb.toString(), endTestOnFailure);
-        } else if (expectedEndCondition.equals(SPACE_EXHAUSTED)) {
-            otherSearchFailure(
-                    "Could not exhaust search space, ran out of time.",
-                    endTestOnFailure);
-        } else {
-            otherSearchFailure(
-                    "Exhausted search space, should have run out of time.",
-                    endTestOnFailure);
-        }
-    }
-
-    protected void assertEndConditionValid(SearchResults searchResults) {
-        assertEndConditionValid(searchResults, true);
-    }
-
-    protected void assertEndConditionValidAndContinue(
-            SearchResults searchResults) {
-        assertEndConditionValid(searchResults, false);
-    }
-
-    private void assertEndConditionValid(SearchResults searchResults,
-                                         boolean endTestOnFailure) {
-        if (searchResults.endCondition().equals(INVARIANT_VIOLATED)) {
-            invariantViolated(searchResults);
-        } else if (searchResults.endCondition().equals(EXCEPTION_THROWN)) {
-            exceptionThrown(searchResults);
-        } else if (endTestOnFailure) {
-            assertSearchTestsPassed();
-        }
-    }
-
-    private void otherSearchFailure(String message, boolean endTestOnFailure) {
-        if (endTestOnFailure) {
-            fail(message);
-        } else {
-            failedSearchTest = true;
-            System.err.println("Search test failed. " + message);
-            System.err.println("Continuing to run the rest of the test...\n");
-        }
-    }
-
-    protected void assertSearchTestsPassed() {
-        if (failedSearchTest) {
-            fail("Search test failed.");
-        }
-    }
-
-    private void invariantViolated(SearchResults searchResults) {
-        final SearchState humanReadable = SearchState
-                .humanReadableTraceEndState(
-                        searchResults.invariantViolatingState());
-
-        humanReadable.printTrace();
-
-        StatePredicate invariant = searchResults.invariantViolated();
-        assert invariant != null;
-
-        System.err.println("\n" + invariant.errorMessage(humanReadable) + "\n");
-
-        if (GlobalSettings.startVisualization()) {
-            Thread thread = new Thread(() -> {
-                VizClient vc = new VizClient(humanReadable, invariant, true);
-                try {
-                    vc.run();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }, "VizClient");
-            thread.setDaemon(false);
-            thread.start();
-
-            System.err.println("Invariant violated. Visualization started.\n");
-            throw new VizClientStarted();
-        } else {
-            fail("Invariant violated (see above trace and information).");
-        }
-    }
-
-    @SneakyThrows
-    private void exceptionThrown(SearchResults searchResults) {
-        Throwable exception =
-                searchResults.exceptionalState().thrownException();
-        assert exception != null;
-
-        final SearchState humanReadable = SearchState
-                .humanReadableTraceEndState(searchResults.exceptionalState());
-        humanReadable.printTrace();
-        System.err.println();
-
-        if (GlobalSettings.startVisualization()) {
-            Thread thread = new Thread(() -> {
-                VizClient vc = new VizClient(humanReadable, null, true);
-                try {
-                    vc.run();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }, "VizClient");
-            thread.setDaemon(false);
-            thread.start();
-
-            exception.printStackTrace();
-
-            System.err.println(
-                    "\nException thrown by nodes during search. Visualization started.\n");
-
-            throw new VizClientStarted();
-        } else {
-            System.err.println(
-                    "Exception thrown by nodes during search (see above trace).\n");
-            throw exception;
-        }
-    }
-
-    protected void sendCommandAndCheck(Client client, Command command,
-                                       Result expectedResult)
+    protected final void sendCommandAndCheck(Client client, Command command,
+                                             Result expectedResult)
             throws InterruptedException {
         client.sendCommand(command);
         Result result = client.getResult();
         assertEquals(expectedResult, result);
     }
 
-    protected void assertMaxWaitTimeLessThan(long allowedMillis) {
+    protected final void assertMaxWaitTimeLessThan(long allowedMillis) {
         // TODO: maybe shut the runstate and threads down here
 
         long maxWaitTimeMillis = 0;
@@ -373,26 +242,203 @@ public abstract class BaseJUnitTest {
                         maxWaitTimeMillis, allowedMillis));
     }
 
+
+    /* Search helper methods */
+
+    protected final void bfs(SearchState searchState,
+                             SearchSettings searchSettings) {
+        assert searchState != null;
+        searchResults = Search.bfs(searchState, searchSettings);
+        assertEndConditionValid();
+    }
+
+    protected final void bfs(SearchState searchState) {
+        bfs(searchState, searchSettings);
+    }
+
+    protected final void dfs(SearchState searchState,
+                             SearchSettings searchSettings) {
+        assert searchState != null;
+        searchResults = Search.dfs(searchState, searchSettings);
+        assertEndConditionValid();
+    }
+
+    protected final void dfs(SearchState searchState) {
+        dfs(searchState, searchSettings);
+    }
+
+    @SneakyThrows
+    private void assertEndConditionValid() {
+        final EndCondition ec = searchResults.endCondition();
+        if (!(ec == INVARIANT_VIOLATED || ec == EXCEPTION_THROWN)) {
+            return;
+        }
+
+        final SearchState terminal;
+        final StatePredicate invariant;
+        final Throwable exception;
+        if (ec == INVARIANT_VIOLATED) {
+            terminal = searchResults.invariantViolatingState();
+            invariant = searchResults.invariantViolated();
+            exception = null;
+        } else {
+            terminal = searchResults.exceptionalState();
+            invariant = null;
+            exception = searchResults.exceptionalState().thrownException();
+        }
+
+        final SearchState humanReadable =
+                SearchState.humanReadableTraceEndState(terminal);
+        humanReadable.printTrace();
+
+        if (ec == INVARIANT_VIOLATED) {
+            System.err.println(
+                    "\n" + invariant.errorMessage(humanReadable) + "\n");
+        } else {
+            System.err.println();
+        }
+
+        if (GlobalSettings.startVisualization()) {
+            Thread thread = new Thread(() -> {
+                VizClient vc = new VizClient(humanReadable, invariant, true);
+                try {
+                    vc.run();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, "VizClient");
+            thread.setDaemon(false);
+            thread.start();
+
+            if (ec == INVARIANT_VIOLATED) {
+                System.err.println(
+                        "Invariant violated. Visualization started.\n");
+            } else {
+                exception.printStackTrace();
+                System.err.println(
+                        "\nException thrown by nodes during search. Visualization started.\n");
+            }
+
+            throw new VizClientStarted();
+        }
+
+        if (ec == INVARIANT_VIOLATED) {
+            fail("Invariant violated (see above trace and information).");
+        }
+
+        System.err.println(
+                "Exception thrown by nodes during search (see above trace).\n");
+        throw exception;
+    }
+
+    protected final void clearSearchResults() {
+        searchResults = null;
+    }
+
+    protected final SearchState goalMatchingState() {
+        assert !searchResults.goalsSought().isEmpty();
+        assertGoalFound(true);
+        return searchResults.goalMatchingState();
+    }
+
+    protected final void assertGoalFound() {
+        assert !searchResults.goalsSought().isEmpty();
+        assertGoalFound(false);
+    }
+
+    private void assertGoalFound(boolean endTestOnFailure) {
+        assert searchResults.goalsSought() != null &&
+                !searchResults.goalsSought().isEmpty();
+
+        final EndCondition ec = searchResults.endCondition();
+        if (ec == GOAL_FOUND) {
+            return;
+        }
+
+        assert ec != INVARIANT_VIOLATED && ec != EXCEPTION_THROWN;
+
+        final List<StatePredicate> goals =
+                new ArrayList<>(searchResults.goalsSought());
+        final StringBuilder sb = new StringBuilder();
+        sb.append("Could not find state matching");
+        if (goals.size() == 1) {
+            sb.append(" \"").append(goals.get(0).name()).append("\"");
+        } else {
+            sb.append(" one of the following:");
+            for (StatePredicate goal : goals) {
+                sb.append("\n\t- \"").append(goal).append("\"");
+            }
+        }
+        sb.append(switch (ec) {
+            case SPACE_EXHAUSTED -> "\nSearch space was exhausted.";
+            case TIME_EXHAUSTED -> "\nSearch ran out of time.";
+            default -> "";
+        });
+
+        if (endTestOnFailure) {
+            fail(sb.toString());
+        } else {
+            System.err.println(sb.toString());
+            failTestAndContinue();
+        }
+    }
+
+    protected final void assertSpaceExhausted() {
+        assert searchResults.goalsSought() == null ||
+                searchResults.goalsSought().isEmpty();
+
+        final EndCondition ec = searchResults.endCondition();
+        if (searchResults.endCondition() == SPACE_EXHAUSTED) {
+            return;
+        }
+
+        assert ec == TIME_EXHAUSTED;
+
+        System.err.println("Could not exhaust search space, ran out of time.");
+        failTestAndContinue();
+    }
+
+    private void failTestAndContinue() {
+        System.err.println(
+                "Search test failed. Continuing to run the rest of the test...\n");
+        failedSearchTest = true;
+    }
+
+
     /* Utils */
-    protected long nodesSize() {
-        // TODO: include timer queues?
+
+    protected final long nodesSize() {
         int total = 0;
         for (Node node : runState.nodes()) {
             total += Cloning.size(node);
+            // TODO: consider including timers as below
+            // for (TimerEnvelope te : runState.timers(node.address())) {
+            //     total += Cloning.size(te.timer());
+            // }
         }
         return total;
     }
 
-
     public static String readableSize(long size) {
-        // Taken from: https://stackoverflow.com/a/5599842
-        if (size <= 0) {
-            return "0";
+        // Modified from: https://stackoverflow.com/a/5599842
+        if (size == 0) {
+            return "0 B";
         }
+
+        final String prefix;
+        if (size < 0) {
+            prefix = "-";
+        } else {
+            prefix = "";
+        }
+
+        size = Math.abs(size);
+
         final String[] units = new String[]{"B", "kB", "MB", "GB", "TB"};
-        int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
-        return new DecimalFormat("#,##0.#")
+        final int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
+        final String baseStr = new DecimalFormat("#,##0.#")
                 .format(size / Math.pow(1024, digitGroups)) + " " +
                 units[digitGroups];
+        return prefix + baseStr;
     }
 }

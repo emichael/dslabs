@@ -31,17 +31,23 @@ import lombok.Setter;
 @Getter
 public class SearchResults {
     public enum EndCondition {
-        SPACE_EXHAUSTED, TIME_EXHAUSTED, INVARIANT_VIOLATED, EXCEPTION_THROWN
+        SPACE_EXHAUSTED, TIME_EXHAUSTED, INVARIANT_VIOLATED, GOAL_FOUND,
+        EXCEPTION_THROWN
     }
 
     // Only set by main thread
     @Setter private Collection<StatePredicate> invariantsTested;
+    @Setter private Collection<StatePredicate> goalsSought;
     @Setter private EndCondition endCondition;
 
     // Set by worker threads
     private final AtomicReference<SearchState> invariantViolatingState =
             new AtomicReference<>();
     private volatile StatePredicate invariantViolated;
+
+    private final AtomicReference<SearchState> goalMatchingState =
+            new AtomicReference<>();
+    private volatile StatePredicate goalMatched;
 
     private final AtomicReference<SearchState> exceptionalState =
             new AtomicReference<>();
@@ -55,9 +61,19 @@ public class SearchResults {
         return exceptionalState.get();
     }
 
+    public SearchState goalMatchingState() {
+        return goalMatchingState.get();
+    }
+
     void invariantViolated(SearchState state, StatePredicate invariant) {
         if (invariantViolatingState.compareAndSet(null, state)) {
             invariantViolated = invariant;
+        }
+    }
+
+    void goalFound(SearchState state, StatePredicate goal) {
+        if (goalMatchingState.compareAndSet(null, state)) {
+            goalMatched = goal;
         }
     }
 
