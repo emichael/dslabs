@@ -80,7 +80,7 @@ class PingClient extends Node implements Client {
         Timer Handlers
        -----------------------------------------------------------------------*/
     private synchronized void onPingTimer(PingTimer t) {
-        if (ping != null && Objects.equal(ping, t.ping()) && pong == null) {
+        if (Objects.equal(ping, t.ping()) && pong == null) {
             send(new PingRequest(ping), serverAddress);
             set(t, RETRY_MILLIS);
         }
