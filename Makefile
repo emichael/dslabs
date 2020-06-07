@@ -7,10 +7,13 @@ LAB_FILES = $(shell find labs -type f | sed 's/ /\\ /g')
 HANDOUT_FILES = $(shell find handout-files -type f | sed 's/ /\\ /g')
 
 JAR_FILES = build/libs/framework.jar \
-						build/libs/framework-compile.jar \
-						build/libs/framework-sources.jar
-
-OTHER_FILES = build/doc/ lombok.config deps/oddity.jar
+						build/libs/grader.jar \
+						build/libs/framework-sources.jar \
+						build/libs/grader-sources.jar \
+						build/libs/framework-deps.jar \
+						build/libs/grader-deps.jar \
+						build/libs/framework-deps-sources.jar
+OTHER_FILES = build/doc/ lombok.config
 
 
 ifeq ($(shell uname -s),Darwin)
@@ -31,18 +34,23 @@ all: build/handout/
 dependencies: deps/oddity.jar
 	./gradlew copyDependencies
 
-$(JAR_FILES) build/doc/: $(FRAMEWORK_FILES)
+build/libs/: $(FRAMEWORK_FILES)
 	./gradlew assemble
+	touch $@
+
+build/doc/: $(FRAMEWORK_FILES)
+	./gradlew javadoc
 	touch $@
 
 deps/oddity.jar:
 	mkdir -p deps
 	wget -O $@ $(ODDITY_URL)
 
-build/handout/: $(LAB_FILES) $(JAR_FILES) $(HANDOUT_FILES) $(OTHER_FILES)
+build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/ deps/oddity.jar
 	rm -rf $@
-	mkdir $@
-	$(CP) -r labs handout-files/. $(JAR_FILES) $(OTHER_FILES) $@
+	mkdir $@ $@jars
+	$(CP) -r labs handout-files/. $(OTHER_FILES) $@
+	$(CP) $(JAR_FILES) deps/oddity.jar $@jars
 
 build/handout.tar.gz: build/handout/
 	$(TAR) -czf $@ --transform "s/^build\/handout/dslabs/" $^

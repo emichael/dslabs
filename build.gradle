@@ -21,7 +21,7 @@ sourceSets {
     java {
       srcDirs = ['framework/tst']
     }
-    compileClasspath += main.output
+    compileClasspath += main.compileClasspath + main.output
     annotationProcessorPath += main.annotationProcessorPath
   }
 
@@ -43,7 +43,6 @@ sourceSets {
                   'labs/lab4-shardedstore/src' ]
     }
     compileClasspath += main.compileClasspath + main.output
-    runtimeClasspath += main.runtimeClasspath
     annotationProcessorPath += main.annotationProcessorPath
   }
 
@@ -56,16 +55,18 @@ sourceSets {
                   'labs/lab4-shardedstore/tst']
     }
     compileClasspath += grader.compileClasspath + grader.output + labs.output
-    runtimeClasspath += grader.runtimeClasspath + labs.output
     annotationProcessorPath += grader.annotationProcessorPath
   }
 }
 
 configurations {
-  sources
-  graderSources.extendsFrom sources
-
-  graderImplementation.extendsFrom implementation
+  sources {
+    transitive = false
+  }
+  graderImplementation
+  graderSources {
+    transitive = false
+  }
 }
 
 repositories {
@@ -73,31 +74,30 @@ repositories {
 }
 
 dependencies {
-  implementation      'org.projectlombok:lombok:1.18.12'
-  annotationProcessor 'org.projectlombok:lombok:1.18.12'
-  sources             'org.projectlombok:lombok:1.18.12:sources'
+  implementation      group: 'org.projectlombok', name: 'lombok', version: '1.18.12'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.12'
+  sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.12', classifier: 'sources'
 
-  implementation 'com.google.guava:guava:29.0-jre'
-  sources        'com.google.guava:guava:29.0-jre:sources'
-  implementation 'org.apache.commons:commons-lang3:3.10'
-  sources        'org.apache.commons:commons-lang3:3.10:sources'
+  implementation group: 'com.google.guava', name: 'guava', version: '29.0-jre'
+  sources        group: 'com.google.guava', name: 'guava', version: '29.0-jre', classifier: 'sources'
+  implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
+  sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.10', classifier: 'sources'
+  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.0'
+  sources        group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.0', classifier: 'sources'
+  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
+  sources        group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0', classifier: 'sources'
 
-  implementation 'com.fasterxml.jackson.core:jackson-core:2.11.0'
-  sources        'com.fasterxml.jackson.core:jackson-core:2.11.0:sources'
-  implementation 'com.fasterxml.jackson.core:jackson-databind:2.11.0'
-  sources        'com.fasterxml.jackson.core:jackson-databind:2.11.0:sources'
+  graderImplementation group: 'junit', name: 'junit', version: '4.13'
+  graderSources        group: 'junit', name: 'junit', version: '4.13', classifier: 'sources'
+  graderImplementation group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3'
+  graderSources        group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3', classifier: 'sources'
 
-  graderImplementation 'junit:junit:4.13'
-  graderSources        'junit:junit:4.13:sources'
-  graderImplementation 'io.github.kostaskougios:cloning:1.10.3'
-  graderSources        'io.github.kostaskougios:cloning:1.10.3:sources'
-
-  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.11.0'
-  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-guava:2.11.0:sources'
-  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.11.0'
-  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jdk8:2.11.0:sources'
-  graderImplementation 'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.0'
-  graderSources        'com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.11.0:sources'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.11.0'
+  graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.11.0', classifier: 'sources'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.11.0'
+  graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.11.0', classifier: 'sources'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0'
+  graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0', classifier: 'sources'
 }
 
 // Create reproducible jars
@@ -108,27 +108,44 @@ tasks.withType(AbstractArchiveTask) {
 
 task scaffoldingJar(type: ShadowJar) {
   archiveBaseName = 'framework'
-  classifier = 'compile'
   from sourceSets.main.output
-  configurations = [ project.configurations.runtimeClasspath,
-                     project.configurations.sources ]
 }
 
 task graderJar(type: ShadowJar) {
-  archiveBaseName = 'framework'
-  from sourceSets.main.output,
-       sourceSets.grader.output
-  configurations = [ project.configurations.graderRuntimeClasspath,
-                     project.configurations.graderSources ]
+  archiveBaseName = 'grader'
+  from sourceSets.grader.output
 }
 
-task sourcesJar(type: ShadowJar) {
+task scaffoldingSourcesJar(type: ShadowJar) {
   archiveBaseName = 'framework'
   classifier = 'sources'
-  from sourceSets.main.java,
-       sourceSets.grader.java,
-  configurations = []
+  from sourceSets.main.java
 }
+
+task graderSourcesJar(type: ShadowJar) {
+  archiveBaseName = 'grader'
+  classifier = 'sources'
+  from sourceSets.grader.java
+}
+
+task scaffoldingDependenciesJar(type: ShadowJar) {
+  archiveBaseName = 'framework'
+  classifier = 'deps'
+  configurations = [ project.configurations.runtimeClasspath ]
+}
+
+task graderDependenciesJar(type: ShadowJar) {
+  archiveBaseName = 'grader'
+  classifier = 'deps'
+  configurations = [ project.configurations.graderRuntimeClasspath ]
+}
+
+task scaffoldingDependenciesSourcesJar(type: ShadowJar) {
+  archiveBaseName = 'framework'
+  classifier = 'deps-sources'
+  configurations = [ project.configurations.sources ]
+}
+
 
 jar.enabled = false
 
@@ -140,21 +157,22 @@ javadoc {
 
 tasks.assemble.dependsOn tasks.scaffoldingJar
 tasks.assemble.dependsOn tasks.graderJar
-tasks.assemble.dependsOn tasks.sourcesJar
-tasks.assemble.dependsOn tasks.javadoc
+tasks.assemble.dependsOn tasks.scaffoldingSourcesJar
+tasks.assemble.dependsOn tasks.graderSourcesJar
+tasks.assemble.dependsOn tasks.scaffoldingDependenciesJar
+tasks.assemble.dependsOn tasks.graderDependenciesJar
+tasks.assemble.dependsOn tasks.scaffoldingDependenciesSourcesJar
 
 // copy dependencies into directories that IntelliJ can find
 task copyDependencies {
   doLast {
     copy {
-      from configurations.compileClasspath,
-           configurations.runtimeClasspath,
+      from configurations.runtimeClasspath,
            configurations.sources
       into "deps/compile"
     }
     copy {
-      from configurations.graderCompileClasspath,
-           configurations.graderRuntimeClasspath,
+      from configurations.graderRuntimeClasspath,
            configurations.graderSources
       into "deps/test"
     }

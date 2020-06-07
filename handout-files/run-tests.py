@@ -18,6 +18,14 @@ SEARCH_CATEGORY = 'dslabs.framework.testing.junit.SearchTests'
 
 VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
 
+RUNTIME_CLASSPATH = (
+    'jars/framework.jar:'
+    'jars/framework-deps.jar:'
+    'jars/grader.jar:'
+    'jars/grader-deps.jar:'
+    'out/src/:'
+    'out/tst/'
+)
 
 def make():
     """Compile the source files, return True if successful."""
@@ -68,7 +76,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     command += [
         '-cp',
-        'framework.jar:out/src/:out/tst/',
+        RUNTIME_CLASSPATH,
         RUNNER
     ]
 
@@ -107,7 +115,7 @@ def run_viz_debugger(lab, args, no_viz_server=False):
 
     command += [
         '-cp',
-        'framework.jar:out/src/:out/tst/',
+        RUNTIME_CLASSPATH,
         VIZ_DEBUGGER
     ]
 

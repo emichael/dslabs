@@ -144,7 +144,7 @@ public class VizClient {
 
         if (startOddity) {
             ProcessBuilder pb =
-                    new ProcessBuilder("java", "-jar", "oddity.jar");
+                    new ProcessBuilder("java", "-jar", "jars/oddity.jar");
             pb.redirectOutput(Redirect.INHERIT).redirectError(Redirect.INHERIT);
             final Process p = pb.start();
 
