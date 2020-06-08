@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import shutil
 import subprocess
 
 
@@ -29,9 +30,14 @@ RUNTIME_CLASSPATH = (
 
 def make():
     """Compile the source files, return True if successful."""
-    return not subprocess.call(['make'],
-                               stdout=subprocess.DEVNULL,
-                               stderr=subprocess.DEVNULL)
+    try:
+        subprocess.check_output(['make'], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as ex:
+        print("Could not compile sources.\n")
+        print(ex.output.decode("utf-8"))
+        shutil.rmtree('out')
+        return False
+    return True
 
 
 def run_tests(lab, part=None, no_run=False, no_search=False,
@@ -40,7 +46,6 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
               test_num=None, assertions=False):
     """Run the specified tests."""
     if not make():
-        print("Could not compile sources.")
         return
 
     command = ['java',
@@ -105,7 +110,6 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 def run_viz_debugger(lab, args, no_viz_server=False):
     """Start the visual debugger."""
     if not make():
-        print("Could not compile sources.")
         return
 
     command = ['java']
