@@ -25,7 +25,7 @@ package dslabs.framework.testing.utils;
 import dslabs.framework.Node;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Workload;
-import dslabs.framework.testing.search.Event;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.search.SearchState;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

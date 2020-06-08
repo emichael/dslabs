@@ -20,32 +20,53 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.utils;
+package dslabs.framework.testing;
 
-import lombok.AccessLevel;
-import lombok.Data;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import dslabs.framework.Address;
+import dslabs.framework.testing.MessageEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
 
-@Data
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class Either<T, U> {
-    private final T left;
-    private final U right;
 
-    public static <T, U> Either<T, U> left(@NonNull T t) {
-        return new Either<>(t, null);
+@Getter
+@EqualsAndHashCode
+public class Event {
+    private final MessageEnvelope message;
+    private final TimerEnvelope timer;
+
+    public Event(MessageEnvelope messageEnvelope) {
+        this.message = messageEnvelope;
+        this.timer = null;
     }
 
-    public static <T, U> Either<T, U> right(@NonNull U u) {
-        return new Either<>(null, u);
+    public Event(TimerEnvelope timer) {
+        this.message = null;
+        this.timer = timer;
     }
 
-    public boolean isLeft() {
-        return left != null;
+    public boolean isMessage() {
+        return message != null;
     }
 
-    public boolean isRight() {
-        return right != null;
+    public boolean isTimer() {
+        return timer != null;
+    }
+
+    public Address locationRootAddress() {
+        if (isMessage()) {
+            return message.to().rootAddress();
+        } else {
+            return timer.to().rootAddress();
+        }
+    }
+
+    @Override
+    public String toString() {
+        if (isMessage()) {
+            return message.toString();
+        } else {
+            return timer.toString();
+        }
     }
 }

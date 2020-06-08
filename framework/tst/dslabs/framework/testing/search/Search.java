@@ -22,6 +22,7 @@
 
 package dslabs.framework.testing.search;
 
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.search.SearchState.SearchEquivalenceWrappedSearchState;
 import dslabs.framework.testing.utils.CheckLogger;

@@ -23,9 +23,9 @@
 package dslabs.framework.testing.runner;
 
 import dslabs.framework.Address;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
-import dslabs.framework.testing.utils.Either;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -102,19 +102,18 @@ public class Network implements Iterable<MessageEnvelope> {
             return timers.poll();
         }
 
-        Either<MessageEnvelope, TimerEnvelope> take()
-                throws InterruptedException {
+        Event take() throws InterruptedException {
             while (true) {
                 newTimerEndTime.set(Long.MAX_VALUE);
                 TimerEnvelope te = timers.peek();
                 if (te != null && te.isDue()) {
-                    return Either.right(timers.poll());
+                    return new Event(timers.poll());
                 }
 
                 newMessageAvailable = false;
                 MessageEnvelope me = messages.poll();
                 if (me != null) {
-                    return Either.left(me);
+                    return new Event(me);
                 }
 
                 // Wait for new message or timer
@@ -136,7 +135,7 @@ public class Network implements Iterable<MessageEnvelope> {
                     long endTime = te.endTimeNanos();
                     long waitTime = endTime - System.nanoTime();
                     if (waitTime <= MIN_WAIT_TIME_NANOS) {
-                        return Either.right(timers.poll());
+                        return new Event(timers.poll());
                     }
 
                     synchronized (this) {
@@ -204,8 +203,7 @@ public class Network implements Iterable<MessageEnvelope> {
         return messages.iterator();
     }
 
-    public Either<MessageEnvelope, TimerEnvelope> take(Address address)
-            throws InterruptedException {
+    public Event take(Address address) throws InterruptedException {
         return inbox(address.rootAddress()).take();
     }
 }

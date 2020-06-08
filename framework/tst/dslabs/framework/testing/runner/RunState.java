@@ -30,12 +30,12 @@ import dslabs.framework.Node;
 import dslabs.framework.Timer;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
-import dslabs.framework.testing.utils.Either;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -122,23 +122,22 @@ public class RunState extends AbstractState {
 
     private void runNode(Address address, Node node, Inbox inbox) {
         while (!Thread.interrupted()) {
-            Either<MessageEnvelope, TimerEnvelope> item;
-
+            Event item;
             try {
                 item = inbox.take();
             } catch (InterruptedException e) {
                 break;
             }
 
-            if (item.isLeft()) {
-                MessageEnvelope me = item.left();
+            if (item.isMessage()) {
+                MessageEnvelope me = item.message();
                 if (settings.shouldDeliver(me)) {
                     node.handleMessage(me.message(), me.from(), me.to());
                 }
             }
 
-            if (item.isRight()) {
-                TimerEnvelope te = item.right();
+            if (item.isTimer()) {
+                TimerEnvelope te = item.timer();
                 if (settings.deliverTimers()) {
                     node.onTimer(te.timer(), te.to());
                 }

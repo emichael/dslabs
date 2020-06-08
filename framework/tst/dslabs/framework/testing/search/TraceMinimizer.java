@@ -22,6 +22,7 @@
 
 package dslabs.framework.testing.search;
 
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
 import java.util.LinkedList;
 import java.util.List;

@@ -7,12 +7,12 @@ import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Command;
 import dslabs.framework.Message;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
-import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.junit.PrettyTestName;
@@ -24,7 +24,6 @@ import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
-import dslabs.framework.testing.utils.Either;
 import dslabs.kvstore.KVStore;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.Arrays;
@@ -208,14 +207,14 @@ public class PrimaryBackupTest extends BaseJUnitTest {
      */
     private View getView() {
         runState.network().send(new MessageEnvelope(TA, VSA, new GetView()));
-        Either<MessageEnvelope, TimerEnvelope> p = null;
+        Event e = null;
         try {
-            p = runState.network().take(TA);
-        } catch (InterruptedException e) {
+            e = runState.network().take(TA);
+        } catch (InterruptedException ex) {
             fail("Interrupted while waiting for view");
         }
 
-        MessageEnvelope me = p.left();
+        MessageEnvelope me = e.message();
         if (me == null) {
             fail("Polled envelope is null (this should never happen)");
         }
@@ -755,9 +754,9 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 Streams.stream(requestsSent.network().iterator())
                        .filter(e -> e.to().equals(server(1)))
                        .filter(e -> senders.contains(e.from())).collect(
-                        Collectors.toMap(MessageEnvelope::from,
-                                Sets::newHashSet,
-                                Sets::union));
+                        Collectors
+                                .toMap(MessageEnvelope::from, Sets::newHashSet,
+                                        Sets::union));
 
         // Send the requests to the primary, keep track of the resulting messages
         final Map<Address, List<MessageEnvelope>> pToB = new HashMap<>();

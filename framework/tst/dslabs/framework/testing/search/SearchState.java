@@ -32,6 +32,7 @@ import dslabs.framework.Node;
 import dslabs.framework.Timer;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.TimerEnvelope;
