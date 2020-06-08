@@ -695,10 +695,10 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("Tolerates holes in Paxos log")
+    @PrettyTestName("Multiple clients, single partition and heal")
     @Category(RunTests.class)
     @TestPointValue(15)
-    public void test16ToleratesHoles() throws InterruptedException {
+    public void test16SinglePartition() throws InterruptedException {
         final int nClients = 5, nServers = 5;
 
         setupStates(nServers);
