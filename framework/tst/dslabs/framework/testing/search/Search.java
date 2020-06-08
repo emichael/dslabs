@@ -248,6 +248,10 @@ public abstract class Search {
             return StateStatus.PRUNED;
         }
 
+        if (settings.depthLimited() && s.depth() >= settings.maxDepth()) {
+            return StateStatus.PRUNED;
+        }
+
         return StateStatus.VALID;
     }
 
@@ -458,8 +462,7 @@ class BFS extends Search {
 
     @Override
     protected boolean spaceExhausted() {
-        return queue.isEmpty() ||
-                (settings.depthLimited() && depth.get() > settings.maxDepth());
+        return queue.isEmpty();
     }
 
     @Override
@@ -479,6 +482,9 @@ class BFS extends Search {
                 continue;
             }
 
+            depth.getAndAccumulate(successor.depth(), Math::max);
+            states.incrementAndGet();
+
             StateStatus status = checkState(successor, false);
 
             if (status.equals(StateStatus.TERMINAL)) {
@@ -487,8 +493,6 @@ class BFS extends Search {
                 continue;
             }
 
-            states.incrementAndGet();
-            depth.getAndAccumulate(node.depth(), Math::max);
             queue.add(successor);
         }
     }
@@ -544,18 +548,22 @@ class RandomDFS extends Search {
 
     private void runProbe() {
         probes.incrementAndGet();
+        states.incrementAndGet();
 
         for (SearchState current = initialState, next = null;
-             current != null && current.depth() <= settings.maxDepth();
+             current != null;
              current = next, next = null) {
-            states.incrementAndGet();
 
             List<Event> events = new ArrayList<>(current.events(settings));
             Collections.shuffle(events);
 
             for (Event event : events) {
                 SearchState s = current.stepEvent(event, settings, true);
+                if (s == null) {
+                    continue;
+                }
 
+                states.incrementAndGet();
                 StateStatus status = checkState(s, true);
 
                 if (status.equals(StateStatus.TERMINAL)) {
