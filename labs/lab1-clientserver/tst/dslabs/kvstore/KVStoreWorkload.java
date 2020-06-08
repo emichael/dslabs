@@ -148,6 +148,7 @@ public abstract class KVStoreWorkload extends Workload {
 
     /* KVStore-specific workloads */
 
+    // TODO: rename these to STATIC_FINAL_CASE
     public static final Workload simpleWorkload = builder()
             .commands(put("key1", "v1a"), get("key1"), put("key2", "v2a"),
                     get("key2"), put("key1", "v1b"), get("key1"),

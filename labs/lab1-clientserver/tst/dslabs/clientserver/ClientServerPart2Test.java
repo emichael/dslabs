@@ -287,8 +287,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         initSearchState
                 .addClientWorker(client(1), differentKeysInfiniteWorkload);
 
-        System.out.println("Checking that all reachable states are good\n");
-
+        System.out.println("Checking that all reachable states are good");
         searchSettings.maxTimeSecs(15).addInvariant(RESULTS_OK);
         bfs(initSearchState);
 
