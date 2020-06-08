@@ -50,6 +50,7 @@ import static dslabs.kvstore.KVStoreWorkload.differentKeysInfiniteWorkload;
 import static dslabs.kvstore.KVStoreWorkload.get;
 import static dslabs.kvstore.KVStoreWorkload.getResult;
 import static dslabs.kvstore.KVStoreWorkload.put;
+import static dslabs.kvstore.KVStoreWorkload.putAppendGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putGetWorkload;
 import static dslabs.kvstore.KVStoreWorkload.putOk;
 import static dslabs.kvstore.KVStoreWorkload.putWorkload;
@@ -1121,5 +1122,61 @@ public class PaxosTest extends BaseJUnitTest {
     public void test25FiveServerRandomSearch() {
         setupStates(5);
         randomSearch();
+    }
+
+    @Test(timeout = 40 * 1000)
+    @PrettyTestName("Paxos runs in singleton group")
+    @Category({RunTests.class, SearchTests.class})
+    @TestPointValue(0)
+    public void test26SingletonPaxos() throws InterruptedException {
+        // First, do basic run-time tests to validate correctness
+        setupStates(1);
+        int nClients = 10, nRounds = 30;
+
+        for (int i = 1; i <= nClients; i++) {
+            runState.addClientWorker(client(i), appendSameKeyWorkload(nRounds));
+        }
+
+        runSettings.addInvariant(CLIENTS_DONE);
+        runSettings.addInvariant(APPENDS_LINEARIZABLE);
+        runSettings.addInvariant(LOGS_CONSISTENT_ALL_SLOTS);
+        runState.run(runSettings);
+        assertRunInvariantsHold();
+
+        setupStates(1);
+        for (int i = 1; i <= nClients; i++) {
+            runState.addClientWorker(client(i), appendSameKeyWorkload(nRounds));
+        }
+        runSettings.networkDeliverRate(0.8);
+        runState.run(runSettings);
+        assertRunInvariantsHold();
+
+        // Next, do a random search to further validate safety
+        setupStates(1);
+        initSearchState.addClientWorker(client(1),
+                KVStoreWorkload.builder().commands(append("foo", "x")).build());
+        initSearchState.addClientWorker(client(2),
+                KVStoreWorkload.builder().commands(append("foo", "y")).build());
+
+        searchSettings.maxDepth(1000).maxTimeSecs(5)
+                      .addInvariant(APPENDS_LINEARIZABLE)
+                      .addInvariant(LOGS_CONSISTENT).addPrune(CLIENTS_DONE);
+        dfs(initSearchState);
+
+        // Finally, do a BFS to check that progress happens in a single step
+        System.out.println(
+                "Checking that 3 commands can be processed in 6 steps");
+        setupStates(1);
+        initSearchState.addClientWorker(client(1), putAppendGetWorkload);
+        // Must be single-threaded so that state depths are minimal
+        searchSettings.clear().addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
+                      .maxTimeSecs(10).maxDepth(6).singleThreaded(true);
+        bfs(initSearchState);
+
+        final SearchState clientDone = goalMatchingState();
+        assertEquals(6, clientDone.depth());
+
+        searchSettings.maxDepth(-1).clearGoals().addPrune(CLIENTS_DONE);
+        bfs(initSearchState);
     }
 }

@@ -237,7 +237,7 @@ You should pass the part 2 tests; execute them with `run-tests.py --lab 4 --part
   implementation is correct and only model check the new protocol. They do this
   by instantiating all Paxos groups with a single server. Your Paxos
   implementation should be able to reach agreement in a single step when there
-  is only one server.
+  is only one server; there is a test at the end of lab 3 that validates this.
 - You may have implemented optimizations in lab 3 by making assumptions which
   were valid but do not hold for this lab. In particular, you should be very
   cautious about dropping proposals when Paxos is running as a sub-node. As a

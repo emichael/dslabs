@@ -150,6 +150,17 @@ them should be straightforward, but be sure to pay attention their requirements
 and implement them correctly.
 
 
+## One-server Paxos
+There is a test (worth 0 points) at the very end of the test suite called "Paxos
+runs in singleton group" which validates that your Paxos implementation can run
+with only one server and that it can process requests in a single step.
+Ordinarily, a Paxos group with only one server isn't that useful. However, it
+will be important in lab 4 that your Paxos implementation can function correctly
+and efficiently when lab 4's search tests instantiate Paxos groups with a single
+server. There should be very little difference between a single-server Paxos
+group and your server from lab 1.
+
+
 ---
 
 
