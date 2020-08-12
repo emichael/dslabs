@@ -32,6 +32,7 @@ abstract class TraceMinimizer {
     static SearchState minimizeTrace(SearchState state,
                                      final StatePredicate predicate,
                                      boolean expectedResult) {
+        // TODO: maintain set of "bad" states so we don't have to unwind every time
         boolean shortenedEventsList;
         do {
             shortenedEventsList = false;
