@@ -91,6 +91,9 @@ public abstract class Cloning {
             try {
                 ret = jdclClone(object);
             } catch (Throwable ignored) {
+                if (GlobalSettings.doChecks()) {
+                    CheckLogger.notFastCloned(object);
+                }
                 cannotClone.add(object.getClass());
                 ret = defaultClone(object);
             }

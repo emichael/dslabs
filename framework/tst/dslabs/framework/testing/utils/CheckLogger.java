@@ -24,8 +24,8 @@ package dslabs.framework.testing.utils;
 
 import dslabs.framework.Node;
 import dslabs.framework.testing.ClientWorker;
-import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.Event;
+import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.search.SearchState;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,6 +44,8 @@ public abstract class CheckLogger {
     private static final Map<Class, Object> notEqualToClone =
             new ConcurrentHashMap<>();
     private static final Map<Class, Object> hashCodeNotEqualToClone =
+            new ConcurrentHashMap<>();
+    private static final Map<Class, Object> notFastCloned =
             new ConcurrentHashMap<>();
 
     private static final Map<String, Pair<SearchState, Event>>
@@ -103,6 +105,13 @@ public abstract class CheckLogger {
         }
     }
 
+    public static void notFastCloned(@NonNull Object object) {
+        Class c = object.getClass();
+        if (!isIgnored(c)) {
+            notFastCloned.putIfAbsent(c, object);
+        }
+    }
+
     public static void notDeterministic(Event event,
                                         SearchState startingState) {
         String methodName = methodName(event, startingState);
@@ -149,6 +158,13 @@ public abstract class CheckLogger {
             System.err.println(
                     "Objects have hashCode not equal to their clone. Check all classes correctly implement hashCode.");
             printClasses(hashCodeNotEqualToClone);
+        }
+
+        if (!notFastCloned.isEmpty()) {
+            System.err.println("Objects cannot be fast-cloned. " +
+                    "Check that they don't contain lambdas or other non-standard fields. " +
+                    "This error could also occur due to the use of a data structure the fast-cloning library does not yet support.");
+            printClasses(notFastCloned);
         }
 
         if (!notDeterministicMethods.isEmpty()) {
