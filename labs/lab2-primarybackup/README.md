@@ -191,8 +191,8 @@ The `ViewServer` should return `STARTUP_VIEWNUM` with `null` primary and backup
 when it has not yet started a view and use `INITIAL_VIEWNUM` for the first
 started view. It then proceeds to later view numbers sequentially. The view
 service can proceed to a new view in one of two cases:
-1. It hasn't received a `Ping` from the primary or backup for two consecutive
-   `PING_CHECK_MILLIS` intervals.
+1. It hasn't received a `Ping` from the primary or backup between two
+   consecutive `PingCheckTimer`s.
 2. There is no backup and there's an idle server (a server that's been pinging
    but is neither the primary nor the backup).
 
@@ -238,8 +238,9 @@ You should pass the part 1 tests before moving on to part 2; execute them with
   acknowledging the view in which it is the primary. This is expected. We will
   fix these flaws in the design in future labs.
 * You'll want to add field(s) to `ViewServer` in order to keep track of which
-  servers have pinged since the most recent `PingCheckTimer` and how many ping
-  intervals each server has most recently missed.
+  servers have pinged since the second-most-recent `PingCheckTimer`; you'll need
+  to differentiate between servers which have pinged since the most recent
+  `PingCheckTimer` and servers which have not.
 * Add field(s) to `ViewServer` to keep track of the current view.
 * There may be more than two servers sending `Ping`s. The extra ones (beyond
   primary and backup) are volunteering to be backup if needed. You'll want to
