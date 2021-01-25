@@ -5,6 +5,7 @@ import dslabs.framework.Message;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
+import dslabs.framework.testing.junit.DSLabsTestRunner;
 import dslabs.framework.testing.junit.PrettyTestName;
 import dslabs.framework.testing.junit.TestPointValue;
 import java.lang.reflect.Field;
@@ -13,6 +14,7 @@ import java.util.LinkedList;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.junit.BaseJUnitTest.server;
@@ -22,6 +24,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@RunWith(DSLabsTestRunner.class)
 public class ViewServerTest {
     static final Address VSA = new LocalAddress("viewserver"), TA =
             new LocalAddress("testserver");
