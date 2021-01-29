@@ -263,4 +263,15 @@ public class ViewServerTest {
         timeoutFully(server(3));
         check(server(2), server(3), INITIAL_VIEWNUM + 2);
     }
+
+    @Test(timeout = 5 * 1000)
+    @PrettyTestName("Dead idle server shouldn't become backup")
+    @TestPointValue(5)
+    public void test11DeadServerNotMadeBackup() {
+        setupView(server(1), null, false);
+        sendPing(STARTUP_VIEWNUM, server(2));
+        timeoutFully();
+        sendPing(INITIAL_VIEWNUM, server(1));
+        check(server(1), null, INITIAL_VIEWNUM);
+    }
 }
