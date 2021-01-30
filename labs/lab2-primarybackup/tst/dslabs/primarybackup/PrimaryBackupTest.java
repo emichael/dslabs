@@ -499,6 +499,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         runSettings.resetNetwork();
 
+        // Let system fully heal
+        runState.start(runSettings);
+        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.stop();
+
         // Read from the primary
         Workload readKeys = Workload.builder().commands(
                 IntStream.range(0, nKeys).mapToObj(KVStoreWorkload::get)
@@ -548,6 +553,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         }
 
         runSettings.resetNetwork();
+
+        // Let system fully heal
+        runState.start(runSettings);
+        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.stop();
 
         // Read from the primary
         Workload readKeys = Workload.workload(get("foo"));

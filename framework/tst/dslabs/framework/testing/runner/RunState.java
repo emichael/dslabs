@@ -267,7 +267,7 @@ public class RunState extends AbstractState {
         startInternal(settings);
     }
 
-    public synchronized boolean startInternal(RunSettings settings) {
+    private synchronized boolean startInternal(RunSettings settings) {
         if (settings == null) {
             settings = new RunSettings();
         }
