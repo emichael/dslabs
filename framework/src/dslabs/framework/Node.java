@@ -274,6 +274,9 @@ public abstract class Node implements Serializable {
             return;
         }
 
+        LOG.finest(() -> String
+                .format("MessageSend(%s -> %s, %s)", from, to, message));
+
         if (messageAdder != null) {
             messageAdder.accept(new ImmutableTriple<>(from, to, message));
         } else if (batchMessageAdder != null) {
@@ -297,6 +300,9 @@ public abstract class Node implements Serializable {
             return;
         }
 
+        // TODO: use send instead of broadcast when to.length == 1?
+        // TODO: check for to.length == 0
+
         for (Address a : to) {
             if (a == null) {
                 LOG.severe(String.format(
@@ -305,6 +311,10 @@ public abstract class Node implements Serializable {
                 return;
             }
         }
+
+        LOG.finest(() -> String
+                .format("MessageSend(%s -> %s, %s)", from, Arrays.toString(to),
+                        message));
 
         if (batchMessageAdder != null) {
             batchMessageAdder.accept(new ImmutableTriple<>(from, to, message));
@@ -328,6 +338,8 @@ public abstract class Node implements Serializable {
                     "Attempting to set null timer for %s, not setting", from));
             return;
         }
+
+        LOG.finest(() -> String.format("TimerSet(-> %s, %s)", from, timer));
 
         if (timerAdder != null) {
             timerAdder.accept(new ImmutableTriple<>(from, timer,
@@ -360,7 +372,7 @@ public abstract class Node implements Serializable {
         }
 
         LOG.finest(() -> String
-                .format("Message(%s -> %s, %s)", sender, destination, message));
+                .format("MessageReceive(%s -> %s, %s)", sender, destination, message));
 
         String handlerName = "handle" + message.getClass().getSimpleName();
         return callMethod(destination, handlerName, message, sender);
@@ -441,7 +453,8 @@ public abstract class Node implements Serializable {
             return;
         }
 
-        LOG.finest(() -> String.format("Timer(-> %s, %s)", destination, timer));
+        LOG.finest(() -> String
+                .format("TimerReceive(-> %s, %s)", destination, timer));
 
         String handlerName = "on" + timer.getClass().getSimpleName();
         callMethod(destination, handlerName, timer);

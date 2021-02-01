@@ -224,19 +224,18 @@ $ ./run-tests.py --lab 0 --test-num 1 --log-level FINEST
 --------------------------------------------------
 TEST 1: Single client ping test [RUN] (0pts)
 
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node]
-  MESSAGE(PingRequest) client1 -> pingserver |
-    PingRequest(ping=PingApplication.Ping(value=Hello, World!))
-
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node]
-  MESSAGE(PongReply) pingserver -> client1 |
-    PongReply(pong=PingApplication.Pong(value=Hello, World!))
-...PASS (0.046s)
+[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageSend(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] TimerSet(-> client1, PingTimer(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageReceive(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageSend(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
+[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageReceive(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
+[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] TimerReceive(-> client1, PingTimer(ping=PingApplication.Ping(value=Hello, World!)))
+...PASS (0.131s)
 ==================================================
 
 Tests passed: 1/1
-Points: 0/0
-Total time: 0.115s
+Points: 0/0 (0.00%)
+Total time: 0.142s
 
 ALL PASS
 ==================================================
