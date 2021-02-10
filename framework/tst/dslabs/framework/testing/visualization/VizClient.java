@@ -142,21 +142,32 @@ public class VizClient {
             startOddity = GlobalSettings.startVizServer();
         }
 
+        final Process p;
         if (startOddity) {
             ProcessBuilder pb =
                     new ProcessBuilder("java", "-jar", "jars/oddity.jar");
             pb.redirectOutput(Redirect.INHERIT).redirectError(Redirect.INHERIT);
-            final Process p = pb.start();
-
-            // Kill oddity on exit
-            Runtime.getRuntime().addShutdownHook(new Thread(p::destroy));
+            p = pb.start();
 
             waitUntilPortListening(host, DEFAULT_BROWSER_PORT);
 
             // Startup the browser
             openURLInChrome("http://" + host + ":" + DEFAULT_BROWSER_PORT);
+        } else {
+            p = null;
         }
 
+        try {
+            bind();
+        } finally {
+            if (p != null) {
+                // Kill oddity on exit
+                p.destroy();
+            }
+        }
+    }
+
+    private void bind() throws IOException {
         // Wait until we can communicate with server
         waitUntilPortListening(host, port);
 
