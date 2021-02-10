@@ -308,7 +308,7 @@ public abstract class BaseJUnitTest {
                 }
             }, "VizClient");
             thread.setDaemon(false);
-            Runtime.getRuntime().addShutdownHook(thread);
+            thread.start();
 
             if (ec == INVARIANT_VIOLATED) {
                 System.err.println(

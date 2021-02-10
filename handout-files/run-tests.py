@@ -4,9 +4,12 @@
 
 
 import argparse
+import collections
 import os
 import shutil
 import subprocess
+import sys
+from subprocess import Popen, PIPE, STDOUT
 
 
 __author__ = 'Ellis Michael (emichael@cs.washington.edu)'
@@ -104,7 +107,22 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     command.append(test_suite)
 
-    exit(subprocess.call(command))
+    process = Popen(command, stdout=PIPE, stderr=STDOUT)
+    recent_output = collections.deque(maxlen=100)
+
+    for c in iter(lambda: process.stdout.read(1), b''):
+        recent_output.append(c)
+        sys.stdout.buffer.write(c)
+        if c == b'\n':
+            sys.stdout.flush()
+
+    exit_code = process.wait()
+    if exit_code != 0:
+        exit(exit_code)
+
+    # Check for test failure
+    if 'FAIL' in b''.join(recent_output).decode('utf-8', 'ignore'):
+        exit(1)
 
 
 def run_viz_debugger(lab, args, no_viz_server=False):

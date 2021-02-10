@@ -65,7 +65,9 @@ public abstract class DSLabsTestCore {
             notifier.removeListener(defaultListener);
         }
 
-        if (!result.wasSuccessful()) {
+        boolean didStartVisualizer = result.getFailures().stream().anyMatch(
+                f -> f.getException() instanceof VizClientStarted);
+        if (!result.wasSuccessful() && !didStartVisualizer) {
             System.exit(1);
         }
     }
