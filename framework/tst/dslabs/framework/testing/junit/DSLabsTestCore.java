@@ -64,5 +64,9 @@ public abstract class DSLabsTestCore {
         } finally {
             notifier.removeListener(defaultListener);
         }
+
+        if (!result.wasSuccessful()) {
+            System.exit(1);
+        }
     }
 }

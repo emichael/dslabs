@@ -104,7 +104,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     command.append(test_suite)
 
-    subprocess.call(command)
+    exit(subprocess.call(command))
 
 
 def run_viz_debugger(lab, args, no_viz_server=False):
@@ -126,7 +126,7 @@ def run_viz_debugger(lab, args, no_viz_server=False):
     command.append(str(lab))
     command += args
 
-    subprocess.call(command)
+    exit(subprocess.call(command))
 
 
 def main():
