@@ -27,11 +27,13 @@ all: $(OUT)/src/ $(OUT)/tst/
 $(OUT)/src/: $(JAVA_SRC)
 	@ echo "[javac] $@"
 	@ mkdir -p $@
+	@ touch $@
 	@ $(JC) -d $@ -cp $(SRC_JARS) $(JAVA_SRC)
 
 $(OUT)/tst/: $(JAVA_TST) $(OUT)/src
 	@ echo "[javac] $@"
 	@ mkdir -p $@
+	@ touch $@
 	@ $(JC) -d $@ -cp $(TST_JARS):$(OUT)/src $(JAVA_TST)
 
 
