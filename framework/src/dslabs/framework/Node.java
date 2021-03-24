@@ -371,7 +371,7 @@ public abstract class Node implements Serializable {
             return null;
         }
 
-        LOG.finest(() -> String
+        LOG.finer(() -> String
                 .format("MessageReceive(%s -> %s, %s)", sender, destination, message));
 
         String handlerName = "handle" + message.getClass().getSimpleName();
@@ -453,7 +453,7 @@ public abstract class Node implements Serializable {
             return;
         }
 
-        LOG.finest(() -> String
+        LOG.finer(() -> String
                 .format("TimerReceive(-> %s, %s)", destination, timer));
 
         String handlerName = "on" + timer.getClass().getSimpleName();

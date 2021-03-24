@@ -85,12 +85,12 @@ public abstract class GlobalSettings {
         ConsoleHandler handler = new ConsoleHandler();
 
         // Set level
-        String name = lookupWithDefault(LOG_LEVEL, "INFO");
+        String name = lookupWithDefault(LOG_LEVEL, "WARNING");
         Level level;
         try {
             level = Level.parse(name);
         } catch (IllegalArgumentException ignored) {
-            level = Level.INFO;
+            level = Level.WARNING;
         }
         handler.setLevel(level);
         logger.setLevel(level);

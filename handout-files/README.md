@@ -249,15 +249,17 @@ for multi-threaded applications.
 
 Should you want to log any data, you can use the `java.util.logging` package,
 available in any class conveniently with the `@Log` Lombok annotation. An
-argument to `run-tests.py` will let you change the logging level. *IMPORTANT:*
-Disable all logging statements before submitting your code (e.g., by only
-logging at levels lower than `INFO`).
+argument to `run-tests.py` will let you change the logging level; the default
+logging level is `WARNING`. *IMPORTANT:* Make sure your code doesn't emit
+logging statements (or `println`s) before submitting (e.g., by only logging at
+levels lower than `WARNING`).
 
 The framework has built-in logging of all delivered messages and timers at the
-`FINEST` level (see it with `run-tests.py -g FINEST`). This may be useful for
-run tests. You can add additional instrumentation to the `send`, `broadcast`,
-`set`, `handleMessage`, and `onTimer` methods of `Node` by overriding those
-methods (and calling the `super` method of course).
+`FINER` level (see it with `run-tests.py -g FINER`), and all sent messages and
+set timers at the `FINEST` level (see it with `run-tests.py -g FINEST`). This
+may be useful for run tests. You can add additional instrumentation to the
+`send`, `broadcast`, `set`, `handleMessage`, and `onTimer` methods of `Node` by
+overriding those methods (and calling the `super` method of course).
 
 
 ## Visualization
