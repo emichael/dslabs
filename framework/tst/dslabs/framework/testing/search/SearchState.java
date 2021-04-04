@@ -502,12 +502,16 @@ public final class SearchState extends AbstractState
     /**
      * A state wrapper designed to support a different equivalence relation,
      * namely search-equivalence, in which the set of non-ignored messages must
-     * be equal. This wrapper is only used by {@link Search} and is not exposed
+     * be equal. Additionally, the thrown exceptions logged by states must also
+     * be equal (these states are terminal and will result in the search
+     * ending). This wrapper is only used by {@link Search} and is not exposed
      * outside this package. However, care must be taken within search
      * strategies to use this equivalence relation and not the default one.
      *
-     * TODO: only consider the non-ignored network and allow states with
-     * different sets of dropped messages to be equivalent?
+     * TODO: Only consider the non-ignored network and allow states with
+     *       different sets of dropped messages to be equivalent? Currently, the
+     *       regular state equals and hashCode methods include the union of both
+     *       message sets.
      */
     @AllArgsConstructor(access = AccessLevel.PRIVATE)
     static final class SearchEquivalenceWrappedSearchState {
@@ -529,6 +533,10 @@ public final class SearchState extends AbstractState
             if (!Objects.equals(state, other.state)) {
                 return false;
             }
+            if (!Objects.equals(state.thrownException,
+                    other.state.thrownException)) {
+                return false;
+            }
             if (state.droppedNetwork.isEmpty() &&
                     other.state.droppedNetwork.isEmpty()) {
                 return true;
@@ -540,6 +548,8 @@ public final class SearchState extends AbstractState
             final int PRIME = 59;
             int result = 1;
             result = result * PRIME + (state == null ? 43 : state.hashCode());
+            result = result * PRIME + (state.thrownException == null ? 43 :
+                    state.thrownException.hashCode());
             if (state.droppedNetwork.isEmpty()) {
                 return result;
             }
