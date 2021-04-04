@@ -38,6 +38,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
+import lombok.SneakyThrows;
 import lombok.ToString;
 import lombok.extern.java.Log;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -356,7 +357,7 @@ public abstract class Node implements Serializable {
     }
 
     private Object handleMessageInternal(Message message, Address sender,
-                                         Address destination) {
+                                         Address destination, boolean handleExceptions) {
         if (message == null) {
             LOG.severe(String.format(
                     "Attempting to deliver null message from %s to %s", sender,
@@ -375,7 +376,7 @@ public abstract class Node implements Serializable {
                 .format("MessageReceive(%s -> %s, %s)", sender, destination, message));
 
         String handlerName = "handle" + message.getClass().getSimpleName();
-        return callMethod(destination, handlerName, message, sender);
+        return callMethod(destination, handlerName, handleExceptions, message, sender);
     }
 
     /**
@@ -393,7 +394,7 @@ public abstract class Node implements Serializable {
      */
     public void handleMessage(Message message, Address sender,
                               Address destination) {
-        handleMessageInternal(message, sender, destination);
+        handleMessageInternal(message, sender, destination, true);
     }
 
     /**
@@ -410,7 +411,7 @@ public abstract class Node implements Serializable {
      * @return the value returned by the handler or null
      */
     protected final Object handleMessage(Message message, Address destination) {
-        return handleMessageInternal(message, address, destination);
+        return handleMessageInternal(message, address, destination, false);
     }
 
     /**
@@ -425,21 +426,10 @@ public abstract class Node implements Serializable {
      * @return the value returned by the handler or null
      */
     protected final Object handleMessage(Message message) {
-        return handleMessageInternal(message, address, address);
+        return handleMessageInternal(message, address, address, false);
     }
 
-    /**
-     * <p><b>Do not use.</b> Only used by testing framework.</p>
-     *
-     * <p>Uses reflection to find the appropriate timer handler; calls that
-     * handler with the given argument.</p>
-     *
-     * @param timer
-     *         the timer to deliver
-     * @param destination
-     *         the Node to deliver to
-     */
-    public void onTimer(Timer timer, Address destination) {
+    private void onTimerInternal(Timer timer, Address destination, boolean handleExceptions) {
         if (timer == null) {
             LOG.severe(String.format("Attempting to deliver null timer to %s",
                     address));
@@ -457,7 +447,22 @@ public abstract class Node implements Serializable {
                 .format("TimerReceive(-> %s, %s)", destination, timer));
 
         String handlerName = "on" + timer.getClass().getSimpleName();
-        callMethod(destination, handlerName, timer);
+        callMethod(destination, handlerName, handleExceptions, timer);
+    }
+
+    /**
+     * <p><b>Do not use.</b> Only used by testing framework.</p>
+     *
+     * <p>Uses reflection to find the appropriate timer handler; calls that
+     * handler with the given argument.</p>
+     *
+     * @param timer
+     *         the timer to deliver
+     * @param destination
+     *         the Node to deliver to
+     */
+    public void onTimer(Timer timer, Address destination) {
+        onTimerInternal(timer, destination, true);
     }
 
     /**
@@ -469,11 +474,12 @@ public abstract class Node implements Serializable {
      *         the timer to deliver
      */
     protected final void onTimer(Timer timer) {
-        onTimer(timer, address);
+        onTimerInternal(timer, address, false);
     }
 
+    @SneakyThrows
     private Object callMethod(Address destination, String methodName,
-                              Object... args) {
+                              boolean handleExceptions, Object... args) {
         // Grab a reference to the root node in this hierarchy
         Node n = this;
         while (n.parentNode != null) {
@@ -519,6 +525,10 @@ public abstract class Node implements Serializable {
 
             if (e instanceof InvocationTargetException) {
                 t = ((InvocationTargetException) e).getTargetException();
+            }
+
+            if (!handleExceptions) {
+                throw t;
             }
 
             if (logExceptions) {
