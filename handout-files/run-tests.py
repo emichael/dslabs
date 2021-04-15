@@ -5,9 +5,9 @@
 
 import argparse
 import os
+import platform
 import shutil
 import subprocess
-import platform
 
 
 __author__ = 'Ellis Michael (emichael@cs.washington.edu)'
@@ -25,13 +25,14 @@ if platform.system() == 'Windows':
 else:
     CP_SEP = ':'
 
-CLASSPATHS = ['jars/framework.jar', 'jars/framework-deps.jar',
-              'jars/grader.jar', 'jars/grader-deps.jar', 'out/src/', 'out/tst/']
-
-RUNTIME_CLASSPATH = ""
-
-for P in CLASSPATHS:
-    RUNTIME_CLASSPATH += P + CP_SEP
+RUNTIME_CLASSPATH = CP_SEP.join((
+    'jars/framework.jar',
+    'jars/framework-deps.jar',
+    'jars/grader.jar',
+    'jars/grader-deps.jar',
+    'out/src/',
+    'out/tst/'
+))
 
 def make():
     """Compile the source files, return True if successful."""
