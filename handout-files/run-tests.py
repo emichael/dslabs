@@ -5,6 +5,7 @@
 
 import argparse
 import os
+import platform
 import shutil
 import subprocess
 
@@ -19,14 +20,19 @@ SEARCH_CATEGORY = 'dslabs.framework.testing.junit.SearchTests'
 
 VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
 
-RUNTIME_CLASSPATH = (
-    'jars/framework.jar:'
-    'jars/framework-deps.jar:'
-    'jars/grader.jar:'
-    'jars/grader-deps.jar:'
-    'out/src/:'
+if platform.system() == 'Windows':
+    CP_SEP = ';'
+else:
+    CP_SEP = ':'
+
+RUNTIME_CLASSPATH = CP_SEP.join((
+    'jars/framework.jar',
+    'jars/framework-deps.jar',
+    'jars/grader.jar',
+    'jars/grader-deps.jar',
+    'out/src/',
     'out/tst/'
-)
+))
 
 def make():
     """Compile the source files, return True if successful."""
