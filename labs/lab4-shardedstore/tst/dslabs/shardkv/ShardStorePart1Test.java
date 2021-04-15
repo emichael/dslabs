@@ -199,6 +199,11 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         joinGroup(2, numServersPerGroup);
 
         ShardConfig config1 = getConfig();
+        while (config1.configNum() != 1) {
+            Thread.sleep(100);
+            config1 = getConfig();
+        }
+        
         Set<Integer> toMove = new HashSet<>();
         toMove.addAll(config1.groupInfo().get(1).getRight().stream().limit(10)
                              .collect(Collectors.toSet()));
@@ -209,6 +214,10 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
         }
 
         ShardConfig config2 = getConfig();
+        while (config2.configNum() != 11) {
+            Thread.sleep(10);
+            config2 = getConfig();
+        }
 
         Set<Integer> group2Shards = config2.groupInfo().get(2).getRight();
 
