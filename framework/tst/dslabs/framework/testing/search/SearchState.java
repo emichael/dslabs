@@ -85,9 +85,9 @@ public final class SearchState extends AbstractState
     @Getter private final transient Set<MessageEnvelope> newMessages;
     @Getter private final transient Set<TimerEnvelope> newTimers;
 
-    public SearchState(Set<Address> servers, Set<Address> clientWorkers,
-                       StateGenerator stateGenerator) {
-        super(servers, clientWorkers, Collections.emptySet(), stateGenerator);
+    public SearchState(StateGenerator stateGenerator) {
+        super(Collections.emptySet(), Collections.emptySet(),
+                Collections.emptySet(), stateGenerator);
 
         this.network = new HashSet<>();
         this.droppedNetwork = new HashSet<>();
@@ -97,10 +97,6 @@ public final class SearchState extends AbstractState
         this.depth = 0;
         this.newMessages = new HashSet<>();
         this.newTimers = new HashSet<>();
-    }
-
-    public SearchState(StateGenerator stateGenerator) {
-        this(Collections.emptySet(), Collections.emptySet(), stateGenerator);
     }
 
     /**
