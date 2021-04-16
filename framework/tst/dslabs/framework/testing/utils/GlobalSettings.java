@@ -67,7 +67,7 @@ public abstract class GlobalSettings {
     doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
 
     @Getter @Setter private static boolean saveTraces =
-            Boolean.parseBoolean(lookupWithDefault("saveTraces", "true"));
+            Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
 
     private static final boolean timeoutsDisabled = Boolean.parseBoolean(
             lookupWithDefault("testTimeoutsDisabled", "false"));

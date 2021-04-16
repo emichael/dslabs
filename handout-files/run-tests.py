@@ -59,7 +59,7 @@ def make():
 def run_tests(lab, part=None, no_run=False, no_search=False,
               timers_disabled=False, log_level=None, single_threaded=False,
               start_viz=False, no_viz_server=False, do_checks=False,
-              test_num=None, assertions=False, ignore_traces=False):
+              test_num=None, assertions=False, save_traces=False):
     """Run the specified tests."""
     if not make():
         return
@@ -90,8 +90,8 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if do_checks:
         command.append('-DdoChecks=true')
 
-    if ignore_traces:
-        command.append('-DsaveTraces=false')
+    if save_traces:
+        command.append('-DsaveTraces=true')
 
     command += [
         '-cp',
@@ -211,8 +211,8 @@ def main():
     group.add_argument('--check-traces', action='store_true',
                        help="replay and recheck saved traces instead of "
                             "running provided tests")
-    parser.add_argument('-x', '--no-save-trace', action='store_true',
-                        help="don't save traces after search test failure")
+    parser.add_argument('-s', '--save-traces', action='store_true',
+                        help="save traces after search test failure")
 
     parser.add_argument('-z', '--start-viz', action='store_true',
                         help="start the visualization on invariant violation")
@@ -256,7 +256,7 @@ def main():
                   do_checks=args.checks,
                   test_num=args.test_num,
                   assertions=args.assertions,
-                  ignore_traces=args.no_save_trace)
+                  save_traces=args.save_traces)
 
 
 if __name__ == '__main__':

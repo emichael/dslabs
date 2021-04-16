@@ -241,6 +241,12 @@ message and timer handlers are not supposed to be idempotent). Furthermore, some
 of these checks rely on non-exhaustive model checking; just because they do not
 report a certain error doesn't mean the problem doesn't exist.
 
+The search tests are also equipped with a trace save/replay feature. If you use
+the `--save-traces` flag in `run-tests.py`, any time a search tests reports an
+error, it saves a file to the `traces/` directory. You can re-run these specific
+event sequences which lead to an error by invoking `run-tests.py
+--check-traces`.
+
 
 ## Debugging and Logging
 Use of an IDE is strongly recommended; an IntelliJ project configuration is
