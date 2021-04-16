@@ -20,6 +20,14 @@ SEARCH_CATEGORY = 'dslabs.framework.testing.junit.SearchTests'
 
 VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
 
+BASE_COMMAND = (
+    'java',
+    '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
+    '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
+    '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+    '--add-opens', 'java.base/java.util.concurrent.atomic=ALL-UNNAMED'
+)
+
 if platform.system() == 'Windows':
     CP_SEP = ';'
 else:
@@ -54,12 +62,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if not make():
         return
 
-    command = ['java',
-               '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
-               '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-               '--add-opens', 'java.base/java.util=ALL-UNNAMED',
-               '--add-opens',
-               'java.base/java.util.concurrent.atomic=ALL-UNNAMED']
+    command = list(BASE_COMMAND)
 
     if assertions:
         command.append('-ea')
@@ -118,7 +121,7 @@ def run_viz_debugger(lab, args, no_viz_server=False):
     if not make():
         return
 
-    command = ['java']
+    command = list(BASE_COMMAND)
 
     if no_viz_server:
         command.append('-DnoVizServer=true')
