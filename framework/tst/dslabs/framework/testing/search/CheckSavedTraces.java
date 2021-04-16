@@ -116,6 +116,6 @@ public class CheckSavedTraces extends BaseJUnitTest {
         traceReplay(initSearchState, trace.history());
 
         System.out.println(
-                "Trace no longer causes error or no longer fully replays");
+                "Trace no longer causes error or no longer fully replays.\n");
     }
 }
