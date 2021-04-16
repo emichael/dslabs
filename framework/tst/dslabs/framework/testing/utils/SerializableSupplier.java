@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Ellis Michael (emichael@cs.washington.edu)
+ * Copyright (c) 2021 Ellis Michael (emichael@cs.washington.edu)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,52 +20,11 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing;
+package dslabs.framework.testing.utils;
 
-import dslabs.framework.Address;
 import java.io.Serializable;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
+import java.util.function.Supplier;
 
-
-@Getter
-@EqualsAndHashCode
-public class Event implements Serializable {
-    private final MessageEnvelope message;
-    private final TimerEnvelope timer;
-
-    public Event(MessageEnvelope messageEnvelope) {
-        this.message = messageEnvelope;
-        this.timer = null;
-    }
-
-    public Event(TimerEnvelope timer) {
-        this.message = null;
-        this.timer = timer;
-    }
-
-    public boolean isMessage() {
-        return message != null;
-    }
-
-    public boolean isTimer() {
-        return timer != null;
-    }
-
-    public Address locationRootAddress() {
-        if (isMessage()) {
-            return message.to().rootAddress();
-        } else {
-            return timer.to().rootAddress();
-        }
-    }
-
-    @Override
-    public String toString() {
-        if (isMessage()) {
-            return message.toString();
-        } else {
-            return timer.toString();
-        }
-    }
+@FunctionalInterface
+public interface SerializableSupplier<T> extends Supplier<T>, Serializable {
 }

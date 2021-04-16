@@ -62,4 +62,4 @@ clean:
 	rm -rf build
 
 clean-all: clean
-	rm -rf deps .gradle
+	rm -rf deps .gradle traces

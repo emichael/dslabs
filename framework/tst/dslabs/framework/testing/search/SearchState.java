@@ -22,6 +22,7 @@
 
 package dslabs.framework.testing.search;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
@@ -35,7 +36,9 @@ import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.TimerEnvelope;
+import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.utils.Cloning;
 import java.io.PrintStream;
 import java.io.Serializable;
@@ -58,6 +61,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.java.Log;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 @Log
@@ -463,6 +467,38 @@ public final class SearchState extends AbstractState
 
     public void printTrace() {
         printTrace(System.err);
+    }
+
+    public static void saveTrace(SearchState state,
+                                 Collection<StatePredicate> invariants) {
+        final Iterable<SearchState> trace = state.trace();
+        final SearchState initialState = Iterables.getFirst(trace, null);
+        assert initialState != null;
+
+        final List<Event> history = new LinkedList<>();
+        boolean skippedFirst = false;
+        for (SearchState s : trace) {
+            if (!skippedFirst) {
+                skippedFirst = true;
+                continue;
+            }
+            assert s.previousEvent != null;
+            history.add(s.previousEvent);
+        }
+
+        final List<Pair<Address, Workload>> clientWorkers = new LinkedList<>();
+        for (Address a : state.clientWorkerAddresses()) {
+            Workload workload = state.clientWorker(a).workload();
+            workload.reset();
+            clientWorkers.add(new ImmutablePair<>(a, workload));
+        }
+
+        SerializableTrace serializableTrace =
+                new SerializableTrace(history, invariants, state.gen,
+                        ImmutableList.copyOf(state.serverAddresses()),
+                        clientWorkers);
+
+        serializableTrace.save();
     }
 
     /**

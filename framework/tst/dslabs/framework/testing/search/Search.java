@@ -409,6 +409,19 @@ public abstract class Search {
         }
         return new RandomDFS(settings).run(initialState);
     }
+
+    public static SearchResults traceReplay(@NonNull SearchState initialState,
+                                            List<Event> trace,
+                                            SearchSettings settings) {
+        if (settings == null) {
+            settings = new SearchSettings();
+            settings.outputFreqSecs(-1);
+            settings.singleThreaded(true);
+        }
+        assert settings.singleThreaded();
+        assert !settings.shouldOutputStatus();
+        return new TraceReplay(settings, trace).run(initialState);
+    }
 }
 
 

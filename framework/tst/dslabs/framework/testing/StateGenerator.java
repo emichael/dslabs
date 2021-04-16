@@ -25,19 +25,22 @@ package dslabs.framework.testing;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Node;
+import dslabs.framework.testing.utils.SerializableFunction;
+import dslabs.framework.testing.utils.SerializableSupplier;
+import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import lombok.Builder;
 import lombok.NonNull;
 
 @Builder
-public class StateGenerator {
-    @NonNull private final Function<Address, Node> serverSupplier;
-    @NonNull private final Function<Address, Client> clientSupplier;
-    @NonNull private final Function<Address, Workload> workloadSupplier;
+public class StateGenerator implements Serializable {
+    @NonNull private final SerializableFunction<Address, Node> serverSupplier;
+    @NonNull private final SerializableFunction<Address, Client> clientSupplier;
+    @NonNull private final SerializableFunction<Address, Workload>
+            workloadSupplier;
 
     public Node server(Address address) {
         return serverSupplier.apply(address);
@@ -113,31 +116,31 @@ public class StateGenerator {
 
     public static class StateGeneratorBuilder {
         public StateGeneratorBuilder serverSupplier(
-                Function<Address, Node> serverSupplier) {
+                SerializableFunction<Address, Node> serverSupplier) {
             this.serverSupplier = serverSupplier;
             return this;
         }
 
         public StateGeneratorBuilder serverSupplier(
-                Supplier<Node> serverSupplier) {
+                SerializableSupplier<Node> serverSupplier) {
             this.serverSupplier = __ -> serverSupplier.get();
             return this;
         }
 
         public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
-                Function<Address, C> clientSupplier) {
+                SerializableFunction<Address, C> clientSupplier) {
             this.clientSupplier = clientSupplier::apply;
             return this;
         }
 
         public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
-                Supplier<C> clientSupplier) {
+                SerializableSupplier<C> clientSupplier) {
             this.clientSupplier = __ -> clientSupplier.get();
             return this;
         }
 
         public StateGeneratorBuilder workloadSupplier(
-                Function<Address, Workload> workloadSupplier) {
+                SerializableFunction<Address, Workload> workloadSupplier) {
             this.workloadSupplier = workloadSupplier;
             return this;
         }

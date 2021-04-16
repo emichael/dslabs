@@ -28,6 +28,7 @@ import dslabs.framework.Command;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.testing.ClientWorker;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.runner.RunSettings;
@@ -267,6 +268,18 @@ public abstract class BaseJUnitTest {
         dfs(searchState, searchSettings);
     }
 
+    protected final void traceReplay(SearchState searchState, List<Event> trace,
+                                     SearchSettings searchSettings) {
+        assert searchState != null;
+        searchResults = Search.traceReplay(searchState, trace, searchSettings);
+        assertEndConditionValid();
+    }
+
+    protected final void traceReplay(SearchState searchState,
+                                     List<Event> trace) {
+        traceReplay(searchState, trace, searchSettings);
+    }
+
     @SneakyThrows
     private void assertEndConditionValid() {
         final EndCondition ec = searchResults.endCondition();
@@ -296,6 +309,11 @@ public abstract class BaseJUnitTest {
                     "\n" + invariant.errorMessage(humanReadable) + "\n");
         } else {
             System.err.println();
+        }
+
+        if (GlobalSettings.saveTraces()) {
+            SearchState
+                    .saveTrace(terminal, searchResults.invariantsTested());
         }
 
         if (GlobalSettings.startVisualization()) {
@@ -378,7 +396,7 @@ public abstract class BaseJUnitTest {
         if (endTestOnFailure) {
             fail(sb.toString());
         } else {
-            System.err.println(sb.toString());
+            System.err.println(sb);
             failTestAndContinue();
         }
     }

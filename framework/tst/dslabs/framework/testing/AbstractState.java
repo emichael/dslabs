@@ -54,7 +54,7 @@ public abstract class AbstractState implements Serializable {
     private final Map<Address, ClientWorker> clientWorkers;
     private final Map<Address, Node> clients;
 
-    private final transient StateGenerator gen;
+    protected final transient StateGenerator gen;
 
     public abstract Iterable<MessageEnvelope> network();
 

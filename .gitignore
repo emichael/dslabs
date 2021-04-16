@@ -2,6 +2,9 @@
 build/
 deps/
 
+# Saved traces
+traces/
+*.trace
 
 # Sublime files
 *.sublime-workspace

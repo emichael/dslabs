@@ -26,10 +26,12 @@ import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.Message;
 import dslabs.framework.Result;
+import dslabs.framework.testing.utils.SerializableFunction;
+import dslabs.framework.testing.utils.SerializablePredicate;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
 import lombok.Getter;
@@ -40,7 +42,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 
 @RequiredArgsConstructor
-public class StatePredicate implements Predicate<AbstractState> {
+public class StatePredicate implements Predicate<AbstractState>, Serializable {
     public static final Pair<Boolean, String> TRUE_NO_MESSAGE =
             new ImmutablePair<>(true, null);
     public static final Pair<Boolean, String> FALSE_NO_MESSAGE =
@@ -131,7 +133,7 @@ public class StatePredicate implements Predicate<AbstractState> {
     }
 
     public static StatePredicate containsEnvelopMatching(String name,
-                                                         Predicate<MessageEnvelope> predicate) {
+                                                         SerializablePredicate<MessageEnvelope> predicate) {
         return statePredicate(
                 String.format("Network contains message satisfying: %s", name),
                 s -> StreamSupport.stream(s.network().spliterator(), false)
@@ -139,7 +141,7 @@ public class StatePredicate implements Predicate<AbstractState> {
     }
 
     public static StatePredicate containsMessageMatching(String name,
-                                                         Predicate<Message> predicate) {
+                                                         SerializablePredicate<Message> predicate) {
         return containsEnvelopMatching(name, e -> predicate.test(e.message()));
     }
 
@@ -156,32 +158,32 @@ public class StatePredicate implements Predicate<AbstractState> {
     /* Class Implementation */
 
     @Getter private final String name;
-    @NonNull private final Function<AbstractState, Pair<Boolean, String>>
+    @NonNull private final SerializableFunction<AbstractState, Pair<Boolean, String>>
             predicate;
 
-    private static <T> Function<T, Pair<Boolean, String>> addNullMessage(
-            String name, Predicate<T> predicate) {
+    private static <T> SerializableFunction<T, Pair<Boolean, String>> addNullMessage(
+            String name, SerializablePredicate<T> predicate) {
         return t -> new ImmutablePair<>(predicate.test(t), null);
     }
 
     public static StatePredicate statePredicateWithMessage(String name,
-                                                           Function<AbstractState, Pair<Boolean, String>> predicateWithMessage) {
+                                                           SerializableFunction<AbstractState, Pair<Boolean, String>> predicateWithMessage) {
         return new StatePredicate(name, predicateWithMessage);
     }
 
     public static StatePredicate statePredicate(String name,
-                                                Predicate<AbstractState> predicate) {
+                                                SerializablePredicate<AbstractState> predicate) {
         return statePredicateWithMessage(name, addNullMessage(name, predicate));
     }
 
     public static StatePredicate resultsPredicateWithMessage(String name,
-                                                             Function<Collection<List<Result>>, Pair<Boolean, String>> predicate) {
+                                                             SerializableFunction<Collection<List<Result>>, Pair<Boolean, String>> predicate) {
         return statePredicateWithMessage(name,
                 s -> predicate.apply(s.results().values()));
     }
 
     public static StatePredicate resultsPredicate(String name,
-                                                  Predicate<Collection<List<Result>>> predicate) {
+                                                  SerializablePredicate<Collection<List<Result>>> predicate) {
         return resultsPredicateWithMessage(name,
                 addNullMessage(name, predicate));
     }
@@ -191,7 +193,7 @@ public class StatePredicate implements Predicate<AbstractState> {
     }
 
     public static StatePredicate resultPredicateWithMessage(String name,
-                                                            Function<List<Result>, Pair<Boolean, String>> predicate,
+                                                            SerializableFunction<List<Result>, Pair<Boolean, String>> predicate,
                                                             Quantifier quantifier) {
         return resultsPredicateWithMessage(name, rs -> {
             for (List<Result> r : rs) {
@@ -226,7 +228,7 @@ public class StatePredicate implements Predicate<AbstractState> {
     }
 
     public static StatePredicate resultPredicate(String name,
-                                                 Predicate<List<Result>> predicate,
+                                                 SerializablePredicate<List<Result>> predicate,
                                                  Quantifier quantifier) {
         return resultPredicateWithMessage(name, addNullMessage(name, predicate),
                 quantifier);
@@ -234,14 +236,14 @@ public class StatePredicate implements Predicate<AbstractState> {
 
     public static StatePredicate resultPredicateWithMessage(String name,
                                                             Address clientWorkerAddress,
-                                                            Function<List<Result>, Pair<Boolean, String>> predicate) {
+                                                            SerializableFunction<List<Result>, Pair<Boolean, String>> predicate) {
         return statePredicateWithMessage(name, s -> predicate
                 .apply(s.clientWorker(clientWorkerAddress).results()));
     }
 
     public static StatePredicate resultPredicate(String name,
                                                  Address clientWorkerAddress,
-                                                 Predicate<List<Result>> predicate) {
+                                                 SerializablePredicate<List<Result>> predicate) {
         return resultPredicateWithMessage(name, clientWorkerAddress,
                 addNullMessage(name, predicate));
     }
