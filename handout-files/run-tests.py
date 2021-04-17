@@ -20,7 +20,7 @@ SEARCH_CATEGORY = 'dslabs.framework.testing.junit.SearchTests'
 
 VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
 
-TRACE_CHECKER = 'dslabs.framework.testing.search.CheckSavedTraces'
+TRACE_REPLAY = 'dslabs.framework.testing.search.CheckSavedTraces'
 
 BASE_COMMAND = (
     'java',
@@ -143,8 +143,8 @@ def run_viz_debugger(lab, args, no_viz_server=False):
     subprocess.call(command)
 
 
-def check_traces(log_level=None, start_viz=False, no_viz_server=False,
-                 do_checks=False, assertions=False):
+def replay_traces(log_level=None, start_viz=False, no_viz_server=False,
+                  do_checks=False, assertions=False):
     """Run the specified tests."""
     if not make():
         return
@@ -170,7 +170,7 @@ def check_traces(log_level=None, start_viz=False, no_viz_server=False,
         '-cp',
         RUNTIME_CLASSPATH,
         RUNNER,
-        TRACE_CHECKER
+        TRACE_REPLAY
     ]
 
     subprocess.call(command)
@@ -182,7 +182,7 @@ def main():
 
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument('-l', '--lab', type=int, nargs=None,
-                        help="lab number for tests to run")
+                       help="lab number for tests to run")
     parser.add_argument('-p', '--part', type=int, nargs='?', default=None,
                         help="part number for tests to run")
 
@@ -208,7 +208,7 @@ def main():
     parser.add_argument('--single-threaded', action='store_true',
                         help="run the tests using only a single thread")
 
-    group.add_argument('--check-traces', action='store_true',
+    group.add_argument('--replay-traces', action='store_true',
                        help="replay and recheck saved traces instead of "
                             "running provided tests")
     parser.add_argument('-s', '--save-traces', action='store_true',
@@ -233,16 +233,16 @@ def main():
     args = parser.parse_args()
 
     if args.debugger:
-        if args.check_traces:
-            parser.error("starting the debugger with --check-traces not "
+        if args.replay_traces:
+            parser.error("starting the debugger with --replay-traces not "
                          "currently supported")
         run_viz_debugger(args.lab, args.debugger, args.no_viz_server)
-    elif args.check_traces:
-        check_traces(log_level=args.log_level,
-                     start_viz=args.start_viz,
-                     no_viz_server=args.no_viz_server,
-                     do_checks=args.checks,
-                     assertions=args.assertions)
+    elif args.replay_traces:
+        replay_traces(log_level=args.log_level,
+                      start_viz=args.start_viz,
+                      no_viz_server=args.no_viz_server,
+                      do_checks=args.checks,
+                      assertions=args.assertions)
     else:
         run_tests(args.lab,
                   part=args.part,

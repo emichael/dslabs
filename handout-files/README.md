@@ -245,7 +245,7 @@ The search tests are also equipped with a trace save/replay feature. If you use
 the `--save-traces` flag in `run-tests.py`, any time a search tests reports an
 error, it saves a file to the `traces/` directory. You can re-run these specific
 event sequences which lead to an error by invoking `run-tests.py
---check-traces`.
+--replay-traces`.
 
 
 ## Debugging and Logging
