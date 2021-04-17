@@ -95,7 +95,7 @@ class SerializableTrace implements Serializable {
 class TraceReplay extends Search {
     private SearchState initialState;
     private final List<Event> trace;
-    private boolean eventsExhausted = false;
+    private boolean startedReplay = false, eventsExhausted = false;
 
     TraceReplay(@NonNull SearchSettings settings, @NonNull List<Event> trace) {
         super(settings);
@@ -126,6 +126,10 @@ class TraceReplay extends Search {
 
     @Override
     protected Runnable getWorker() {
+        if (startedReplay) {
+            return null;
+        }
+        startedReplay = true;
         return this::replayTrace;
     }
 
