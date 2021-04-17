@@ -11,6 +11,7 @@ import dslabs.framework.testing.junit.TestPointValue;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
+import java.util.Objects;
 import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
@@ -273,5 +274,33 @@ public class ViewServerTest {
         timeoutFully();
         sendPing(INITIAL_VIEWNUM, server(1));
         check(server(1), null, INITIAL_VIEWNUM);
+    }
+
+    @Test(timeout = 5 * 1000)
+    @PrettyTestName("Consecutive views have different configurations")
+    @TestPointValue(5)
+    public void test12NewViewNotStarted() {
+        setupView(server(1), null, false);
+        timeoutFully(server(1));
+        check(server(1), null, INITIAL_VIEWNUM);
+        timeoutFully();
+        check(server(1), null, INITIAL_VIEWNUM);
+        sendPing(INITIAL_VIEWNUM, server(1));
+        timeoutFully(server(1));
+        check(server(1), null, INITIAL_VIEWNUM);
+        timeoutFully();
+        check(server(1), null, INITIAL_VIEWNUM);
+        sendPing(STARTUP_VIEWNUM, server(2));
+        check(server(1), server(2), INITIAL_VIEWNUM + 1);
+        sendPing(INITIAL_VIEWNUM + 1, server(1));
+        check(server(1), server(2), INITIAL_VIEWNUM + 1);
+        timeoutFully(server(1), server(2));
+        check(server(1), server(2), INITIAL_VIEWNUM + 1);
+        timeoutFully();
+        View v = getView();
+        if (Objects.equals(v.primary(), server(1)) &&
+                Objects.equals(v.backup(), server(2))) {
+            assertEquals(INITIAL_VIEWNUM + 1, v.viewNum());
+        }
     }
 }
