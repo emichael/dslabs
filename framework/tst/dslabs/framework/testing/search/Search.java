@@ -232,15 +232,18 @@ public abstract class Search {
             SearchState previous = s.previous();
             Event e = s.previousEvent();
 
-            // Check if event is deterministic
-            if (!statesEqual(s, previous.stepEvent(e, settings, true))) {
-                CheckLogger.notDeterministic(e, previous);
-            }
+            if (previous != null) {
+                assert e != null;
+                // Check if event is deterministic
+                if (!statesEqual(s, previous.stepEvent(e, settings, true))) {
+                    CheckLogger.notDeterministic(e, previous);
+                }
 
-            // Check if event is idempotent
-            if (e.isMessage() &&
-                    !statesEqual(s, s.stepEvent(e, settings, true))) {
-                CheckLogger.notIdempotent(e, previous);
+                // Check if event is idempotent
+                if (e.isMessage() &&
+                        !statesEqual(s, s.stepEvent(e, settings, true))) {
+                    CheckLogger.notIdempotent(e, previous);
+                }
             }
         }
 
