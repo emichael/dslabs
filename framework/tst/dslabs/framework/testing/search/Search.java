@@ -32,6 +32,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -156,25 +157,6 @@ public abstract class Search {
         System.out.println("\t" + status(time));
     }
 
-    /**
-     * Determine if two states are equal with respect to search-equivalence.
-     *
-     * @param s1
-     *         the first state
-     * @param s2
-     *         the second state
-     * @return whether the two states are actually equivalent
-     */
-    protected final boolean statesEqual(SearchState s1, SearchState s2) {
-        if (s1 == s2) {
-            return true;
-        }
-        if (s1 == null || s2 == null) {
-            return false;
-        }
-        return s1.wrapped().equals(s2.wrapped());
-    }
-
     protected enum StateStatus {
         VALID, TERMINAL, PRUNED
     }
@@ -235,13 +217,13 @@ public abstract class Search {
             if (previous != null) {
                 assert e != null;
                 // Check if event is deterministic
-                if (!statesEqual(s, previous.stepEvent(e, settings, true))) {
+                if (!Objects.equals(s, previous.stepEvent(e, settings, true))) {
                     CheckLogger.notDeterministic(e, previous);
                 }
 
                 // Check if event is idempotent
                 if (e.isMessage() &&
-                        !statesEqual(s, s.stepEvent(e, settings, true))) {
+                        !Objects.equals(s, s.stepEvent(e, settings, true))) {
                     CheckLogger.notIdempotent(e, previous);
                 }
             }
