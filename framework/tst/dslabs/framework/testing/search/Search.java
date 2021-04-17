@@ -420,6 +420,9 @@ class BFS extends Search {
     private final AtomicLong states = new AtomicLong();
     private final AtomicInteger depth = new AtomicInteger();
 
+    private final AtomicInteger activeWorkers = new AtomicInteger();
+    private int initialDepth, currentDepth;
+
     BFS(SearchSettings settings) {
         super(settings);
     }
@@ -443,6 +446,7 @@ class BFS extends Search {
         discovered.add(initialState.wrapped());
         states.set(0);
         depth.getAndAccumulate(initialState.depth(), Math::max);
+        initialDepth = initialState.depth();
     }
 
     @Override
@@ -452,14 +456,40 @@ class BFS extends Search {
 
     @Override
     protected Runnable getWorker() {
-        SearchState n = queue.poll();
-        if (n == null) {
+        final int currentWorkers = activeWorkers.get();
+        final SearchState head = queue.peek();
+
+        // Don't start workers for multiple depths at the same time
+        if (head == null ||
+                (currentWorkers > 0 && head.depth() > currentDepth)) {
             return null;
         }
-        return () -> exploreNode(n);
+
+        // Only main thread removes elements from queue; will be same as peek
+        final SearchState toExplore = queue.poll();
+        assert toExplore != null;
+
+        if (toExplore.depth() > currentDepth) {
+            currentDepth = toExplore.depth();
+        }
+        activeWorkers.incrementAndGet();
+        return () -> exploreNode(toExplore);
     }
 
     private void exploreNode(@NonNull SearchState node) {
+        // Check the initial state
+        if (node.depth() == initialDepth) {
+            states.incrementAndGet();
+
+            StateStatus status = checkState(node, false);
+
+            // For now, don't consider PRUNED initial states
+            if (status.equals(StateStatus.TERMINAL)) {
+                activeWorkers.decrementAndGet();
+                return;
+            }
+        }
+
         for (Event event : node.events(settings)) {
             SearchState successor = node.stepEvent(event, settings, true);
 
@@ -473,6 +503,7 @@ class BFS extends Search {
             StateStatus status = checkState(successor, false);
 
             if (status.equals(StateStatus.TERMINAL)) {
+                activeWorkers.decrementAndGet();
                 return;
             } else if (status.equals(StateStatus.PRUNED)) {
                 continue;
@@ -480,6 +511,7 @@ class BFS extends Search {
 
             queue.add(successor);
         }
+        activeWorkers.decrementAndGet();
     }
 }
 
@@ -535,8 +567,7 @@ class RandomDFS extends Search {
         probes.incrementAndGet();
         states.incrementAndGet();
 
-        for (SearchState current = initialState, next = null;
-             current != null;
+        for (SearchState current = initialState, next = null; current != null;
              current = next, next = null) {
 
             List<Event> events = new ArrayList<>(current.events(settings));
