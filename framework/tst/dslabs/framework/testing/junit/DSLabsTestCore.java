@@ -32,12 +32,18 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 
 public abstract class DSLabsTestCore {
+    private static boolean EXIT_ON_TEST_FAILURE = true;
+
+    static void preventExitOnFailure() {
+        EXIT_ON_TEST_FAILURE = false;
+    }
+
     public static void main(String[] args)
             throws ClassNotFoundException, NoSuchMethodException,
             InvocationTargetException, IllegalAccessException {
 
         RunNotifier notifier = new RunNotifier();
-        RunListener listener = new TestListener(notifier);
+        RunListener listener = new DSLabsTestListener(notifier);
         notifier.addListener(listener);
 
         // Use reflection to parse commandline arguments
@@ -63,6 +69,10 @@ public abstract class DSLabsTestCore {
             notifier.fireTestRunFinished(result);
         } finally {
             notifier.removeListener(defaultListener);
+        }
+
+        if (EXIT_ON_TEST_FAILURE && !result.wasSuccessful()) {
+            System.exit(1);
         }
     }
 }
