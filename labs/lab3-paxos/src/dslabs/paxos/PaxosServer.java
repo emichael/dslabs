@@ -11,6 +11,7 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class PaxosServer extends Node {
+    /** All servers in the paxos group, including ourselves (this node). */
     private final Address[] servers;
 
     // Your code here...
