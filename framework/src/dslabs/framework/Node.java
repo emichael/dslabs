@@ -70,7 +70,7 @@ import org.apache.commons.lang3.tuple.Triple;
  * <p>Nodes can add sub-Nodes, which allow code re-use. When a Node is
  * registered as a sub-Node, it can send messages and set timers as normal.
  * However, messages can also be passed <i>reliably</i> and immediately between
- * the sub-Node and its parent using {@link #handleMessage(Message, Address)}}.
+ * the sub-Node and its parent using {@link #handleMessage(Message, Address)}.
  * The parent node registering the sub-Node is responsible for creating the
  * sub-Node with a sub-Address of its own address ({@link
  * Address#subAddress(Address, String)}), registering the sub-Node {@link
