@@ -36,7 +36,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 
-public class TestListener extends RunListener {
+class DSLabsTestListener extends RunListener {
     private static final String large_sep = StringUtils.repeat('=', 50);
     private static final String small_sep = StringUtils.repeat('-', 50);
 
@@ -57,7 +57,7 @@ public class TestListener extends RunListener {
         return cat != null && Arrays.asList(cat.value()).contains(category);
     }
 
-    public TestListener(RunNotifier runNotifier) {
+    DSLabsTestListener(RunNotifier runNotifier) {
         this.runNotifier = runNotifier;
     }
 
@@ -99,6 +99,9 @@ public class TestListener extends RunListener {
         if (isInCategory(failure.getDescription(), SearchTests.class) &&
                 failure.getException() instanceof VizClientStarted &&
                 GlobalSettings.startVisualization()) {
+            // Don't let the main method kill the visualization client
+            DSLabsTestCore.preventExitOnFailure();
+
             runNotifier.pleaseStop();
         } else {
             // Otherwise print the exception

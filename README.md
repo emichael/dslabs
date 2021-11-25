@@ -98,6 +98,15 @@ state graph we explore for an individual test, guiding the search towards common
 problems while still exploring all possible executions in the remaining portion
 of the state space.
 
+The DSLabs model is built to be usable by students and be as _transparent as is
+practical_. Students will be required to make certain accommodations for the
+model checker's sake, but we try to limit these and provide tools that help
+validate the model checker's assumptions and debug model checking performance
+issues. Moreover, the model checker itself is not designed with state-of-the-art
+performance as its only goal. Building a model checker that can test student
+implementations of runnable systems built in a general-purpose language such as
+Java requires striking a balance between usability and performance.
+
 
 ### Visualization
 This framework is integrated with the [Oddity](https://github.com/uwplse/oddity)

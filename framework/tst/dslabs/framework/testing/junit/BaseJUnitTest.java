@@ -80,11 +80,12 @@ public abstract class BaseJUnitTest {
 
 
     protected final boolean isRunTest() {
-        return TestListener.isInCategory(testDescription, RunTests.class);
+        return DSLabsTestListener.isInCategory(testDescription, RunTests.class);
     }
 
     protected final boolean isSearchTest() {
-        return TestListener.isInCategory(testDescription, SearchTests.class);
+        return DSLabsTestListener
+                .isInCategory(testDescription, SearchTests.class);
     }
 
     protected void setupTest() {

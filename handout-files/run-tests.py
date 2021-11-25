@@ -8,6 +8,7 @@ import os
 import platform
 import shutil
 import subprocess
+import sys
 
 
 __author__ = 'Ellis Michael (emichael@cs.washington.edu)'
@@ -52,8 +53,7 @@ def make():
         print("Could not compile sources.\n")
         print(ex.output.decode("utf-8"))
         shutil.rmtree('out')
-        return False
-    return True
+        sys.exit(3)
 
 
 def run_tests(lab, part=None, no_run=False, no_search=False,
@@ -61,8 +61,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
               start_viz=False, no_viz_server=False, do_checks=False,
               test_num=None, assertions=False, save_traces=False):
     """Run the specified tests."""
-    if not make():
-        return
+    make()
 
     command = list(BASE_COMMAND)
 
@@ -118,13 +117,13 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     command.append(test_suite)
 
-    subprocess.call(command)
+    returncode = subprocess.call(command)
+    sys.exit(returncode)
 
 
 def run_viz_debugger(lab, args, no_viz_server=False):
     """Start the visual debugger."""
-    if not make():
-        return
+    make()
 
     command = list(BASE_COMMAND)
 
@@ -140,7 +139,8 @@ def run_viz_debugger(lab, args, no_viz_server=False):
     command.append(str(lab))
     command += args
 
-    subprocess.call(command)
+    returncode = subprocess.call(command)
+    sys.exit(returncode)
 
 
 def replay_traces(log_level=None, start_viz=False, no_viz_server=False,
