@@ -391,6 +391,7 @@ public abstract class Node implements Serializable {
      *         the sender of the message
      * @param destination
      *         the Node to deliver to
+     * @hidden
      */
     public void handleMessage(Message message, Address sender,
                               Address destination) {
@@ -460,6 +461,7 @@ public abstract class Node implements Serializable {
      *         the timer to deliver
      * @param destination
      *         the Node to deliver to
+     * @hidden
      */
     public void onTimer(Timer timer, Address destination) {
         onTimerInternal(timer, destination, true);
@@ -550,6 +552,8 @@ public abstract class Node implements Serializable {
      * <p><b>Do not use.</b> Only used by testing framework.
      *
      * <p>Configures the node to allow it to send messages and set timers.
+     *
+     * @hidden
      */
     public void config(Consumer<Triple<Address, Address, Message>> messageAdder,
                        Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
