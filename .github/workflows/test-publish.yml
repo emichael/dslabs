@@ -1,0 +1,71 @@
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  test:
+    name: Tests - Java version ${{ matrix.java }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        java: [ '14', '15', '16', '17' ]
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: ${{ matrix.java }}
+          cache: 'gradle'
+
+      - uses: actions/cache@v2
+        with:
+          path: deps/oddity.jar
+          key: ${{ runner.os }}-oddity-${{ hashFiles('Makefile') }}
+
+      - run: make dependencies
+      - run: make all
+      - run: make test
+
+  publish:
+    needs: test
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' && github.repository == 'emichael/dslabs' }}
+    name: Publish handout
+    runs-on: ubuntu-latest
+    concurrency: publish-handout
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '14'
+          cache: 'gradle'
+
+      - uses: actions/cache@v2
+        with:
+          path: deps/oddity.jar
+          key: ${{ runner.os }}-oddity-${{ hashFiles('Makefile') }}
+
+      - run: make build/handout/
+
+      - run: |
+          cd build/handout/
+
+          git init -b handout
+
+          git config user.name "${GITHUB_ACTOR}"
+          git config user.email "${GITHUB_ACTOR}@users.noreply.github.com"
+
+          git add .
+
+          git commit -m "Committing built handout"
+
+          git push -f "https://${GITHUB_ACTOR}:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git" handout:handout
+
+          rm -rf .git
+          cd ../..
