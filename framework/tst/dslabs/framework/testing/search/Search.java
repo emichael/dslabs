@@ -465,7 +465,7 @@ class BFS extends Search {
             return null;
         }
 
-        // Only main thread removes elements from queue; will be same as peek
+        // getWorker (and dequeuing) protected by lock; will be same as peek
         final SearchState toExplore = queue.poll();
         assert toExplore != null;
 
