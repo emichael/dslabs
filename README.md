@@ -2,9 +2,6 @@
 THIS REPOSITORY WITH SOLUTION CODE PRIVATE.**
 
 
-[![Build Status](https://travis-ci.com/emichael/dslabs.svg?branch=master)](https://travis-ci.com/emichael/dslabs)
-
-
 # Distributed Systems Labs and Framework
 
 [Ellis Michael](http://ellismichael.com/)  
