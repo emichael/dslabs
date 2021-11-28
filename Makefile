@@ -1,6 +1,6 @@
 .PHONY: all test dependencies clean clean-all
 
-ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.38a/oddity.jar
+ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.39a/oddity.jar
 
 FRAMEWORK_FILES = $(shell find framework -type f | sed 's/ /\\ /g')
 LAB_FILES = $(shell find labs -type f | sed 's/ /\\ /g')
