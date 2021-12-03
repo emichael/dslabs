@@ -272,7 +272,7 @@ node failure recovery protocol.
 Your system should guarantee linearizability of all transactions and be
 deadlock-free; it should never reach a state where it cannot make progress.
 Furthermore, it should always be able to process reconfigurations, and when
-there are no ongoing reconfigurations are no conflicting transactions, it should
+there are no ongoing reconfigurations and no conflicting transactions, it should
 be able to make progress and commit transactions (as long as the consensus
 protocol underlying each group continues to make progress, of course). You do
 not need to guarantee fairness, however (more on this below).
