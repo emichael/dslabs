@@ -70,7 +70,7 @@ public abstract class CheckLogger {
             methodName =
                     "on" + event.timer().timer().getClass().getSimpleName();
         } else {
-            // Don't handler other methods for now
+            // Don't handle other methods for now
             return null;
         }
 
