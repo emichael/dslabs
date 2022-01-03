@@ -113,6 +113,9 @@ import org.apache.commons.lang3.tuple.Triple;
 @EqualsAndHashCode(of = {"subNodes"})
 @ToString(of = {"address", "subNodes"})
 public abstract class Node implements Serializable {
+    private static final Map<Class<? extends Node>, Map<String, Optional<Method>>>
+            methods = new ConcurrentHashMap<>();
+
     @JsonIgnore @NonNull private final Address address;
 
     transient private Consumer<Triple<Address, Address, Message>> messageAdder;
@@ -481,8 +484,6 @@ public abstract class Node implements Serializable {
         onTimerInternal(timer, address, false);
     }
 
-    private static final Map<Class, Map<String, Optional<Method>>> methods = new ConcurrentHashMap<>();
-
     @SneakyThrows
     private Object callMethod(Address destination, String methodName,
                               boolean handleExceptions, Object... args) {
@@ -510,11 +511,12 @@ public abstract class Node implements Serializable {
             n = n.subNodes.get(id);
         }
 
-        final Class c = n.getClass();
-        final Map<String, Optional<Method>> methodMap = methods.computeIfAbsent(c, ignore -> new ConcurrentHashMap<>());
+        final Class<? extends Node> c = n.getClass();
+        final Map<String, Optional<Method>> methodMap =
+                methods.computeIfAbsent(c, __ -> new ConcurrentHashMap<>());
         final Optional<Method> method =
-                methodMap.computeIfAbsent(methodName, ignore -> {
-                    Class currentClass = c;
+                methodMap.computeIfAbsent(methodName, __ -> {
+                    Class<?> currentClass = c;
                     // TODO: fix this hack, find a better way to look for methods?
                     while (!currentClass.equals(Object.class)) {
                         for (Method m : currentClass.getDeclaredMethods()) {
@@ -527,12 +529,14 @@ public abstract class Node implements Serializable {
                     }
                     return Optional.empty();
                 });
+
         if (method.isEmpty()) {
             LOG.severe(String.format(
-                    "Could not find method %s from %s with args %s",
-                    methodName, c.getSimpleName(), Arrays.toString(args)));
+                    "Could not find method %s from %s with args %s", methodName,
+                    c.getSimpleName(), Arrays.toString(args)));
             return null;
         }
+
         try {
             return method.get().invoke(n, args);
         } catch (Exception e) {

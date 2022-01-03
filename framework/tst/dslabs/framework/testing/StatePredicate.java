@@ -235,8 +235,8 @@ public class StatePredicate implements Predicate<AbstractState> {
     public static StatePredicate resultPredicateWithMessage(String name,
                                                             Address clientWorkerAddress,
                                                             Function<List<Result>, Pair<Boolean, String>> predicate) {
-        return statePredicateWithMessage(name, s -> predicate
-                .apply(s.clientWorker(clientWorkerAddress).results()));
+        return statePredicateWithMessage(name, s -> predicate.apply(
+                s.clientWorker(clientWorkerAddress).results()));
     }
 
     public static StatePredicate resultPredicate(String name,
