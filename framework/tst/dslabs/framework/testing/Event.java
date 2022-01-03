@@ -29,9 +29,16 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 
+/**
+ * <p>Represents either a timer to fire or a message to deliver.
+ *
+ * @see dslabs.framework.testing.search.SearchState
+ * @see dslabs.framework.testing.runner.RunState
+ */
 @Getter
 @EqualsAndHashCode
 public class Event {
+    // invariant: exactly one of the {message, timer} fields is null
     private final MessageEnvelope message;
     private final TimerEnvelope timer;
 
