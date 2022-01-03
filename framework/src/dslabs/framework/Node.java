@@ -34,6 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import lombok.EqualsAndHashCode;
@@ -479,6 +481,8 @@ public abstract class Node implements Serializable {
         onTimerInternal(timer, address, false);
     }
 
+    private static final Map<Class, Map<String, Optional<Method>>> methods = new ConcurrentHashMap<>();
+
     @SneakyThrows
     private Object callMethod(Address destination, String methodName,
                               boolean handleExceptions, Object... args) {
@@ -506,22 +510,31 @@ public abstract class Node implements Serializable {
             n = n.subNodes.get(id);
         }
 
-        // Call the method
-        Class c = n.getClass();
-        try {
-            // TODO: fix this hack, find a better way to look for methods?
-            while (!c.equals(Object.class)) {
-                for (Method method : c.getDeclaredMethods()) {
-                    if (method.getName().equals(methodName)) {
-                        method.setAccessible(true);
-                        return method.invoke(n, args);
+        final Class c = n.getClass();
+        final Map<String, Optional<Method>> methodMap = methods.computeIfAbsent(c, ignore -> new ConcurrentHashMap<>());
+        final Optional<Method> method =
+                methodMap.computeIfAbsent(methodName, ignore -> {
+                    Class currentClass = c;
+                    // TODO: fix this hack, find a better way to look for methods?
+                    while (!currentClass.equals(Object.class)) {
+                        for (Method m : currentClass.getDeclaredMethods()) {
+                            if (m.getName().equals(methodName)) {
+                                m.setAccessible(true);
+                                return Optional.of(m);
+                            }
+                        }
+                        currentClass = currentClass.getSuperclass();
                     }
-                }
-                c = c.getSuperclass();
-            }
+                    return Optional.empty();
+                });
+        if (method.isEmpty()) {
             LOG.severe(String.format(
-                    "Could not find method %s from %s with args %s", methodName,
-                    n.getClass().getSimpleName(), Arrays.toString(args)));
+                    "Could not find method %s from %s with args %s",
+                    methodName, c.getSimpleName(), Arrays.toString(args)));
+            return null;
+        }
+        try {
+            return method.get().invoke(n, args);
         } catch (Exception e) {
             Throwable t = e;
 
