@@ -1093,6 +1093,45 @@ public class PaxosTest extends BaseJUnitTest {
         bfs(c1AtServer1);
     }
 
+    @Test
+    @PrettyTestName("Handling of logs with holes")
+    @Category(SearchTests.class)
+    @TestPointValue(0)
+    public void test24LogsWithHolesSearch() {
+        setupStates(3);
+
+        initSearchState.addClientWorker(client(1), KVStoreWorkload.builder()
+                .commands(append("foo", "x"), append("foo", "z"))
+                .build());
+        initSearchState.addClientWorker(client(2), KVStoreWorkload.builder()
+                .commands(append("foo", "y"), append("foo", "w"))
+                .build());
+
+        searchSettings.maxTimeSecs(10)
+                      .addInvariant(APPENDS_LINEARIZABLE)
+                      .addInvariant(LOGS_CONSISTENT_ALL_SLOTS)
+                      .addPrune(CLIENTS_DONE);
+
+        // Try to find a state where slot 2 is chosen but slot 1 is not
+        for (Address a : servers(3)) {
+            searchSettings.addGoal(hasStatus(a, 2, CHOSEN).and(
+                    hasStatus(a, 1, ACCEPTED).or(hasStatus(a, 1, EMPTY))));
+        }
+
+        bfs(initSearchState);
+
+        // Not all correct implementations will have such states
+        if (!goalFound()) {
+            return;
+        }
+
+        final SearchState logWithHole = goalMatchingState();
+        logWithHole.dropPendingMessages();
+
+        searchSettings.clearGoals().maxTimeSecs(20);
+        bfs(logWithHole);
+    }
+
     private void randomSearch() {
         initSearchState.addClientWorker(client(1),
                 KVStoreWorkload.builder().commands(append("foo", "x")).build());
@@ -1110,7 +1149,7 @@ public class PaxosTest extends BaseJUnitTest {
     @PrettyTestName("Three server random search")
     @Category(SearchTests.class)
     @TestPointValue(20)
-    public void test24ThreeServerRandomSearch() {
+    public void test25ThreeServerRandomSearch() {
         setupStates(3);
         randomSearch();
     }
@@ -1119,7 +1158,7 @@ public class PaxosTest extends BaseJUnitTest {
     @PrettyTestName("Five server random search")
     @Category(SearchTests.class)
     @TestPointValue(20)
-    public void test25FiveServerRandomSearch() {
+    public void test26FiveServerRandomSearch() {
         setupStates(5);
         randomSearch();
     }
@@ -1128,7 +1167,7 @@ public class PaxosTest extends BaseJUnitTest {
     @PrettyTestName("Paxos runs in singleton group")
     @Category({RunTests.class, SearchTests.class})
     @TestPointValue(0)
-    public void test26SingletonPaxos() throws InterruptedException {
+    public void test27SingletonPaxos() throws InterruptedException {
         // First, do basic run-time tests to validate correctness
         setupStates(1);
         int nClients = 10, nRounds = 30;

@@ -336,6 +336,11 @@ public abstract class BaseJUnitTest {
         searchResults = null;
     }
 
+    protected final boolean goalFound() {
+        assert !searchResults.goalsSought().isEmpty();
+        return searchResults.endCondition() == GOAL_FOUND;
+    }
+
     protected final SearchState goalMatchingState() {
         assert !searchResults.goalsSought().isEmpty();
         assertGoalFound(true);
