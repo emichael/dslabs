@@ -190,9 +190,10 @@ You should pass the lab 3 tests; execute them with `./run-tests.py --lab 3`.
   still make progress in this case.
 * Figure out the minimum number of messages Paxos should use when reaching
   agreement in non-failure cases and make your implementation use that minimum.
-* The search tests in this lab are rather minimal because the state space for
-  most implementations of Paxos explodes quickly. You should take their passing
-  with a grain of salt.
+* The state space for most implementations of Paxos explodes quickly. The search
+  tests check for many common issues, but you cannot conclude that your
+  implementation is free from safety-violating bugs just because the search
+  tests pass.
 * You'll want to use the fact that the `Address` interface extends
   `Comparable<Address>` to implement ballots.
 * One benefit of colocating all PMMC roles in the `PaxosServer` is that your
