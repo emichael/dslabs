@@ -1207,7 +1207,6 @@ public class PaxosTest extends BaseJUnitTest {
                 "Checking that 3 commands can be processed in 6 steps");
         setupStates(1);
         initSearchState.addClientWorker(client(1), putAppendGetWorkload);
-        // Must be single-threaded so that state depths are minimal
         searchSettings.clear().addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10).maxDepth(6).singleThreaded(true);
         bfs(initSearchState);
