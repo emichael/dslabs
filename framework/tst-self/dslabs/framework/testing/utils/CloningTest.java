@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.ToString;
@@ -26,6 +27,7 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class CloningTest {
@@ -280,6 +282,16 @@ public class CloningTest {
         b2.set(0);
         assertNotEquals(b, b2);
     }
+
+    @Test
+    public void transientFinal()
+            throws NoSuchFieldException, IllegalAccessException {
+        TransientFinalExample o = new TransientFinalExample("foobar");
+        TransientFinalExample o2 = Cloning.clone(o);
+        assertFastCloned();
+        assertNull(o2.foo);
+    }
+
 }
 
 @ToString(callSuper = true)
@@ -360,6 +372,11 @@ class AlsoShouldFastSerialize implements Serializable {
         bar.put(2, "bar");
         foo = bar.values();
     }
+}
+
+@AllArgsConstructor
+class TransientFinalExample implements Serializable {
+    transient final String foo;
 }
 
 @EqualsAndHashCode

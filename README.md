@@ -162,8 +162,25 @@ repository is an auto-built version of the handout.
 
 
 ## Contributing
-The framework and assignments are ready to be used, but they are also works in
-progress. There are more features planned, and we welcome pull requests.
+The main tools for development are the same as the students' dependencies — Java
+14 and Python 3. You will also need a few utilities such as `wget` to build with
+the provided `Makefile`; MacOS users will need `gtar` and `gcp` provided by the
+`coreutils` Homebrew package.
+
+IntelliJ files are provided and include a code style used by this project. In
+order to provide IntelliJ with all of the necessary libraries, you must run
+`make dependencies` once after cloning the repository and whenever you add to or
+modify the project's dependencies.
+
+If you add fields to any student-visible classes (all classes in the `framework`
+package as well as `SearchState` and related classes), you should take care to
+ensure that `toString` prints the correct information and that the classes are
+cloned correctly and serialized to JSON correctly, if applicable. See
+`dslabs.framework.testing.utils.Cloning` and
+`dslabs.framework.testing.utils.Json` for more details. Also see Lombok's
+`@ToString` annotation for more information about customizing its behavior. In
+particular, note that `transient` and `static` fields are ignored by default by
+all cloning, serialization, and `toString` methods.
 
 
 ## Contact
