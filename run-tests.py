@@ -7,6 +7,9 @@ import os
 import subprocess
 import sys
 
+# Don't generate bytecode in handout-files dir
+sys.dont_write_bytecode = True
+
 runtests = importlib.import_module("handout-files.run-tests")
 
 # Monkey-patch run-tests.py's make function to first build the handout
