@@ -242,8 +242,8 @@ You should pass the part 2 tests; execute them with `run-tests.py --lab 4 --part
   were valid but do not hold for this lab. In particular, you should be very
   cautious about dropping proposals when Paxos is running as a sub-node. As a
   sub-node, Paxos should be oblivious to `AMOApplication` logic and should be
-  able to decide same command for different slots. Some de-duplication at the
-  `PaxosServer` level is possible, but it must be done carefully.
+  able to decide the same command for different slots. Some de-duplication at
+  the `PaxosServer` level is possible, but it must be done carefully.
 
 
 ## Part 3: Transactions
