@@ -59,10 +59,10 @@ import org.apache.commons.lang3.tuple.Triple;
  * Nodes should not use any other means to communicate (e.g., communication
  * through static variables is forbidden). Subclasses of Node define {@link
  * Message} handlers by creating methods with the correct name and method
- * signature. For instance, to define a message handler for the {@code Foo
- * extends Message}, a Node would define the method {@code handleFoo(Foo
- * message, Address sender)}. Similarly, to define a handler for {@code Bar
- * extends Timer} a Node would define the method {@code onBar(Bar timer)}.
+ * signature. For instance, to define a message handler for {@code Foo extends
+ * Message}, a Node would define the method {@code handleFoo(Foo message,
+ * Address sender)}. Similarly, to define a handler for {@code Bar extends
+ * Timer} a Node would define the method {@code onBar(Bar timer)}.
  *
  * <p>After creation (but before any {@link Message} or {@link Timer}
  * handlers are invoked), the {@link Node#init()} method will be invoked. Nodes
