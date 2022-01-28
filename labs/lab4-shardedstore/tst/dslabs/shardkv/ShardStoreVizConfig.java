@@ -1,5 +1,6 @@
 package dslabs.shardkv;
 
+import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.Workload;
@@ -10,6 +11,7 @@ import dslabs.shardmaster.ShardMaster.Join;
 import dslabs.shardmaster.ShardMaster.Leave;
 import dslabs.shardmaster.ShardMaster.Move;
 import dslabs.shardmaster.ShardMaster.ShardMasterCommand;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -43,10 +45,20 @@ public class ShardStoreVizConfig extends VizConfig {
         int numServersPerGroup = Integer.parseInt(args[1]);
         int numShardMasters = Integer.parseInt(args[2]);
         int numClients = Integer.parseInt(args[3]);
-        List<String> commands = commands(args[4]);
+        int commandStart = 4;
+        int commandEnd = args.length;
         List<String> configCommands = null;
-        if (args.length > 5) {
-            configCommands = commands(args[5]);
+        if (args[args.length - 1].startsWith("config=")) {
+            configCommands = commands(args[args.length - 1].substring("config=".length()));
+            commandEnd--;
+        }
+        if (commandEnd - commandStart != 1 && commandEnd - commandStart != numClients) {
+            throw new IllegalArgumentException("Please provide either a single workload for all " +
+                                               "clients or a separate workload for each client.");
+        }
+        List<List<String>> commands = new LinkedList<>();
+        for (int i = commandStart; i < commandEnd; i++) {
+            commands.add(commands(args[i]));
         }
 
         int numShards = 10;
@@ -54,15 +66,27 @@ public class ShardStoreVizConfig extends VizConfig {
         StateGeneratorBuilder builder = ShardStoreBaseTest
                 .builder(numGroups, numServersPerGroup, numShardMasters,
                         numShards);
-        builder.workloadSupplier(
-                TransactionalKVStoreWorkload.builder().commandStrings(commands)
-                                            .build());
+
+        List<Address> clients = new LinkedList<>();
+        for (int i = 1; i <= numClients; i++) {
+            clients.add(new LocalAddress("client" + i));
+        }
+
+        if (commands.size() == 1) {
+            builder.workloadSupplier(
+                    TransactionalKVStoreWorkload.builder().commandStrings(commands.get(0))
+                                                .build());
+        } else {
+            builder.workloadSupplier(a ->
+                    TransactionalKVStoreWorkload.builder().commandStrings(commands.get(clients.indexOf(a)))
+                                                .build());
+        }
 
         SearchState state = new SearchState(builder.build());
         addServers(state, numGroups, numServersPerGroup, numShardMasters);
 
-        for (int i = 1; i <= numClients; i++) {
-            state.addClientWorker(new LocalAddress("client" + i));
+        for (Address client : clients) {
+            state.addClientWorker(client);
         }
 
         // Add config controller with either default joins or custom commands
