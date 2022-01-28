@@ -1,5 +1,6 @@
 package dslabs.primarybackup;
 
+import dslabs.framework.Address;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.search.SearchState;
@@ -13,7 +14,7 @@ import static dslabs.primarybackup.ViewServerTest.VSA;
 public class PBVizConfig extends VizConfig {
     @Override
     public SearchState getInitialState(int numServers, int numClients,
-                                       List<String> commands) {
+                                       List<List<String>> commands) {
         SearchState searchState =
                 super.getInitialState(numServers, numClients, commands);
         searchState.addServer(VSA);
@@ -21,11 +22,17 @@ public class PBVizConfig extends VizConfig {
     }
 
     @Override
-    protected StateGenerator stateGenerator(List<String> commands) {
+    protected StateGenerator stateGenerator(List<Address> servers,
+                                            List<Address> clients,
+                                            List<List<String>> workload) {
         StateGeneratorBuilder builder = builder();
-        builder.workloadSupplier(
-                KVStoreWorkload.builder().commandStrings(commands).build());
+        if (workload.size() == 1) {
+            builder.workloadSupplier(__ ->
+                KVStoreWorkload.builder().commandStrings(workload.get(0)).build());
+        } else {
+            builder.workloadSupplier(a ->
+                KVStoreWorkload.builder().commandStrings(workload.get(clients.indexOf(a))).build());
+        }
         return builder.build();
     }
 }
-

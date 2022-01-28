@@ -1,5 +1,6 @@
 package dslabs.clientserver;
 
+import dslabs.framework.Address;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.search.SearchState;
@@ -13,7 +14,7 @@ import static dslabs.clientserver.ClientServerBaseTest.builder;
 public class CSVizConfig extends VizConfig {
     @Override
     public SearchState getInitialState(int numServers, int numClients,
-                                       List<String> commands) {
+                                       List<List<String>> commands) {
         SearchState searchState =
                 super.getInitialState(0, numClients, commands);
         searchState.addServer(SA);
@@ -21,11 +22,17 @@ public class CSVizConfig extends VizConfig {
     }
 
     @Override
-    protected StateGenerator stateGenerator(List<String> workload) {
+    protected StateGenerator stateGenerator(List<Address> servers,
+                                            List<Address> clients,
+                                            List<List<String>> workload) {
         StateGeneratorBuilder builder = builder();
-        builder.workloadSupplier(
-                KVStoreWorkload.builder().commandStrings(workload).build());
+        if (workload.size() == 1) {
+            builder.workloadSupplier(__ ->
+                KVStoreWorkload.builder().commandStrings(workload.get(0)).build());
+        } else {
+            builder.workloadSupplier(a ->
+                KVStoreWorkload.builder().commandStrings(workload.get(clients.indexOf(a))).build());
+        }
         return builder.build();
     }
 }
-

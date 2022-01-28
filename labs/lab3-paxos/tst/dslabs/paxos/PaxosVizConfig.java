@@ -13,11 +13,16 @@ public class PaxosVizConfig extends VizConfig {
     @Override
     protected StateGenerator stateGenerator(List<Address> servers,
                                             List<Address> clients,
-                                            List<String> commands) {
+                                            List<List<String>> workload) {
         final Address[] serverAddresses = servers.toArray(new Address[0]);
         StateGeneratorBuilder builder = builder(serverAddresses);
-        builder.workloadSupplier(
-                KVStoreWorkload.builder().commandStrings(commands).build());
+        if (workload.size() == 1) {
+            builder.workloadSupplier(__ ->
+                KVStoreWorkload.builder().commandStrings(workload.get(0)).build());
+        } else {
+            builder.workloadSupplier(a ->
+                KVStoreWorkload.builder().commandStrings(workload.get(clients.indexOf(a))).build());
+        }
         return builder.build();
     }
 }

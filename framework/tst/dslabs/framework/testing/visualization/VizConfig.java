@@ -45,12 +45,26 @@ import java.util.List;
  */
 public abstract class VizConfig {
     public SearchState getInitialState(String[] args) {
-        return getInitialState(Integer.parseInt(args[0]),
-                Integer.parseInt(args[1]), commands(args[2]));
+        int numServers = Integer.parseInt(args[0]);
+        int numClients = Integer.parseInt(args[1]);
+        // The input is in one of the following formats:
+        //
+        // <# servers> <# clients> <uniform workload>
+        //
+        // <# servers> <# clients> <client 1 workload> ... <client n workload>
+        if (args.length != 3 && args.length != 2 + numClients) {
+            throw new IllegalArgumentException("Please provide either a single workload for all " +
+                                               "clients or a separate workload for each client.");
+        }
+        List<List<String>> commands = new LinkedList<>();
+        for (int i = 2; i < args.length; i++) {
+            commands.add(commands(args[i]));
+        }
+        return getInitialState(numServers, numClients, commands);
     }
 
     protected SearchState getInitialState(int numServers, int numClients,
-                                          List<String> commands) {
+                                          List<List<String>> commands) {
         List<Address> servers = new LinkedList<>();
         if (numServers == 1) {
             servers.add(new LocalAddress("server"));
@@ -84,11 +98,11 @@ public abstract class VizConfig {
 
     protected StateGenerator stateGenerator(List<Address> servers,
                                             List<Address> clients,
-                                            List<String> commands) {
+                                            List<List<String>> commands) {
         return stateGenerator(commands);
     }
 
-    protected StateGenerator stateGenerator(List<String> commands) {
+    protected StateGenerator stateGenerator(List<List<String>> commands) {
         return stateGenerator(Collections.emptyList(), Collections.emptyList(),
                 commands);
     }
