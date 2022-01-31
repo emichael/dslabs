@@ -686,7 +686,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(30);
         bfs(initSearchState);
-        assertGoalFound();
+        assertGoalFound(initSearchState);
 
         // Make sure results match
         searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);
@@ -711,7 +711,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 2))
                       .maxTimeSecs(20).nodeActive(server(3), false);
         bfs(viewInitializedState);
-        assertGoalFound();
+        assertGoalFound(viewInitializedState);
 
         // Make sure results match
         searchSettings.clearGoals().clearPrunes().addPrune(CLIENTS_DONE)
@@ -805,7 +805,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         searchSettings.clear().addInvariant(APPENDS_LINEARIZABLE)
                       .addGoal(CLIENTS_DONE).maxTimeSecs(20);
         bfs(forwardedReversed);
-        assertGoalFound();
+        assertGoalFound(forwardedReversed);
 
         // Make sure linearizability is preserved
         searchSettings.clearGoals().addPrune(CLIENTS_DONE)
@@ -876,7 +876,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                                                  .negate())
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 5));
         bfs(client1Done);
-        assertGoalFound();
+        assertGoalFound(client1Done);
 
         searchSettings.clearGoals();
         bfs(client1Done);

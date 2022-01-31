@@ -126,7 +126,7 @@ public final class PingTest extends BaseJUnitTest {
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10);
         bfs(initSearchState);
-        assertGoalFound();
+        assertGoalFound(initSearchState);
 
         System.out
                 .println("Checking that all of the returned pongs match pings");

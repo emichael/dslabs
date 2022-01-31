@@ -914,7 +914,7 @@ public class PaxosTest extends BaseJUnitTest {
         // From there, make sure the second command can be executed
         searchSettings.resetNetwork().clearGoals().addGoal(CLIENTS_DONE);
         bfs(oneCommandExecuted);
-        assertGoalFound();
+        assertGoalFound(oneCommandExecuted);
 
         // Check that linearizability is preserved (with and without timers)
         searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);
@@ -968,12 +968,12 @@ public class PaxosTest extends BaseJUnitTest {
         searchSettings.clearGoals().addGoal(CLIENTS_DONE).resetNetwork()
                       .partition(server(1), server(3), client(2));
         bfs(firstAppendSent);
-        assertGoalFound();
+        assertGoalFound(firstAppendSent);
 
         searchSettings.resetNetwork()
                       .partition(server(2), server(3), client(2));
         bfs(firstAppendSent);
-        assertGoalFound();
+        assertGoalFound(firstAppendSent);
 
         // Checking that linearizability is preserved in both other partitions
         searchSettings.clearGoals().addPrune(CLIENTS_DONE).resetNetwork()
@@ -1084,7 +1084,7 @@ public class PaxosTest extends BaseJUnitTest {
         // Make sure server 4 can get c1 chosen
         searchSettings.clearGoals().addGoal(hasStatus(server(4), 1, CHOSEN));
         bfs(c1AtServer1);
-        assertGoalFound();
+        assertGoalFound(c1AtServer1);
 
         // Re-add ignored messages
         c1AtServer1.undropMessagesFrom(server(3));

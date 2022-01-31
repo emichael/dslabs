@@ -227,7 +227,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         // From there, make sure the client can finish all operations
         searchSettings.resetNetwork().clearGoals().addGoal(CLIENTS_DONE);
         bfs(joinFinished);
-        assertGoalFound();
+        assertGoalFound(joinFinished);
 
         // Now, check from the end of the Join
         searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);

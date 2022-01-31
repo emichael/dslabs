@@ -194,7 +194,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10);
         bfs(initSearchState);
-        assertGoalFound();
+        assertGoalFound(initSearchState);
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
@@ -221,7 +221,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10);
         bfs(initSearchState);
-        assertGoalFound();
+        assertGoalFound(initSearchState);
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
@@ -245,7 +245,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(30);
         bfs(initSearchState);
-        assertGoalFound();
+        assertGoalFound(initSearchState);
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
@@ -271,7 +271,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         searchSettings.addInvariant(APPENDS_LINEARIZABLE).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(30);
         bfs(initSearchState);
-        assertGoalFound();
+        assertGoalFound(initSearchState);
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);

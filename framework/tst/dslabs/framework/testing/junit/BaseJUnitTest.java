@@ -343,16 +343,16 @@ public abstract class BaseJUnitTest {
 
     protected final SearchState goalMatchingState() {
         assert !searchResults.goalsSought().isEmpty();
-        assertGoalFound(true);
+        assertGoalFound(null, true);
         return searchResults.goalMatchingState();
     }
 
-    protected final void assertGoalFound() {
+    protected final void assertGoalFound(SearchState start) {
         assert !searchResults.goalsSought().isEmpty();
-        assertGoalFound(false);
+        assertGoalFound(start, false);
     }
 
-    private void assertGoalFound(boolean endTestOnFailure) {
+    private void assertGoalFound(SearchState start, boolean endTestOnFailure) {
         assert searchResults.goalsSought() != null &&
                 !searchResults.goalsSought().isEmpty();
 
@@ -380,6 +380,27 @@ public abstract class BaseJUnitTest {
             case TIME_EXHAUSTED -> "\nSearch ran out of time.";
             default -> "";
         });
+
+        if (GlobalSettings.startVisualization() && start != null) {
+            // Without this, it seems that you get a more or less empty trace which only has the
+            // last message sent; you cannot take any steps other than accepting this message.
+            final SearchState humanReadable =
+                SearchState.humanReadableTraceEndState(start);
+            Thread thread = new Thread(() -> {
+                VizClient vc = new VizClient(humanReadable, null, true);
+                try {
+                    vc.run();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, "VizClient");
+            thread.setDaemon(false);
+            thread.start();
+
+            System.err.println(sb.toString());
+
+            throw new VizClientStarted();
+        }
 
         if (endTestOnFailure) {
             fail(sb.toString());
