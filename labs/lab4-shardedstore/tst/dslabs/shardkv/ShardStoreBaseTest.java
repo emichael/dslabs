@@ -221,8 +221,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         // First, just get the Join finished
         searchSettings.maxTimeSecs(15).partition(CCA, shardMaster(1))
                       .addInvariant(RESULTS_OK).addGoal(clientDone(CCA));
-        bfs(initSearchState);
-        final SearchState joinFinished = goalMatchingState();
+        final SearchState joinFinished = findGoalMatchingStateFrom(initSearchState);
 
         // From there, make sure the client can finish all operations
         searchSettings.resetNetwork().clearGoals().addGoal(CLIENTS_DONE);
@@ -251,21 +250,18 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         searchSettings.maxTimeSecs(15).partition(CCA, shardMaster(1))
                       .addInvariant(RESULTS_OK)
                       .addGoal(clientHasResults(CCA, 1));
-        bfs(initSearchState);
-        final SearchState firstJoin = goalMatchingState();
+        final SearchState firstJoin = findGoalMatchingStateFrom(initSearchState);
 
         // Then, find a state where the Put is finished
         searchSettings.resetNetwork()
                       .partition(client(1), shardMaster(1), server(1, 1))
                       .clearGoals().addGoal(clientHasResults(client(1), 1));
-        bfs(firstJoin);
-        final SearchState putDone = goalMatchingState();
+        final SearchState putDone = findGoalMatchingStateFrom(firstJoin);
 
         // From there, finish the second Join and the Leave
         searchSettings.resetNetwork().partition(CCA, shardMaster(1))
                       .clearGoals().addGoal(clientDone(CCA));
-        bfs(putDone);
-        final SearchState ccaDone = goalMatchingState();
+        final SearchState ccaDone = findGoalMatchingStateFrom(putDone);
 
         // Search for invariant violations from there
         searchSettings.clearGoals().resetNetwork().addPrune(CLIENTS_DONE)
@@ -296,16 +292,14 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         searchSettings.maxTimeSecs(15).partition(CCA, shardMaster(1))
                       .addInvariant(RESULTS_OK)
                       .addGoal(clientHasResults(CCA, 1));
-        bfs(initSearchState);
-        SearchState firstJoin = goalMatchingState();
+        SearchState firstJoin = findGoalMatchingStateFrom(initSearchState);
 
         // Find state where client1 is done
         searchSettings.resetNetwork()
                       .partition(client(1), shardMaster(1), server(1, 1))
                       .maxTimeSecs(30).clearGoals()
                       .addGoal(clientDone(client(1)));
-        bfs(firstJoin);
-        SearchState client1Done = goalMatchingState();
+        SearchState client1Done = findGoalMatchingStateFrom(firstJoin);
 
         // Make sure we can find a state where client2 has finished
         searchSettings.resetNetwork()
@@ -317,8 +311,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
         searchSettings.resetNetwork().maxTimeSecs(15)
                       .partition(CCA, shardMaster(1)).clearGoals()
                       .addGoal(clientDone(CCA));
-        bfs(client1Done);
-        SearchState secondJoin = goalMatchingState();
+        SearchState secondJoin = findGoalMatchingStateFrom(client1Done);
 
         // Search for invariant violations from second join being done
         searchSettings.clearGoals().resetNetwork().maxTimeSecs(30)

@@ -348,7 +348,12 @@ public abstract class BaseJUnitTest {
     }
 
     protected final SearchState findGoalMatchingStateFrom(SearchState start) {
-        bfs(start);
+        return findGoalMatchingStateFrom(start, searchSettings);
+    }
+
+    protected final SearchState findGoalMatchingStateFrom(SearchState start,
+                                                          SearchSettings settings) {
+        bfs(start, settings);
         assertGoalFound(start, true);
         return searchResults.goalMatchingState();
     }

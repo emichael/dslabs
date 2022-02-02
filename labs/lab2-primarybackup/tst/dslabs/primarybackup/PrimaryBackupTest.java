@@ -169,8 +169,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 .linkActive(backup, primary, true);
         }
 
-        bfs(startState, temp);
-        SearchState current = goalMatchingState();
+        SearchState current = findGoalMatchingStateFrom(startState, temp);
         clearSearchResults();
 
         // Deliver each of the view replies in turn
@@ -753,8 +752,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                                     .map(MessageEnvelope::from)
                                     .collect(Collectors.toSet())
                                     .containsAll(senders)));
-        bfs(viewInitialized);
-        final SearchState requestsSent = goalMatchingState();
+        final SearchState requestsSent = findGoalMatchingStateFrom(viewInitialized);
         System.out.println("Client requests sent.\n");
 
         // Grab the messages sent by the clients
@@ -856,8 +854,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         searchSettings.maxTimeSecs(10).partition(server(1), client(1), VSA)
                       .addInvariant(RESULTS_OK).addGoal(clientDone(client(1)))
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 3));
-        bfs(primaryAlone);
-        final SearchState client1Done = goalMatchingState();
+        final SearchState client1Done = findGoalMatchingStateFrom(primaryAlone);
 
         // Make sure that the second client can finish, sending message to backup
         searchSettings.maxTimeSecs(30).resetNetwork()
