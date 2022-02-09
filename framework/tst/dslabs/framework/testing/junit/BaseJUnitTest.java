@@ -358,11 +358,6 @@ public abstract class BaseJUnitTest {
         return searchResults.goalMatchingState();
     }
 
-    protected final void assertGoalFound() {
-        assert !searchResults.goalsSought().isEmpty();
-        assertGoalFound(null, false);
-    }
-
     protected final void assertGoalReachableFrom(SearchState start) {
         bfs(start);
         assertGoalFound(start, false);
