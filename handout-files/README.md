@@ -266,9 +266,12 @@ overriding those methods (and calling the `super` method of course).
 Included in this handout is a tool for visualizing and graphically debugging
 executions of distributed systems. You can run it in two different ways. First,
 you can start any lab from its initial state by calling `./run-tests.py --lab N
---debug NUM_SERVERS NUM_CLIENTS WORKLOAD`, where `WORKLOAD` is a comma-separated
-list of commands for the clients to send (e.g.,
-`PUT:foo:bar,APPEND:foo:baz,GET:foo`). You can even write custom parsers for the
+--debug NUM_SERVERS NUM_CLIENTS WORKLOAD` or `./run-tests.py --lab N --debug
+NUM_SERVERS NUM_CLIENTS WORKLOAD_1 ... WORKLOAD_N`. Here `WORKLOAD`/`WORKLOAD_i`
+is a comma-separated list of commands for the clients to send (e.g.,
+`PUT:foo:bar,APPEND:foo:baz,GET:foo`). If only one workload is provided, all
+clients will send the same workload; if `NUM_CLIENTS` workloads are provided,
+then client i will send `WORKLOAD_i`. You can even write custom parsers for the
 arguments to `--debug` by overriding `getInitialState(String[] args)` in the
 relevant subclass of `VizConfig`. The visualization tool will startup Google
 Chrome, which is the only supported browser at this time. If it cannot open a
