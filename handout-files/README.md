@@ -271,8 +271,8 @@ NUM_SERVERS NUM_CLIENTS WORKLOAD_1 ... WORKLOAD_N`. Here `WORKLOAD`/`WORKLOAD_i`
 is a comma-separated list of commands for the clients to send (e.g.,
 `PUT:foo:bar,APPEND:foo:baz,GET:foo`). If only one workload is provided, all
 clients will send the same workload; if `NUM_CLIENTS` workloads are provided,
-then client i will send `WORKLOAD_i`. You can even write custom parsers for the
-arguments to `--debug` by overriding `getInitialState(String[] args)` in the
+then client `i` will send `WORKLOAD_i`. You can even write custom parsers for
+the arguments to `--debug` by overriding `getInitialState(String[] args)` in the
 relevant subclass of `VizConfig`. The visualization tool will startup Google
 Chrome, which is the only supported browser at this time. If it cannot open a
 Chrome window, you should open a Chrome tab manually and navigate to

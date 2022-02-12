@@ -336,9 +336,10 @@ NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD_1 ... CLIENT_WORKLOAD_N
 - `CLIENT_WORKLOAD`/`CLIENT_WORKLOAD_i` is a `ShardStoreClient`'s workload, a
   comma-separated list of `KVStoreCommand`s. As before, if a single workload is
   provided then all clients will send that workload, and if `NUM_CLIENTS`
-  workloads are provided then client i will send `CLIENT_WORKLOAD_i`. Workloads
-  can include `GET`, `PUT`, and `APPEND`, which have the normal syntax, as well
-  as transactions, which have the following syntax:
+  workloads are provided then client `i` will send
+  `CLIENT_WORKLOAD_i`. Workloads can include `GET`, `PUT`, and `APPEND`, which
+  have the normal syntax, as well as transactions, which have the following
+  syntax:
   - `MULTIGET:key1:key2:...:keyN`
   - `MULTIPUT:key1:value1:key2:value2:...:keyN:valueN`
   - `SWAP:key1:key2`
