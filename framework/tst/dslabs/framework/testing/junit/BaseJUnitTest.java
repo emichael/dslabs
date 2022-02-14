@@ -385,8 +385,6 @@ public abstract class BaseJUnitTest {
         });
 
         if (GlobalSettings.startVisualization() && bfsStartState != null) {
-            // Without this, you get a single-state trace which only has the last message sent; you
-            // cannot take any steps other than accepting this message.
             final SearchState humanReadable =
                 SearchState.humanReadableTraceEndState(bfsStartState);
             Thread thread = new Thread(() -> {
