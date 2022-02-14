@@ -70,7 +70,7 @@ public abstract class BaseJUnitTest {
     /* States */
     protected RunState runState;
     protected SearchState initSearchState;
-    protected SearchState bfsStartState;
+    private SearchState bfsStartState;
 
     /* Internal */
     private Set<Thread> startedThreads;
