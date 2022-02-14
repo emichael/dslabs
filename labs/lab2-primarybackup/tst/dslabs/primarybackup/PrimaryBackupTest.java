@@ -169,7 +169,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                 .linkActive(backup, primary, true);
         }
 
-        SearchState current = findGoalMatchingStateFrom(startState, temp);
+        bfs(startState, temp);
+        SearchState current = goalMatchingState();
         clearSearchResults();
 
         // Deliver each of the view replies in turn
@@ -684,7 +685,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Make sure clients can finish
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(30);
-        assertGoalReachableFrom(initSearchState);
+        bfs(initSearchState);
+        assertGoalFound();
 
         // Make sure results match
         searchSettings.clearGoals().addPrune(CLIENTS_DONE).maxTimeSecs(30);
@@ -708,7 +710,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 2))
                       .maxTimeSecs(20).nodeActive(server(3), false);
-        assertGoalReachableFrom(viewInitializedState);
+        bfs(viewInitializedState);
+        assertGoalFound();
 
         // Make sure results match
         searchSettings.clearGoals().clearPrunes().addPrune(CLIENTS_DONE)
@@ -752,7 +755,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                                     .map(MessageEnvelope::from)
                                     .collect(Collectors.toSet())
                                     .containsAll(senders)));
-        final SearchState requestsSent = findGoalMatchingStateFrom(viewInitialized);
+        bfs(viewInitialized);
+        final SearchState requestsSent = goalMatchingState();
         System.out.println("Client requests sent.\n");
 
         // Grab the messages sent by the clients
@@ -800,7 +804,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Make sure clients can finish from here
         searchSettings.clear().addInvariant(APPENDS_LINEARIZABLE)
                       .addGoal(CLIENTS_DONE).maxTimeSecs(20);
-        assertGoalReachableFrom(forwardedReversed);
+        bfs(forwardedReversed);
+        assertGoalFound();
 
         // Make sure linearizability is preserved
         searchSettings.clearGoals().addPrune(CLIENTS_DONE)
@@ -854,7 +859,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         searchSettings.maxTimeSecs(10).partition(server(1), client(1), VSA)
                       .addInvariant(RESULTS_OK).addGoal(clientDone(client(1)))
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 3));
-        final SearchState client1Done = findGoalMatchingStateFrom(primaryAlone);
+        bfs(primaryAlone);
+        final SearchState client1Done = goalMatchingState();
 
         // Make sure that the second client can finish, sending message to backup
         searchSettings.maxTimeSecs(30).resetNetwork()
@@ -869,7 +875,8 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                         hasViewReply(INITIAL_VIEWNUM + 4, server(2), null))
                                                  .negate())
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 5));
-        assertGoalReachableFrom(client1Done);
+        bfs(client1Done);
+        assertGoalFound();
 
         searchSettings.clearGoals();
         bfs(client1Done);

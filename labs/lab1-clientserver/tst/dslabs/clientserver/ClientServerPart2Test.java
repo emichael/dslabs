@@ -193,7 +193,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         System.out.println("Checking that an end state is reachable");
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10);
-        assertGoalReachableFrom(initSearchState);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
@@ -219,7 +220,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         System.out.println("Checking that an end state is reachable");
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10);
-        assertGoalReachableFrom(initSearchState);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
@@ -242,7 +244,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         System.out.println("Checking that an end state is reachable");
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(30);
-        assertGoalReachableFrom(initSearchState);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
@@ -267,7 +270,8 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         System.out.println("Checking that an end state is reachable");
         searchSettings.addInvariant(APPENDS_LINEARIZABLE).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(30);
-        assertGoalReachableFrom(initSearchState);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out.println("Checking that all reachable states are good");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);

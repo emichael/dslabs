@@ -125,7 +125,8 @@ public final class PingTest extends BaseJUnitTest {
         System.out.println("Checking that the client can finish all pings");
         searchSettings.addInvariant(RESULTS_OK).addGoal(CLIENTS_DONE)
                       .maxTimeSecs(10);
-        assertGoalReachableFrom(initSearchState);
+        bfs(initSearchState);
+        assertGoalFound();
 
         System.out
                 .println("Checking that all of the returned pongs match pings");

@@ -70,6 +70,7 @@ public abstract class BaseJUnitTest {
     /* States */
     protected RunState runState;
     protected SearchState initSearchState;
+    protected SearchState bfsStartState;
 
     /* Internal */
     private Set<Thread> startedThreads;
@@ -156,6 +157,7 @@ public abstract class BaseJUnitTest {
                         searchSettings = null;
                         runState = null;
                         initSearchState = null;
+                        bfsStartState = null;
                         startedThreads = null;
                         searchResults = null;
                         testDescription = null;
@@ -249,6 +251,7 @@ public abstract class BaseJUnitTest {
     protected final void bfs(SearchState searchState,
                              SearchSettings searchSettings) {
         assert searchState != null;
+        bfsStartState = searchState;
         searchResults = Search.bfs(searchState, searchSettings);
         assertEndConditionValid();
     }
@@ -343,27 +346,16 @@ public abstract class BaseJUnitTest {
 
     protected final SearchState goalMatchingState() {
         assert !searchResults.goalsSought().isEmpty();
-        assertGoalFound(null, true);
+        assertGoalFound(true);
         return searchResults.goalMatchingState();
     }
 
-    protected final SearchState findGoalMatchingStateFrom(SearchState start) {
-        return findGoalMatchingStateFrom(start, searchSettings);
+    protected final void assertGoalFound() {
+        assert !searchResults.goalsSought().isEmpty();
+        assertGoalFound(false);
     }
 
-    protected final SearchState findGoalMatchingStateFrom(SearchState start,
-                                                          SearchSettings settings) {
-        bfs(start, settings);
-        assertGoalFound(start, true);
-        return searchResults.goalMatchingState();
-    }
-
-    protected final void assertGoalReachableFrom(SearchState start) {
-        bfs(start);
-        assertGoalFound(start, false);
-    }
-
-    private void assertGoalFound(SearchState start, boolean endTestOnFailure) {
+    private void assertGoalFound(boolean endTestOnFailure) {
         assert searchResults.goalsSought() != null &&
                 !searchResults.goalsSought().isEmpty();
 
@@ -392,11 +384,11 @@ public abstract class BaseJUnitTest {
             default -> "";
         });
 
-        if (GlobalSettings.startVisualization() && start != null) {
-            // Without this, it seems that you get a more or less empty trace which only has the
-            // last message sent; you cannot take any steps other than accepting this message.
+        if (GlobalSettings.startVisualization() && bfsStartState != null) {
+            // Without this, you get a single-state trace which only has the last message sent; you
+            // cannot take any steps other than accepting this message.
             final SearchState humanReadable =
-                SearchState.humanReadableTraceEndState(start);
+                SearchState.humanReadableTraceEndState(bfsStartState);
             Thread thread = new Thread(() -> {
                 VizClient vc = new VizClient(humanReadable, null, true);
                 try {
