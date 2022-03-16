@@ -319,6 +319,13 @@ traces branching off the one that violated the invariant.
 
 ![Trace](img/trace-servers.png)
 
+Adding the `--start-viz` flag to `./run-tests.py` will also start the
+visualization tool if the search is unable to find a particular state it is
+looking for. In this case, the tool will be pre-populated with a trace that ends
+in the state the search started from. This allows you to manually explore
+possible executions to check if a matching state actually exists.
+
+
 ### Run-until
 You can save some time by asking the visualization tool to find a state matching
 a particular predicate. Click "Run Until" and then "Predicate":
