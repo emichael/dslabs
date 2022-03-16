@@ -398,6 +398,8 @@ public abstract class BaseJUnitTest {
             thread.setDaemon(false);
             thread.start();
 
+            sb.append("\nStarting visualization from beginning of search.\n");
+
             System.err.println(sb.toString());
 
             throw new VizClientStarted();

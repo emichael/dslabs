@@ -170,7 +170,9 @@ def main():
                         help="run the tests using only a single thread")
 
     parser.add_argument('-z', '--start-viz', action='store_true',
-                        help="start the visualization on invariant violation")
+                        help="start the visualization on invariant violation "
+                             "or when the search is unable to find a "
+                             "particular state")
 
     parser.add_argument('-d', '--debugger', nargs='*', metavar="ARG",
                         help="Don't run any tests, instead start the visual "
