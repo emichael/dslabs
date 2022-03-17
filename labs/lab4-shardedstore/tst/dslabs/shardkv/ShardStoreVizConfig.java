@@ -39,6 +39,15 @@ public class ShardStoreVizConfig extends VizConfig {
         }
     }
 
+    private List<String> getConfigCommandsIfPresent(String[] args) {
+        if (args[args.length - 1].startsWith("JOIN") ||
+            args[args.length - 1].startsWith("LEAVE") ||
+            args[args.length - 1].startsWith("MOVE")) {
+            return commands(args[args.length - 1]);
+        }
+        return null;
+    }
+
     @Override
     public SearchState getInitialState(String[] args) {
         int numGroups = Integer.parseInt(args[0]);
@@ -47,9 +56,8 @@ public class ShardStoreVizConfig extends VizConfig {
         int numClients = Integer.parseInt(args[3]);
         int commandStart = 4;
         int commandEnd = args.length;
-        List<String> configCommands = null;
-        if (args[args.length - 1].startsWith("config=")) {
-            configCommands = commands(args[args.length - 1].substring("config=".length()));
+        List<String> configCommands = getConfigCommandsIfPresent(args);
+        if (configCommands != null) {
             commandEnd--;
         }
         if (commandEnd - commandStart != 1 && commandEnd - commandStart != numClients) {

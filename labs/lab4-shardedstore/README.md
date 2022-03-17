@@ -325,8 +325,8 @@ You should pass the part 3 tests; execute them with `run-tests.py --lab 4 --part
 The arguments to start the visual debugger for this lab are slightly different.
 To start the visual debugger, execute `./run-tests.py -d NUM_GROUPS
 NUM_SERVERS_PER_GROUP NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD
-[config=CONFIG_WORKLOAD]` or `./run-tests.py -d NUM_GROUPS NUM_SERVERS_PER_GROUP
-NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD_1 ... CLIENT_WORKLOAD_N
+[CONFIG_WORKLOAD]` or `./run-tests.py -d NUM_GROUPS NUM_SERVERS_PER_GROUP
+NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD_1 ... CLIENT_WORKLOAD_NUM_CLIENTS
 [config=CONFIG_WORKLOAD]` where:
 - `NUM_GROUPS` is the number of `ShardStoreServer` groups
 - `NUM_SERVERS_PER_GROUP` is the number of `ShardStoreServer`s in each group
