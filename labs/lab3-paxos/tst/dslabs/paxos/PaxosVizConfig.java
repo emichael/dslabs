@@ -16,13 +16,8 @@ public class PaxosVizConfig extends VizConfig {
                                             List<List<String>> workload) {
         final Address[] serverAddresses = servers.toArray(new Address[0]);
         StateGeneratorBuilder builder = builder(serverAddresses);
-        if (workload.size() == 1) {
-            builder.workloadSupplier(__ ->
-                KVStoreWorkload.builder().commandStrings(workload.get(0)).build());
-        } else {
-            builder.workloadSupplier(a ->
-                KVStoreWorkload.builder().commandStrings(workload.get(clients.indexOf(a))).build());
-        }
+        builder.workloadSupplier(a ->
+            KVStoreWorkload.builder().commandStrings(workload.get(clients.indexOf(a))).build());
         return builder.build();
     }
 }

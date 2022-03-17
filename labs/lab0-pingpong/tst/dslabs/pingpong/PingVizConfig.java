@@ -28,13 +28,8 @@ public class PingVizConfig extends VizConfig {
                                             List<Address> clients,
                                             List<List<String>> workload) {
         StateGeneratorBuilder builder = builder();
-        if (workload.size() == 1) {
-            builder.workloadSupplier(__ -> Workload.workload(
-                workload.get(0).stream().map(Ping::new).collect(Collectors.toList())));
-        } else {
-            builder.workloadSupplier(a -> Workload.workload(
-                workload.get(clients.indexOf(a)).stream().map(Ping::new).collect(Collectors.toList())));
-        }
+        builder.workloadSupplier(a -> Workload.workload(
+            workload.get(clients.indexOf(a)).stream().map(Ping::new).collect(Collectors.toList())));
         return builder.build();
     }
 }

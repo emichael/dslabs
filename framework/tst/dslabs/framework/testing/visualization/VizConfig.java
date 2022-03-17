@@ -57,8 +57,17 @@ public abstract class VizConfig {
                                                "clients or a separate workload for each client.");
         }
         List<List<String>> commands = new LinkedList<>();
-        for (int i = 2; i < args.length; i++) {
-            commands.add(commands(args[i]));
+        if (args.length == 3) {
+            // Same workload for all clients
+            List<String> singleWorkload = commands(args[2]);
+            for (int i = 0; i < numClients; i++) {
+                commands.add(singleWorkload);
+            }
+        } else {
+            // Specific workload for each client
+            for (int i = 0; i < numClients; i++) {
+                commands.add(commands(args[2 + i]));
+            }
         }
         return getInitialState(numServers, numClients, commands);
     }
