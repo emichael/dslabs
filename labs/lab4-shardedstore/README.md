@@ -325,15 +325,21 @@ You should pass the part 3 tests; execute them with `run-tests.py --lab 4 --part
 The arguments to start the visual debugger for this lab are slightly different.
 To start the visual debugger, execute `./run-tests.py -d NUM_GROUPS
 NUM_SERVERS_PER_GROUP NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD
-[CONFIG_WORKLOAD]` where:
+[CONFIG_WORKLOAD]` or `./run-tests.py -d NUM_GROUPS NUM_SERVERS_PER_GROUP
+NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD_1 ... CLIENT_WORKLOAD_NUM_CLIENTS
+[config=CONFIG_WORKLOAD]` where:
 - `NUM_GROUPS` is the number of `ShardStoreServer` groups
 - `NUM_SERVERS_PER_GROUP` is the number of `ShardStoreServer`s in each group
 - `NUM_SHARDMASTERS` is the number of Paxos servers replicating the
   `ShardMaster`
 - `NUM_CLIENTS` is the number of `ShardStoreClient`s
-- `CLIENT_WORKLOAD` is the `ShardStoreClient`'s workload, a comma-separated list
-  of `KVStoreCommand`s. These can include `GET`, `PUT`, and `APPEND`, which have
-  the normal syntax, as well as transactions, which have the following syntax:
+- `CLIENT_WORKLOAD`/`CLIENT_WORKLOAD_i` is a `ShardStoreClient`'s workload, a
+  comma-separated list of `KVStoreCommand`s. As before, if a single workload is
+  provided then all clients will send that workload, and if `NUM_CLIENTS`
+  workloads are provided then client `i` will send
+  `CLIENT_WORKLOAD_i`. Workloads can include `GET`, `PUT`, and `APPEND`, which
+  have the normal syntax, as well as transactions, which have the following
+  syntax:
   - `MULTIGET:key1:key2:...:keyN`
   - `MULTIPUT:key1:value1:key2:value2:...:keyN:valueN`
   - `SWAP:key1:key2`
