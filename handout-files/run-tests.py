@@ -182,9 +182,9 @@ def main():
                         "clients request the same workload. To give different "
                         "workloads for each client, the args should be: "
                         "NUM_SERVERS NUM_CLIENTS WORKLOAD_1 WORKLOAD_2 ... "
-                        "WORKLOAD_N where each WORLOAD_j is a comma-separated "
-                        "list of commands and a workload is provided for each "
-                        "client.")
+                        "WORKLOAD_NUM_CLIENTS where each WORLOAD_i is a "
+                        "comma-separated list of commands and a workload is "
+                        "provided for each client.")
 
     parser.add_argument('--no-viz-server', action='store_true',
                         help="do not automatically start the visualization "
