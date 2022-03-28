@@ -466,3 +466,198 @@ sent). Catching this is simpler than it might be because we assume that the
 client only sends one ping at a time, and waits for the previous ping to be
 acknowledged before sending a different ping. What should be the client's
 behavior when it receives a duplicate (late) message?
+
+### More on Search Tests
+
+The goal of this section is to build intuition about how search tests work. This
+will help you to understand errors that you see in your search tests, so that
+you can modify your implementation to work best with the model checker. To do
+this, we'll see how the search test checks the correctness of our ping-pong
+implementation. Before continuing, you should understand the ping-pong
+protocol. You should also review the "Search Tests" section of the [top-level
+README](../../README.md).
+
+At this point, we've told you that search tests check the correctness of the
+implementation by exploring the state graph (a directed graph where the vertices
+are states of the system and there is an edge from state `u` to `v` if there is
+a message or timer which can be delivered in state `u` to reach state
+`v`). Moreover, the state of the system consists of three parts: the state of
+the nodes in the system, the state of the network, and the timers pending for
+each node. Let's describe each of these in more detail.
+
+First, the state of the nodes is relatively self-explanatory: it consists of all
+Client or Server objects involved in the system. Next, the timers pending for
+each node can be seen as a queue where the queue ordering respects durations (as
+described in the top-level README). What's left is the state of the network, and
+here things differ from the intuition in the visual debugger. Specifically, in
+the visual debugger, when a message is duplicated, a new copy of the message
+appears in the visualizer. As messages can be duplicated any number of times, if
+the network state included the number of duplicates present in the system, then
+the state graph would be infinite. To avoid this, in search tests, the state of
+the network is represented by a set of all messages which have been sent. This
+incorporates duplications, delays, and drops: once a message is sent, it can be
+delivered 0 times (drops), 1 time, or many times (duplicates), and it can be
+delivered after other messages and timers have been delivered (delays).
+
+Now we can proceed to the example. The search test of lab 0 has a single server
+and a single client who sends 10 different Ping commands. The test first
+attempts to find a sequence of events that leads to the client receiving Pongs
+for all of its Pings. To simplify the example, we'll consider a single client
+who sends Pings with values "ping-1" and "ping-2". This is the search that would
+occur if you replace the first line of the search test in [the test
+file](./tst/dslabs/pingpong/PingTest.java) with
+
+```java
+initSearchState.addClientWorker(client(1), repeatedPings(2));
+```
+
+To begin, we show the states and edges that the BFS examines in this test, and
+then we explain the graph in more detail.
+
+![State Graph](../../img/state-graph.png)
+
+The vertex labels in the state graph describe the state of the nodes, timer
+queues, and network.
+* Recall that the state of a node (Server/Client) is simply the fields of the
+  Server/Client object. The PingServer has an `app` field, while the
+  `PingClient` has a `serverAddress`, `ping`, and `pong` field. The first two
+  lines describe the state of the two nodes in the system (we omit the fields in
+  the Node superclass as those details are not important for us).
+* The next two lines describe the client and server timer queues. These are
+  given as a list where the list ordering must respect durations.
+* The last line(s) store the state of the network, all messages ever sent. These
+  describe both the message contents and the sender/receiver of the message.
+
+The very first state in the graph is the system's initial state -- that is, the
+state after all nodes have been initialized and the client has been told to send
+the first command (via `sendCommand(Ping(ping-1))`). At this point, the client
+has sent a PingRequest to the server and has set a PingTimer, but it has not yet
+received any results. After construction and initialization, the server's state
+is rather boring: it has a PingApplication with no fields, and it doesn't set
+any timers in `init()`.
+
+From this starting state there are two possible events: we can fire the timer,
+or deliver the message.
+* If we fire the PingTimer, then the client will see that the timer matches the
+  last sent Ping and there is no Pong received for the Ping, so it will resend
+  the PingRequest to the server and reset the timer. Thus, the client's timer
+  queue again has [PingTimer(Ping(ping-1))]. Moreover, the network set already
+  has this PingRequest from client to server, so the network set doesn't change
+  either. Therefore, we return to the initial state.
+* If we deliver the PingRequest, the server executes the request and replies
+  with a PongReply. The server's node state and timer queue remain the same, but
+  now the network has the PongReply sent from server to client.
+
+This explains all of the edges from the starting state, and it explains how we
+reach the second state in the graph. At this second state, the client has not
+received results for any commands, so the BFS continues.
+
+From this state, we can fire the timer or deliver either of the messages.
+* Test your understanding: you should now be able to explain why firing the
+  PingTimer or delivering the PingRequest returns us to the same state.
+* When delivering the PongReply, many things happen.
+  * The client determines that the PongReply is a reply for the current command,
+    so it updates its pong field to match.
+  * The framework determines that the client received a result (via
+    `hasResult()`) and saves the result (via `getResult()`) in the `results`
+    list.
+  * Since the client received a result, the framework tells the client to send
+    the next command (`sendCommand(Ping(ping-2))`).
+    * The client updates its `ping` field to this new command, and sets its
+      `pong` field to null.
+    * The client sends a PingRequest for this command to the server.
+    * The client sets a PingTimer for this command. Since the timer ordering
+      must respect durations, `PingTimer(Ping(ping-1))` must fire before
+      `PingTimer(Ping(ping-2))`.
+
+So, we've explained the edges leaving the second state, and we've explained why
+the third state is so different from the second. In the third state, the client
+has not received results for some commands, and all received results match the
+expected results. Therefore, the BFS continues.
+
+We can fire the first timer in queue or deliver any of the messages.
+* If we fire the first PingTimer in queue, then the client will recognize that
+  the timer is out-of-date, hence drop it. No other actions wil be taken. So, we
+  get a new state which is almost the same as the original, but the new client
+  queue has only the second timer in the original client queue.
+* If we deliver ping-1's PingRequest or PongReply, then we return to the same
+  state. Once again, you should be able to explain why this is the case.
+* If we deliver the PingRequest for ping-2, then the server executes the Ping
+  and replies. Thus, node states and timer queues remain the same, but the
+  network now has a PongReply for ping-2.
+
+Thus, we get two states, one from firing the timer (call it `u`), one from
+delivering the message (call it `v`). In both resulting states, the client's
+workload is not finished, and any received results match expected results, so
+the BFS continues.
+
+From `u`:
+* If we fire the remaining timer, or deliver ping-1's PingRequest/PongReply,
+  then the state remains the same. Once again, you should be able to explain why
+  this is the case.
+* If we deliver the PingRequest for ping-2, then the server executes and sends a
+  PongReply, which has never been sent before. So, in the resulting state, the
+  network gets this new message.
+Once again, the client's workload is not finished, and any received results
+match expected results, so the BFS continues.
+
+From `v`:
+* If we fire the first timer in the client's queue, the client takes no
+  actions. So we get a state which is almost the same as `v`, but the timer
+  queue only has the second timer of the original queue. Note that this is the
+  same state we obtained from `u`.
+* If we deliver ping-1's PingRequest/PongReply, or deliver ping-2's PingRequest,
+  then the state remains the same. Once again, you should be able to explain why
+  this is the case.
+* If we deliver ping-2's PongReply, then:
+  * The client determines that the PongReply is a reply for the current command,
+    so it updates its pong field to match.
+  * The framework determines that the client received a result (via
+    `hasResult()`) and saves the result (via `getResult()`) in the `results`
+    list.
+  * The client has no more commands to send, so no more actions are taken.
+
+Note that in this state, the client's workload is done. Moreover, all received
+results match the expected results. So, the BFS finishes and we have found a
+state matching the goal. So, at this point, we know that our system can reach a
+result. We also are more confident in the safety of our system, since in the
+states we examined, we checked that the received results match the expected
+results.
+
+Here are some questions you can use to test your understanding of search tests:
+* Consider the modification outlined earlier in this section: in
+  `handlePongReply`, the client doesn't check that the pong value matches the
+  ping value. Carry out the BFS by hand as we did above, and give the state at
+  which an invariant violation occurs.
+* From the correct solution (the initially provided one), comment out the line
+  `send(new PongReply(p), sender)` in the server's `handlePingRequest`. Now, it
+  should be impossible for the client to receive results.
+  * First, the theory: write out the state graph for this modified solution. How
+    can the search test tell that the client's workload cannot be finished?
+  * Now, the practice: run the test and see the error that the search test gives
+    you.
+    * Optionally, open the visual debugger and try to deliver messages to get a
+      result to the client. For this simple liveness issue, it may seem
+      unnecessary to use the visual debugger, but for the more complicated
+      protocols you will work with, the debugger can help you to see where your
+      implementation differs from your protocol design (or a situation you
+      missed when designing the protocol).
+* The test in lab 0 has another search:
+  ```java
+  searchSettings.clearGoals().addPrune(CLIENTS_DONE)
+  bfs(initSearchState);
+  assertSpaceExhausted();
+  ```
+
+  This will run the BFS as described earlier, checking that the results match
+  the expected results, but the difference is that the test does not have a goal
+  that all clients should finish. When the search reaches a state where the
+  client is done, the test will not end; instead, it will continue examining any
+  remaining states where the client is not done. That is to say, the test
+  "prunes" any parts of the search space which follow a state where the clients
+  are finished. The test asserts that it can exhaust the search space; in other
+  words, that in the time allotted, it can examine the entire graph specified by
+  this prune.
+
+  Carry out this pruned BFS by hand (still assuming that the client sends only 2
+  commands rather than 10), and confirm that you can exhaust the search space.
