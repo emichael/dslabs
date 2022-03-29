@@ -514,7 +514,7 @@ initSearchState.addClientWorker(client(1), repeatedPings(2));
 To begin, we show the states and edges that the BFS examines in this test, and
 then we explain the graph in more detail.
 
-![State Graph](../../img/state-graph.png)
+![State Graph](./img/state-graph.png)
 
 The vertex labels in the state graph describe the state of the nodes, timer
 queues, and network.
