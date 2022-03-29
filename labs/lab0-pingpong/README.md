@@ -505,9 +505,9 @@ and a single client which sends 10 different `Ping`s. The test first attempts to
 find a sequence of events that leads to the client receiving `Pong`s for all of
 its `Ping`s. It then explores the entire state graph and checks that the `Pong`s
 received by the client match the `Ping`s sent. To simplify the example, we'll
-consider a client which only sends two `Ping`s with values "ping-1" and "ping-2".
-This is the search that would occur if you replace the first line of the search
-test in [the test file](./tst/dslabs/pingpong/PingTest.java) with
+consider a client which only sends two `Ping`s with values "ping-1" and
+"ping-2". This is the search that would occur if you replace the first line of
+the search test in [the test file](./tst/dslabs/pingpong/PingTest.java) with
 
 ```java
 initSearchState.addClientWorker(client(1), repeatedPings(2));
@@ -534,7 +534,7 @@ queues, and network.
 
 The very first state in the graph is the system's initial state -- that is, the
 state after all nodes have been initialized and the client has been told to send
-the first command (via `sendCommand(Ping(ping-1))`). At this point, the client
+the first command (via `sendCommand(Ping("ping-1"))`). At this point, the client
 has sent a `PingRequest` to the server and has set a `PingTimer`, but it has not
 yet received any results. After construction and initialization, the server's
 state is rather boring: it has a `PingApplication` with no fields, and it
@@ -543,11 +543,11 @@ doesn't set any timers in `init()`.
 From this starting state there are two possible events: we can fire the timer,
 or deliver the message.
 * If we fire the `PingTimer`, then the client will see that the timer matches
-  the last sent Ping and there is no `Pong` received for the `Ping`, so it will
-  resend the PingRequest to the server and reset the timer. Thus, the client's
-  timer queue again has `[PingTimer(Ping(ping-1))]`. Moreover, the network set
-  already has this `PingRequest` from client to server, so the network set
-  doesn't change either. Therefore, we return to the initial state.
+  the last sent `Ping` and there is no `Pong` received for the `Ping`, so it
+  will resend the `PingRequest` to the server and reset the timer. Thus, the
+  client's timer queue again has `[PingTimer(Ping("ping-1"))]`. Moreover, the
+  network set already has this `PingRequest` from client to server, so the
+  network set doesn't change either. Therefore, we return to the initial state.
 * If we deliver the `PingRequest`, the server executes the request and replies
   with a `PongReply`. The server's state and timer queue remain the same, but
   now the network has the `PongReply` that was sent from server to client. The
@@ -567,13 +567,13 @@ From this state, we can fire the timer or deliver either of the messages.
     `hasResult()`) and saves the result (via `getResult()`) in the `results`
     list.
   * Since the client received a result, the framework tells the client to send
-    the next command (`sendCommand(Ping(ping-2))`).
+    the next command (`sendCommand(Ping("ping-2"))`).
     * The client updates its `ping` field to this new command, and sets its
       `pong` field to null.
     * The client sends a `PingRequest` for this command to the server.
     * The client sets a `PingTimer` for this command. Since the timer ordering
-      must respect durations, `PingTimer(Ping(ping-1))` must fire before
-      `PingTimer(Ping(ping-2))`.
+      must respect durations, `PingTimer(Ping("ping-1"))` must fire before
+      `PingTimer(Ping("ping-2"))`.
 
 So, we've explained the edges leaving the second state, and we've explained why
 the third state is different from the second. In the third state, the client is
