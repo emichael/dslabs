@@ -562,7 +562,7 @@ From this state, we can fire the timer or deliver either of the messages.
   `PingTimer` or delivering the `PingRequest` returns us to the same state.
 * When delivering the `PongReply`, many things happen.
   * The client determines that the `PongReply` is a reply for the current
-    command, so it updates its pong field to match.
+    command, so it updates its `pong` field to match.
   * The framework determines that the client received a result (via
     `hasResult()`) and saves the result (via `getResult()`) in the `results`
     list.
