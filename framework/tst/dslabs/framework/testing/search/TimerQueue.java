@@ -107,6 +107,7 @@ class TimerQueue implements Serializable, Iterable<TimerEnvelope> {
     }
 
     boolean isDeliverable(TimerEnvelope timerEnvelope) {
+        // TODO: quadratic
         for (TimerEnvelope te : timers) {
             if (te.equals(timerEnvelope)) {
                 return true;

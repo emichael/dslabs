@@ -28,6 +28,7 @@ import com.google.common.collect.Streams;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.TimerEnvelope;
+import dslabs.framework.testing.newviz.DebuggerWindow;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.Json;
@@ -38,6 +39,8 @@ import java.lang.ProcessBuilder.Redirect;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import javax.swing.JFrame;
+import javax.swing.WindowConstants;
 
 /**
  * Oddity client.
@@ -133,6 +136,13 @@ public class VizClient {
     }
 
     public void run(Boolean startOddity) throws IOException {
+        if (GlobalSettings.newViz()) {
+            DebuggerWindow debuggerWindow = new DebuggerWindow(state);
+            debuggerWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+            debuggerWindow.setVisible(true);
+            return;
+        }
+
         if (trace) {
             System.out.println("Starting trace visualization client.");
         } else {

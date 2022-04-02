@@ -63,7 +63,9 @@ public abstract class GlobalSettings {
     startVizServer =
             !Boolean.parseBoolean(lookupWithDefault("noVizServer", "false")),
 
-    doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
+    doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false")),
+
+    newViz = Boolean.parseBoolean(lookupWithDefault("newViz", "false"));
 
     private static final boolean timeoutsDisabled = Boolean.parseBoolean(
             lookupWithDefault("testTimeoutsDisabled", "false"));

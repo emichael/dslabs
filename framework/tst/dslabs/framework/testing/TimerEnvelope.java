@@ -24,6 +24,7 @@ package dslabs.framework.testing;
 
 import dslabs.framework.Address;
 import dslabs.framework.Timer;
+import dslabs.framework.testing.newviz.VizIgnore;
 import java.io.Serializable;
 import java.util.Random;
 import lombok.Data;
@@ -42,9 +43,11 @@ public final class TimerEnvelope
     private final Address to;
     private final Timer timer;
 
+    @VizIgnore
     private final int minTimerLengthMillis, maxTimerLengthMillis,
             timerLengthMillis;
 
+    @VizIgnore
     private final long startTimeNanos;
 
     public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis,

@@ -21,6 +21,10 @@ sourceSets {
     java {
       srcDirs = ['framework/tst']
     }
+    resources {
+      srcDirs = ['framework/tst']
+      includes = ['**/*.properties']
+    }
     compileClasspath += main.compileClasspath + main.output
     annotationProcessorPath += main.annotationProcessorPath
   }
@@ -98,6 +102,21 @@ dependencies {
   graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.11.0', classifier: 'sources'
   graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0'
   graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0', classifier: 'sources'
+
+  // Swing stuff
+  graderImplementation group: 'com.intellij', name: 'forms_rt', version: '7.0.3'
+  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1'
+  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1', classifier: 'sources'
+  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '2.0.1'
+  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '2.0.1', classifier: 'sources'
+  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-font_awesome', version: '4.7.0.1'
+  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-font_awesome', version: '4.7.0.1', classifier: 'sources'
+  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.0'
+  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.0', classifier: 'sources'
+  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.0'
+  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.0', classifier: 'sources'
+  graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1'
+  graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1', classifier: 'sources'
 }
 
 // Create reproducible jars

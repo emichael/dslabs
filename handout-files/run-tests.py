@@ -57,7 +57,7 @@ def make():
 def run_tests(lab, part=None, no_run=False, no_search=False,
               timers_disabled=False, log_level=None, single_threaded=False,
               start_viz=False, no_viz_server=False, do_checks=False,
-              test_num=None, assertions=False):
+              test_num=None, assertions=False, new_viz=False):
     """Run the specified tests."""
     make()
 
@@ -86,6 +86,9 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     if do_checks:
         command.append('-DdoChecks=true')
+
+    if new_viz:
+        command.append('-DnewViz=true')
 
     command += [
         '-cp',
@@ -116,7 +119,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     sys.exit(returncode)
 
 
-def run_viz_debugger(lab, args, no_viz_server=False):
+def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False):
     """Start the visual debugger."""
     make()
 
@@ -124,6 +127,9 @@ def run_viz_debugger(lab, args, no_viz_server=False):
 
     if no_viz_server:
         command.append('-DnoVizServer=true')
+
+    if new_viz:
+        command.append('-DnewViz=true')
 
     command += [
         '-cp',
@@ -193,10 +199,14 @@ def main():
                         "server; instead, the user starts the server  and "
                         "opens the browser manually")
 
+    parser.add_argument('--new-viz', action='store_true',
+                        help="use the new visualization tool")
+
     args = parser.parse_args()
 
     if args.debugger:
-        run_viz_debugger(args.lab, args.debugger, args.no_viz_server)
+        run_viz_debugger(args.lab, args.debugger, args.no_viz_server,
+                         new_viz=args.new_viz)
     else:
         run_tests(args.lab,
                   part=args.part,
@@ -209,7 +219,8 @@ def main():
                   no_viz_server=args.no_viz_server,
                   do_checks=args.checks,
                   test_num=args.test_num,
-                  assertions=args.assertions)
+                  assertions=args.assertions,
+                  new_viz=args.new_viz)
 
 
 if __name__ == '__main__':

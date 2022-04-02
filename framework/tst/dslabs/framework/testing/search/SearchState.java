@@ -291,10 +291,10 @@ public final class SearchState extends AbstractState
             settings = new SearchSettings();
         }
 
-        Address toAddress = message.to().rootAddress();
+        final Address toAddress = message.to().rootAddress();
 
         // Node must exist
-        if (!hasNode(message.to().rootAddress()) || (!skipChecks &&
+        if (!hasNode(toAddress) || (!skipChecks &&
                 !(network.contains(message) &&
                         settings.shouldDeliver(message)))) {
             return null;
@@ -309,17 +309,54 @@ public final class SearchState extends AbstractState
         return ns;
     }
 
-    public SearchState stepTimer(TimerEnvelope timer, SearchSettings settings,
-                                 boolean skipChecks) {
+    /**
+     * Checks whether the timer's destination root node exists, the search
+     * settings allow the timer to be delivered, and the timer is deliverable
+     * according to its delivery rules.
+     *
+     * @param timer
+     *         the timer
+     * @param settings
+     *         the settings or null to use default {@link SearchSettings}
+     * @return {@code true} iff the equivalent call to {@link
+     * #stepTimer(TimerEnvelope, SearchSettings, boolean)} with {@code
+     * skipChecks = true} would attempt to generate a successor state
+     *
+     * @see TimerQueue
+     */
+    public boolean canStepTimer(TimerEnvelope timer, SearchSettings settings) {
         if (settings == null) {
             settings = new SearchSettings();
         }
 
-        Address toAddress = timer.to().rootAddress();
+        final Address toAddress = timer.to().rootAddress();
 
-        if (!hasNode(timer.to().rootAddress()) || (!skipChecks &&
-                !(settings.deliverTimers(toAddress) &&
-                        timers.get(toAddress).isDeliverable(timer)))) {
+        return hasNode(toAddress) && settings.deliverTimers(toAddress) &&
+                timers.get(toAddress).isDeliverable(timer);
+    }
+
+    /**
+     * Equivalent to {@link #canStepTimer(TimerEnvelope, SearchSettings)} with
+     * {@code null} {@link SearchSettings}.
+     */
+    public boolean canStepTimer(TimerEnvelope timer) {
+        return canStepTimer(timer, null);
+    }
+
+    public SearchState stepTimer(TimerEnvelope timer, SearchSettings settings,
+                                 boolean skipChecks) {
+        // TODO: here and everywhere else we instantiate SearchSettings to get defaults, use a singleton
+        if (settings == null) {
+            settings = new SearchSettings();
+        }
+
+        final Address toAddress = timer.to().rootAddress();
+
+        if (!hasNode(toAddress)) {
+            return null;
+        }
+
+        if (!skipChecks && !canStepTimer(timer, settings)) {
             return null;
         }
 
