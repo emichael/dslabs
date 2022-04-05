@@ -101,6 +101,8 @@ public class DebuggerWindow extends JFrame {
     private final JXMultiSplitPane splitPane;
 
     private final EventsPanel eventsPanel;
+    private final StateTreeCanvas stateTreeCanvas;
+
     private EventTreeState currentState;
     private final SearchState initialState;
 
@@ -150,8 +152,7 @@ public class DebuggerWindow extends JFrame {
             final JMenuItem revertButton = new JMenuItem("Revert");
             revertButton.setToolTipText(
                     "Revert the visual debugger to its initial configuration from startup");
-            revertButton.addActionListener(e -> setState(
-                    EventTreeState.convert(DebuggerWindow.this.initialState)));
+            revertButton.addActionListener(e -> this.reset());
             fileMenu.add(revertButton);
             final JMenuItem closeButton = new JMenuItem("Quit");
             fileMenu.add(closeButton);
@@ -293,6 +294,11 @@ public class DebuggerWindow extends JFrame {
                          });
         }
 
+        // add(new EventGraphicPanel(), "dock south");
+        stateTreeCanvas = new StateTreeCanvas(this);
+        stateTreeCanvas.showEvent(currentState);
+        add(stateTreeCanvas, "dock south");
+
         pack();
         // TODO: don't exceed size of screen
         setSize(new Dimension(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT));
@@ -386,6 +392,11 @@ public class DebuggerWindow extends JFrame {
         layout.layoutByWeight(splitPane);
     }
 
+    void reset() {
+        stateTreeCanvas.reset();
+        setState(EventTreeState.convert(DebuggerWindow.this.initialState));
+    }
+
     void deliverEvent(Event e) {
         EventTreeState newState = currentState.step(e);
         assert newState != null;
@@ -393,6 +404,7 @@ public class DebuggerWindow extends JFrame {
     }
 
     void setState(@NonNull EventTreeState s) {
+        stateTreeCanvas.showEvent(s);
         currentState = s;
         for (Address a : currentState.addresses()) {
             assert statePanels.containsKey(a);

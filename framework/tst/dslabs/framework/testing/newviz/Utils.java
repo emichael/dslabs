@@ -58,7 +58,7 @@ abstract class Utils {
         return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(),
                 c.getBlue());
     }
-    
+
     static boolean setupThemeOnStartup() {
         final Preferences prefs = Preferences.userNodeForPackage(Utils.class);
         final boolean darkModeEnabled = prefs.getBoolean(PREF_DARK_MODE, false);
