@@ -61,9 +61,9 @@ class EventsPanel extends JPanel {
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         add(scrollPane, "grow");
 
-        update(initialState);
-
         setPreferredSize(new Dimension(300, getPreferredSize().height));
+
+        update(initialState);
     }
 
     private StateTree addEventTreeState(final EventTreeState s) {
@@ -210,5 +210,11 @@ class EventsPanel extends JPanel {
         // Need both revalidate and repaint here for whatever reason
         inner.revalidate();
         inner.repaint();
+    }
+
+    void reset() {
+        inner.removeAll();
+        events.clear();
+        initialState = null;
     }
 }

@@ -394,6 +394,7 @@ public class DebuggerWindow extends JFrame {
 
     void reset() {
         stateTreeCanvas.reset();
+        eventsPanel.reset();
         setState(EventTreeState.convert(DebuggerWindow.this.initialState));
     }
 
