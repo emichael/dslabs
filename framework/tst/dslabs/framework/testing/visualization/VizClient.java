@@ -141,11 +141,7 @@ public class VizClient {
 
     public void run(Boolean startOddity) throws IOException {
         if (GlobalSettings.newViz()) {
-            if (invariant != null) {
-                new DebuggerWindow(state, Set.of(invariant));
-            } else {
-                new DebuggerWindow(state);
-            }
+            new DebuggerWindow(state, settings);
             return;
         }
 
