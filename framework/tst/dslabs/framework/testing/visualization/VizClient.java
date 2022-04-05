@@ -39,6 +39,7 @@ import java.lang.ProcessBuilder.Redirect;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Set;
 import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 
@@ -137,9 +138,11 @@ public class VizClient {
 
     public void run(Boolean startOddity) throws IOException {
         if (GlobalSettings.newViz()) {
-            DebuggerWindow debuggerWindow = new DebuggerWindow(state);
-            debuggerWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            debuggerWindow.setVisible(true);
+            if (invariant != null) {
+                new DebuggerWindow(state, Set.of(invariant));
+            } else {
+                new DebuggerWindow(state);
+            }
             return;
         }
 

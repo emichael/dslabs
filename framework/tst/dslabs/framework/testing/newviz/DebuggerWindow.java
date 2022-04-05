@@ -296,6 +296,9 @@ public class DebuggerWindow extends JFrame {
         pack();
         // TODO: don't exceed size of screen
         setSize(new Dimension(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT));
+
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setVisible(true);
     }
 
     private void updateInvariants() {
