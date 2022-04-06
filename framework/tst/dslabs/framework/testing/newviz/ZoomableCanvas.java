@@ -29,41 +29,132 @@ import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.UIManager;
+import lombok.NonNull;
 
 /**
  * Implements a basic JPanel which can be drawn on, zoomed, and panned using the
- * mouse wheel and clicking and dragging the mouse. Sub-classes should apply the
- * transform from getTransform() before drawing 2D graphics. Additionally, to
- * tell where a mouse click is relative to the graphics drawn, the inverse of
- * the transform should first be applied to the point.
+ * mouse wheel and clicking and dragging the mouse. Subclasses implement
+ * paintZoomedComponent to draw graphics. Additionally, to tell where a mouse
+ * click is relative to the graphics drawn, unZoomedPoint should be invoked.
  */
-class ZoomableCanvas extends JPanel
-        implements MouseWheelListener, MouseMotionListener, MouseListener {
-    private static final double SCALE_STEP = 0.1d;
+abstract class ZoomableCanvas extends JPanel {
+    private static final double SCALE_AMOUNT = 1.1, DEFAULT_MIN_SCALE = 0.15,
+            DEFAULT_MAX_SCALE = 10.0;
 
-    private double scale = 1.0;
-    private double deltaX, deltaY;
     private Point dragOrigin = null;
+    private AffineTransform transform = new AffineTransform();
+
+    private final double minScale, maxScale;
 
     public ZoomableCanvas() {
-        this(-1.0);
+        this(1.0, DEFAULT_MIN_SCALE, DEFAULT_MAX_SCALE);
     }
 
-    public ZoomableCanvas(double scale) {
-        if (scale > 0) {
-            this.scale = scale;
+    public ZoomableCanvas(double initialScaleAmount, double minScale,
+                          double maxScale) {
+        assert initialScaleAmount != 0.0;
+        assert minScale <= maxScale;
+
+        if (initialScaleAmount != 1.0) {
+            transform.scale(initialScaleAmount, initialScaleAmount);
         }
 
-        addMouseWheelListener(this);
-        addMouseListener(this);
-        addMouseMotionListener(this);
+        this.minScale = minScale;
+        this.maxScale = maxScale;
+
+        addMouseWheelListener(e -> {
+            double x = e.getX(), y = e.getY();
+
+            AffineTransform temp = new AffineTransform();
+            temp.translate(x, y);
+
+            double scaleFactor =
+                    Math.pow(SCALE_AMOUNT, -e.getPreciseWheelRotation());
+            temp.scale(scaleFactor, scaleFactor);
+
+            temp.translate(-x, -y);
+
+            double newScaleAmount = transform.getScaleX() * temp.getScaleX();
+            if (newScaleAmount > maxScale || newScaleAmount < minScale) {
+                return;
+            }
+
+            transform.preConcatenate(temp);
+
+            revalidate();
+            repaint();
+        });
+
+        addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                // right click
+                if (e.getButton() == MouseEvent.BUTTON3) {
+                    var menu = new JPopupMenu();
+                    var reset = new JMenuItem("Reset zoom");
+                    reset.setToolTipText(
+                            "Reset the state tree's zoom and pan amount to the default");
+                    reset.addActionListener(__ -> {
+                        transform = new AffineTransform();
+                        revalidate();
+                        repaint();
+                    });
+                    menu.add(reset);
+                    menu.show(ZoomableCanvas.this, e.getX(), e.getY());
+                    e.consume();
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                dragOrigin = e.getPoint();
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+
+            }
+        });
+
+        addMouseMotionListener(new MouseMotionListener() {
+            @Override
+            public void mouseDragged(MouseEvent e) {
+                if (dragOrigin == null) {
+                    return;
+                }
+
+                var temp = new AffineTransform();
+                temp.translate(-dragOrigin.x + e.getX(),
+                        -dragOrigin.y + e.getY());
+                transform.preConcatenate(temp);
+
+                dragOrigin = e.getPoint();
+                revalidate();
+                repaint();
+            }
+
+            @Override
+            public void mouseMoved(MouseEvent e) {
+
+            }
+        });
 
         setUI();
     }
@@ -79,87 +170,43 @@ class ZoomableCanvas extends JPanel
         setUI();
     }
 
-    public AffineTransform getTransform() {
-        AffineTransform at = new AffineTransform();
-        at.translate(deltaX, deltaY);
-        at.scale(scale, scale);
-        return at;
+    /**
+     * Return the point in the original image corresponding to a point on the
+     * component.
+     *
+     * @param p
+     *         the point
+     * @return the corresponding point in the original space or null if the
+     * canvas has been zoomed out so much that it's degenerated to a point
+     * (shouldn't ever happen)
+     */
+    protected final Point2D unZoomedPoint(@NonNull Point p) {
+        try {
+            return transform.createInverse().transform(p, null);
+        } catch (NoninvertibleTransformException e) {
+            // Transform should always be invertible but if it isn't, there is
+            // no unique inverse
+            return null;
+        }
     }
 
     @Override
-    public void paintComponent(Graphics g) {
+    public final void paintComponent(Graphics g) {
         super.paintComponent(g);
-        var g2d = (Graphics2D) g;
+        var g2d = (Graphics2D) g.create();
         g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING,
                 RenderingHints.VALUE_ANTIALIAS_ON);
+        g2d.transform(transform);
+        paintZoomedComponent(g2d);
+        g2d.dispose();
     }
 
-    @Override
-    public void mouseWheelMoved(MouseWheelEvent e) {
-        double zoomFactor = -SCALE_STEP * e.getPreciseWheelRotation() * scale;
-        scale += zoomFactor;
-        scale = Math.max(scale, SCALE_STEP);
-        revalidate();
-        repaint();
-    }
-
-    @Override
-    public void mouseDragged(MouseEvent e) {
-        if (dragOrigin == null) {
-            return;
-        }
-        deltaX -= dragOrigin.x - e.getX();
-        deltaY -= dragOrigin.y - e.getY();
-        dragOrigin = e.getPoint();
-        revalidate();
-        repaint();
-    }
-
-    @Override
-    public void mouseMoved(MouseEvent e) {
-
-    }
-
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        // right click
-        if (e.getButton() == MouseEvent.BUTTON3) {
-            var menu = new JPopupMenu();
-            var reset = new JMenuItem("Reset zoom");
-            reset.setToolTipText(
-                    "Reset the state tree's zoom and pan amount to the default");
-            reset.addActionListener(__ -> {
-                scale = 1.0;
-                deltaX = 0;
-                deltaY = 0;
-                revalidate();
-                repaint();
-            });
-            menu.add(reset);
-            menu.show(this, e.getX(), e.getY());
-            e.consume();
-        }
-    }
-
-
-    @Override
-    public void mousePressed(MouseEvent e) {
-        dragOrigin = e.getPoint();
-    }
-
-    @Override
-    public void mouseReleased(MouseEvent e) {
-
-    }
-
-    @Override
-    public void mouseEntered(MouseEvent e) {
-
-    }
-
-    @Override
-    public void mouseExited(MouseEvent e) {
-
-    }
+    /**
+     * Subclasses should override this method to paint the component. The
+     * results will be transformed by the class and rendered in the panel.
+     *
+     * @param g
+     *         the Graphics object with a pre-installed transform
+     */
+    abstract void paintZoomedComponent(Graphics2D g);
 }
-

@@ -3,10 +3,10 @@ package dslabs.framework.testing.newviz;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.geom.Ellipse2D;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.Set;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.experimental.Delegate;
 
 class StateTreeCanvas extends ZoomableCanvas {
@@ -23,16 +22,56 @@ class StateTreeCanvas extends ZoomableCanvas {
     Set<Node> nodes = new HashSet<>();
     Node selected = null;
 
-    private final DebuggerWindow parent;
-
     private static final int DEFAULT_X_SIZE = 1080, DEFAULT_Y_SIZE = 200;
 
     private static final int CIRCLE_RADIUS = 40, CIRCLE_GAP = 60;
     private static final int X_OFFSET = 100, Y_OFFSET = 100;
 
     StateTreeCanvas(DebuggerWindow parent) {
-        this.parent = parent;
         setPreferredSize(new Dimension(DEFAULT_X_SIZE, DEFAULT_Y_SIZE));
+
+        addMouseListener(new MouseListener() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.isConsumed() || e.getButton() != MouseEvent.BUTTON1) {
+                    return;
+                }
+
+                var p = unZoomedPoint(e.getPoint());
+
+                // TODO: binary search instead of linear scan
+                for (var n : nodes) {
+                    if (n.contains(p)) {
+                        // Don't do anything if the state is already selected
+                        if (n != selected) {
+                            parent.setState(n.state);
+                        }
+                        e.consume();
+                        break;
+                    }
+                }
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseReleased(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+
+            }
+        });
     }
 
     /*
@@ -126,17 +165,12 @@ class StateTreeCanvas extends ZoomableCanvas {
     }
 
     @Override
-    public void paintComponent(Graphics g) {
-        super.paintComponent(g);
-
-        var g2d = (Graphics2D) g.create();
-        g2d.setColor(Color.BLACK);
-        g2d.transform(getTransform());
-        g2d.setStroke(
+    public void paintZoomedComponent(Graphics2D g) {
+        g.setColor(Color.BLACK);
+        g.setStroke(
                 new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
                         0, new float[]{5}, 0));
-        paintNode(g2d, root);
-        g2d.dispose();
+        paintNode(g, root);
     }
 
     private void paintNode(Graphics2D g, Node n) {
@@ -158,30 +192,6 @@ class StateTreeCanvas extends ZoomableCanvas {
 
         for (Node child : n.children) {
             paintNode(g, child);
-        }
-    }
-
-    @SneakyThrows
-    @Override
-    public void mouseClicked(MouseEvent e) {
-        super.mouseClicked(e);
-
-        if (e.isConsumed() || e.getButton() != MouseEvent.BUTTON1) {
-            return;
-        }
-
-        var p = getTransform().createInverse().transform(e.getPoint(), null);
-
-        // TODO: binary search instead of linear scan
-        for (var n : nodes) {
-            if (n.contains(p)) {
-                // Don't do anything if the state is already selected
-                if (n != selected) {
-                    parent.setState(n.state);
-                }
-                e.consume();
-                break;
-            }
         }
     }
 
