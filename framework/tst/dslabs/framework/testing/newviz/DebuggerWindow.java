@@ -222,6 +222,10 @@ public class DebuggerWindow extends JFrame {
 
                         splitPane.revalidate();
                         splitPane.repaint();
+
+                        if (checkbox.hasFocus()) {
+                            DebuggerWindow.this.transferFocus();
+                        }
                     }
                 });
                 viewHidePane.add(checkbox);
