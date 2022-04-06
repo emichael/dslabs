@@ -54,6 +54,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import jiconfont.icons.font_awesome.FontAwesome;
 import lombok.NonNull;
@@ -212,6 +213,13 @@ public class DebuggerWindow extends JFrame {
                     @Override
                     public void actionPerformed(ActionEvent e) {
                         layoutNodes();
+
+                        // When we un-hide a node, make sure it gets the right LAF
+                        if (checkbox.isSelected()) {
+                            SwingUtilities.updateComponentTreeUI(
+                                    statePanels.get(a));
+                        }
+
                         splitPane.revalidate();
                         splitPane.repaint();
                     }
