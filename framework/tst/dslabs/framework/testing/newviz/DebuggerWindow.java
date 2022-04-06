@@ -256,7 +256,7 @@ public class DebuggerWindow extends JFrame {
             ADD THE NODES AND EVENT PANEL
            -------------------------------------------------------------------*/
         for (Address a : addresses) {
-            SingleNodePanel panel = new SingleNodePanel(currentState, a, this);
+            SingleNodePanel panel = new SingleNodePanel(currentState, searchSettings, a, this);
             statePanels.put(a, panel);
         }
 
@@ -473,7 +473,7 @@ public class DebuggerWindow extends JFrame {
         currentState = s;
         for (Address a : currentState.addresses()) {
             assert statePanels.containsKey(a);
-            statePanels.get(a).updateState(currentState, viewDeliveredMessages);
+            statePanels.get(a).updateState(currentState, searchSettings, viewDeliveredMessages);
         }
         eventsPanel.update(currentState);
         updatePredicatePanes();

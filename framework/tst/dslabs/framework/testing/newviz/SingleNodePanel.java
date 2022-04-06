@@ -27,7 +27,9 @@ import dslabs.framework.Address;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
+import dslabs.framework.testing.search.SearchSettings;
 import java.awt.Graphics;
+import java.awt.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -64,7 +66,7 @@ class SingleNodePanel extends JPanel {
     private final List<Triple<TimerEnvelope, JPanel, StateTree>> timers =
             new ArrayList<>();
 
-    SingleNodePanel(final EventTreeState s, final Address a,
+    SingleNodePanel(final EventTreeState s, final SearchSettings settings, final Address a,
                     final DebuggerWindow parent) {
         this.parent = parent;
         address = a;
@@ -99,13 +101,19 @@ class SingleNodePanel extends JPanel {
         // XXX: why does this need w 100%, h 100%? Shouldn't grow handle it?
         add(mainSplitPane, "grow, h 100%");
 
+        boolean searchDone = settings != null &&
+                             (settings.invariantViolated(s.state()) ||
+                              settings.shouldPrune(s.state()) ||
+                              settings.goalMatched(s.state()));
         for (MessageEnvelope message : s.network()) {
             if (message.to().equals(address)) {
-                addMessage(message);
+                addMessage(message,
+                           !searchDone && (settings == null || settings.shouldDeliver(message)));
             }
         }
         for (TimerEnvelope timer : s.timers(a)) {
-            addTimer(timer, s.canStepTimer(timer));
+            addTimer(timer, s.canStepTimer(timer),
+                     !searchDone && (settings == null || settings.deliverTimers(a)));
         }
 
         add(new JLabel(a.toString()), "center");
@@ -126,7 +134,7 @@ class SingleNodePanel extends JPanel {
     }
 
     // TODO: do this _much_ more incrementally without repainting everything
-    void updateState(EventTreeState s, boolean viewDeliveredMessages) {
+    void updateState(EventTreeState s, SearchSettings settings, boolean viewDeliveredMessages) {
         boolean nodeIsDiffed = !s.isInitialState() &&
                 s.previousEvent().locationRootAddress().equals(address);
         if (nodeIsDiffed) {
@@ -136,6 +144,11 @@ class SingleNodePanel extends JPanel {
             nodeState.update(s.node(address));
             nodeState.clearDiffObject();
         }
+
+        boolean searchDone = settings != null &&
+                                (settings.invariantViolated(s.state()) ||
+                                 settings.shouldPrune(s.state()) ||
+                                 settings.goalMatched(s.state()));
 
         final Set<MessageEnvelope> ms = Sets.newHashSet(
                 viewDeliveredMessages ? s.network() : s.undeliveredMessages());
@@ -147,7 +160,8 @@ class SingleNodePanel extends JPanel {
             if (messages.containsKey(message)) {
                 continue;
             }
-            addMessage(message);
+            addMessage(message,
+                       !searchDone && (settings == null || settings.shouldDeliver(message)));
             repaintMessageBox = true;
         }
         for (MessageEnvelope message : new HashSet<>(messages.keySet())) {
@@ -155,6 +169,23 @@ class SingleNodePanel extends JPanel {
                 messageBox.remove(messages.get(message).getLeft());
                 repaintMessageBox = true;
                 messages.remove(message);
+            } else {
+                // Update messages if they are not deliverable. Slightly gross because we have to
+                // get the components of the message panel and search for the JButton.
+                JPanel mbox = messages.get(message).getLeft();
+                synchronized (mbox.getTreeLock()) {
+                    JButton button = null;
+                    for (Component c : mbox.getComponents()) {
+                        if (!(c instanceof JButton)) {
+                            continue;
+                        }
+                        button = (JButton) c;
+                        break;
+                    }
+                    assert button != null;
+                    button.setEnabled(!searchDone &&
+                                      (settings == null || settings.shouldDeliver(message)));
+                }
             }
         }
         if (repaintMessageBox) {
@@ -188,14 +219,15 @@ class SingleNodePanel extends JPanel {
         timerBox.removeAll();
 
         for (TimerEnvelope timer : s.timers(address)) {
-            addTimer(timer, s.canStepTimer(timer));
+            addTimer(timer, s.canStepTimer(timer),
+                     !searchDone && (settings == null || settings.deliverTimers(address)));
         }
 
         timerBox.revalidate();
         timerBox.repaint();
     }
 
-    private void addMessage(final MessageEnvelope message) {
+    private void addMessage(final MessageEnvelope message, boolean allowDelivery) {
         final JPanel mbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
@@ -207,6 +239,8 @@ class SingleNodePanel extends JPanel {
         deliveryButton.addActionListener(
                 e -> parent.deliverEvent(new Event(message)));
 
+        deliveryButton.setEnabled(allowDelivery);
+
         StateTree tree = new StateTree(message);
         tree.collapseRow(0);
         mbox.add(tree, "pad 0 0");
@@ -215,7 +249,7 @@ class SingleNodePanel extends JPanel {
         messageBox.add(mbox, "pad 0 0");
     }
 
-    private void addTimer(final TimerEnvelope timer, boolean deliverable) {
+    private void addTimer(final TimerEnvelope timer, boolean deliverable, boolean allowDelivery) {
         final JPanel tbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
@@ -230,6 +264,8 @@ class SingleNodePanel extends JPanel {
         if (!deliverable) {
             deliveryButton.setVisible(false);
         }
+
+        deliveryButton.setEnabled(allowDelivery);
 
         StateTree tree = new StateTree(timer.timer());
         tree.collapseRow(0);
