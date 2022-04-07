@@ -242,7 +242,7 @@ public class DebuggerWindow extends JFrame {
             if (searchSettings != null) {
                 addPredicatePaneToSidebar(sideBar, "Invariants", searchSettings.invariants(),
                                           this.invariants);
-                addPredicatePaneToSidebar(sideBar, "Prunes", searchSettings.prunes(),
+                addPredicatePaneToSidebar(sideBar, "Prunes (Ignored States)", searchSettings.prunes(),
                                           this.prunes);
                 addPredicatePaneToSidebar(sideBar, "Goals", searchSettings.goals(),
                                           this.goals);
@@ -347,6 +347,7 @@ public class DebuggerWindow extends JFrame {
 
             if (invariant.test(currentState.state())) {
                 label.setIcon(Utils.makeIcon(FontAwesome.CHECK_SQUARE));
+                label.setToolTipText(null);
             } else {
                 label.setIcon(Utils.makeIcon(FontAwesome.EXCLAMATION_TRIANGLE,
                         UIManager.getColor("warningColor")));
@@ -359,13 +360,12 @@ public class DebuggerWindow extends JFrame {
             JLabel label = e.getValue();
 
             if (prune.test(currentState.state())) {
-                // Not sure what icon to put here: scissors? then what icon to use for the
-                // un-pruned?
-                label.setIcon(Utils.makeIcon(FontAwesome.LOCK,
-                        UIManager.getColor("warningColor")));
+                label.setIcon(Utils.makeIcon(FontAwesome.EYE_SLASH,
+                        Utils.desaturate(UIManager.getColor("warningColor"), 0.5)));
                 label.setToolTipText(prune.detail(currentState.state()));
             } else {
-                label.setIcon(Utils.makeIcon(FontAwesome.UNLOCK));
+                label.setIcon(Utils.makeIcon(FontAwesome.EYE));
+                label.setToolTipText(null);
             }
         }
 
@@ -376,6 +376,7 @@ public class DebuggerWindow extends JFrame {
             if (goal.test(currentState.state())) {
                 label.setIcon(Utils.makeIcon(FontAwesome.CHECK_CIRCLE,
                         UIManager.getColor("successColor")));
+                label.setToolTipText(null);
             } else {
                 // Not using an exclamation because even if the current state is not a goal,
                 // this isn't an error. FontAwesome apparently doesn't have a TIMES_SQUARE,
