@@ -61,7 +61,7 @@ class SingleNodePanel extends JPanel {
 
     private final JSplitPane mainSplitPane, eventPane;
 
-    private final Map<MessageEnvelope, Pair<JPanel, StateTree>> messages =
+    private final Map<MessageEnvelope, Pair<JButton, StateTree>> messages =
             new HashMap<>();
     private final List<Triple<TimerEnvelope, JPanel, StateTree>> timers =
             new ArrayList<>();
@@ -101,20 +101,7 @@ class SingleNodePanel extends JPanel {
         // XXX: why does this need w 100%, h 100%? Shouldn't grow handle it?
         add(mainSplitPane, "grow, h 100%");
 
-        boolean searchDone = settings != null &&
-                             (settings.invariantViolated(s.state()) ||
-                              settings.shouldPrune(s.state()) ||
-                              settings.goalMatched(s.state()));
-        for (MessageEnvelope message : s.network()) {
-            if (message.to().equals(address)) {
-                addMessage(message,
-                           !searchDone && (settings == null || settings.shouldDeliver(message)));
-            }
-        }
-        for (TimerEnvelope timer : s.timers(a)) {
-            addTimer(timer, s.canStepTimer(timer),
-                     !searchDone && (settings == null || settings.deliverTimers(a)));
-        }
+        updateState(s, settings, false);
 
         add(new JLabel(a.toString()), "center");
     }
@@ -166,33 +153,20 @@ class SingleNodePanel extends JPanel {
         }
         for (MessageEnvelope message : new HashSet<>(messages.keySet())) {
             if (!ms.contains(message)) {
-                messageBox.remove(messages.get(message).getLeft());
+                messageBox.remove(messages.get(message).getLeft().getParent());
                 repaintMessageBox = true;
                 messages.remove(message);
             } else {
-                // Update messages if they are not deliverable. Slightly gross because we have to
-                // get the components of the message panel and search for the JButton.
-                JPanel mbox = messages.get(message).getLeft();
-                synchronized (mbox.getTreeLock()) {
-                    JButton button = null;
-                    for (Component c : mbox.getComponents()) {
-                        if (!(c instanceof JButton)) {
-                            continue;
-                        }
-                        button = (JButton) c;
-                        break;
-                    }
-                    assert button != null;
-                    button.setEnabled(!searchDone &&
-                                      (settings == null || settings.shouldDeliver(message)));
-                }
+                JButton button = messages.get(message).getLeft();
+                button.setEnabled(!searchDone &&
+                                  (settings == null || settings.shouldDeliver(message)));
             }
         }
         if (repaintMessageBox) {
             messageBox.revalidate();
             messageBox.repaint();
         }
-        for (Entry<MessageEnvelope, Pair<JPanel, StateTree>> messageEntry : messages.entrySet()) {
+        for (Entry<MessageEnvelope, Pair<JButton, StateTree>> messageEntry : messages.entrySet()) {
             MessageEnvelope message = messageEntry.getKey();
             StateTree tree = messageEntry.getValue().getRight();
             if (!s.isInitialState() &&
@@ -245,7 +219,7 @@ class SingleNodePanel extends JPanel {
         tree.collapseRow(0);
         mbox.add(tree, "pad 0 0");
 
-        messages.put(message, Pair.of(mbox, tree));
+        messages.put(message, Pair.of(deliveryButton, tree));
         messageBox.add(mbox, "pad 0 0");
     }
 
