@@ -26,8 +26,8 @@ import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
-import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.search.SearchSettings;
+import dslabs.framework.testing.search.SearchState;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
@@ -99,7 +99,8 @@ public class DebuggerWindow extends JFrame {
     private final Map<Address, SingleNodePanel> statePanels = new HashMap<>();
     private final Map<Address, JCheckBox> nodesActive = new HashMap<>();
 
-    private final List<Pair<StatePredicate, JLabel>> invariants = new ArrayList<>();
+    private final List<Pair<StatePredicate, JLabel>> invariants =
+            new ArrayList<>();
     private final List<Pair<StatePredicate, JLabel>> prunes = new ArrayList<>();
     private final List<Pair<StatePredicate, JLabel>> goals = new ArrayList<>();
 
@@ -181,17 +182,23 @@ public class DebuggerWindow extends JFrame {
                 }
             });
 
-            JCheckBoxMenuItem ignoreSearchSettingsMenuItem =
-                    new JCheckBoxMenuItem("Ignore search requirements", false);
-            settingsMenu.add(ignoreSearchSettingsMenuItem);
-            ignoreSearchSettingsMenuItem.addActionListener(e -> {
-                boolean old = ignoreSearchSettings;
-                ignoreSearchSettings =
-                        ignoreSearchSettingsMenuItem.getState();
-                if (old != ignoreSearchSettings) {
-                    setState(currentState);
-                }
-            });
+            // TODO: only add menu item if searchSettings actually restricts events
+            // (has prunes or prevents message/timer delivery)
+            if (searchSettings != null) {
+                JCheckBoxMenuItem ignoreSearchSettingsMenuItem =
+                        new JCheckBoxMenuItem(
+                                "Ignore search event delivery restrictions",
+                                false);
+                settingsMenu.add(ignoreSearchSettingsMenuItem);
+                ignoreSearchSettingsMenuItem.addActionListener(e -> {
+                    boolean old = ignoreSearchSettings;
+                    ignoreSearchSettings =
+                            ignoreSearchSettingsMenuItem.getState();
+                    if (old != ignoreSearchSettings) {
+                        setState(currentState);
+                    }
+                });
+            }
 
             settingsMenu.addSeparator();
 
@@ -253,12 +260,12 @@ public class DebuggerWindow extends JFrame {
             sideBar.add(viewHidePane);
 
             if (searchSettings != null) {
-                addPredicatePaneToSidebar(sideBar, "Invariants", searchSettings.invariants(),
-                                          this.invariants);
-                addPredicatePaneToSidebar(sideBar, "Prunes (Ignored States)", searchSettings.prunes(),
-                                          this.prunes);
-                addPredicatePaneToSidebar(sideBar, "Goals", searchSettings.goals(),
-                                          this.goals);
+                addPredicatePaneToSidebar(sideBar, "Invariants",
+                        searchSettings.invariants(), this.invariants);
+                addPredicatePaneToSidebar(sideBar, "Prunes (Ignored States)",
+                        searchSettings.prunes(), this.prunes);
+                addPredicatePaneToSidebar(sideBar, "Goals",
+                        searchSettings.goals(), this.goals);
                 updatePredicatePanes();
             }
             sideBar.setMinimumSize(new Dimension(20, 0));
@@ -269,7 +276,8 @@ public class DebuggerWindow extends JFrame {
             ADD THE NODES AND EVENT PANEL
            -------------------------------------------------------------------*/
         for (Address a : addresses) {
-            SingleNodePanel panel = new SingleNodePanel(currentState, searchSettings, a, this);
+            SingleNodePanel panel =
+                    new SingleNodePanel(currentState, searchSettings, a, this);
             statePanels.put(a, panel);
         }
 
@@ -337,7 +345,8 @@ public class DebuggerWindow extends JFrame {
         setVisible(true);
     }
 
-    private void addPredicatePaneToSidebar(JXTaskPaneContainer sideBar, String name,
+    private void addPredicatePaneToSidebar(JXTaskPaneContainer sideBar,
+                                           String name,
                                            Collection<StatePredicate> predicates,
                                            List<Pair<StatePredicate, JLabel>> labels) {
         if (predicates.isEmpty()) {
@@ -374,9 +383,11 @@ public class DebuggerWindow extends JFrame {
 
             if (prune.test(currentState.state())) {
                 label.setIcon(Utils.makeIcon(FontAwesome.EYE_SLASH,
-                        Utils.desaturate(UIManager.getColor("warningColor"), 0.5)));
+                        Utils.desaturate(UIManager.getColor("warningColor"),
+                                0.5)));
                 label.setToolTipText(prune.detail(currentState.state()));
             } else {
+                // TODO: find better icons, the eye staring at you is creepy
                 label.setIcon(Utils.makeIcon(FontAwesome.EYE));
                 label.setToolTipText(null);
             }
@@ -488,11 +499,10 @@ public class DebuggerWindow extends JFrame {
         for (Address a : currentState.addresses()) {
             assert statePanels.containsKey(a);
             statePanels.get(a).updateState(currentState,
-                                           ignoreSearchSettings ? null : searchSettings,
-                                           viewDeliveredMessages);
+                    ignoreSearchSettings ? null : searchSettings,
+                    viewDeliveredMessages);
         }
         eventsPanel.update(currentState);
         updatePredicatePanes();
     }
 }
-

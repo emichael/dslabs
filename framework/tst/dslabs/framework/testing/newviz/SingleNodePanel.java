@@ -29,7 +29,6 @@ import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.search.SearchSettings;
 import java.awt.Graphics;
-import java.awt.Component;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,8 +65,8 @@ class SingleNodePanel extends JPanel {
     private final List<Triple<TimerEnvelope, JPanel, StateTree>> timers =
             new ArrayList<>();
 
-    SingleNodePanel(final EventTreeState s, final SearchSettings settings, final Address a,
-                    final DebuggerWindow parent) {
+    SingleNodePanel(final EventTreeState s, final SearchSettings settings,
+                    final Address a, final DebuggerWindow parent) {
         this.parent = parent;
         address = a;
 
@@ -121,7 +120,8 @@ class SingleNodePanel extends JPanel {
     }
 
     // TODO: do this _much_ more incrementally without repainting everything
-    void updateState(EventTreeState s, SearchSettings settings, boolean viewDeliveredMessages) {
+    void updateState(EventTreeState s, SearchSettings settings,
+                     boolean viewDeliveredMessages) {
         boolean nodeIsDiffed = !s.isInitialState() &&
                 s.previousEvent().locationRootAddress().equals(address);
         if (nodeIsDiffed) {
@@ -144,7 +144,8 @@ class SingleNodePanel extends JPanel {
             if (messages.containsKey(message)) {
                 continue;
             }
-            addMessage(message, pruned, settings != null && !settings.shouldDeliver(message));
+            addMessage(message, pruned,
+                    settings != null && !settings.shouldDeliver(message));
             repaintMessageBox = true;
         }
         for (MessageEnvelope message : new HashSet<>(messages.keySet())) {
@@ -154,8 +155,8 @@ class SingleNodePanel extends JPanel {
                 messages.remove(message);
             } else {
                 setDeliverability(messages.get(message).getLeft(), pruned,
-                                  settings != null && !settings.shouldDeliver(message),
-                                  "message");
+                        settings != null && !settings.shouldDeliver(message),
+                        "message");
             }
         }
         if (repaintMessageBox) {
@@ -190,14 +191,15 @@ class SingleNodePanel extends JPanel {
 
         for (TimerEnvelope timer : s.timers(address)) {
             addTimer(timer, s.canStepTimer(timer), pruned,
-                     settings != null && !settings.deliverTimers(address));
+                    settings != null && !settings.deliverTimers(address));
         }
 
         timerBox.revalidate();
         timerBox.repaint();
     }
 
-    private void addMessage(final MessageEnvelope message, boolean pruned, boolean prohibited) {
+    private void addMessage(final MessageEnvelope message, boolean pruned,
+                            boolean prohibited) {
         final JPanel mbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
@@ -217,8 +219,8 @@ class SingleNodePanel extends JPanel {
         messageBox.add(mbox, "pad 0 0");
     }
 
-    private void addTimer(final TimerEnvelope timer, boolean deliverable, boolean pruned,
-                          boolean prohibited) {
+    private void addTimer(final TimerEnvelope timer, boolean deliverable,
+                          boolean pruned, boolean prohibited) {
         final JPanel tbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
@@ -244,16 +246,16 @@ class SingleNodePanel extends JPanel {
         timerBox.add(tbox);
     }
 
-    private void setDeliverability(JButton deliveryButton, boolean pruned, boolean prohibited,
-                                   String name) {
+    private void setDeliverability(JButton deliveryButton, boolean pruned,
+                                   boolean prohibited, String name) {
         deliveryButton.setEnabled(!pruned && !prohibited);
         String tooltip;
         if (pruned) {
             tooltip = "This " + name +
-                      " cannot be delivered because the current state is pruned by the search";
+                    " cannot be delivered because the current state is pruned by the search";
         } else if (prohibited) {
             tooltip = "This " + name +
-                      " cannot be delivered because delivery is prohibited by the search";
+                    " cannot be delivered because delivery is prohibited by the search";
         } else {
             tooltip = "Deliver " + name;
         }
