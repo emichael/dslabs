@@ -303,8 +303,9 @@ public abstract class BaseJUnitTest {
         }
 
         if (GlobalSettings.startVisualization()) {
+            final SearchSettings settings = searchSettings;
             Thread thread = new Thread(() -> {
-                VizClient vc = new VizClient(humanReadable, invariant, true);
+                VizClient vc = new VizClient(humanReadable, settings, true);
                 try {
                     vc.run();
                 } catch (IOException e) {
@@ -387,8 +388,9 @@ public abstract class BaseJUnitTest {
         if (GlobalSettings.startVisualization() && bfsStartState != null) {
             final SearchState humanReadable =
                 SearchState.humanReadableTraceEndState(bfsStartState);
+            final SearchSettings settings = searchSettings;
             Thread thread = new Thread(() -> {
-                VizClient vc = new VizClient(humanReadable, null, true);
+                VizClient vc = new VizClient(humanReadable, settings, true);
                 try {
                     vc.run();
                 } catch (IOException e) {

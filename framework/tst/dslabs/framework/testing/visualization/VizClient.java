@@ -29,6 +29,7 @@ import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.newviz.DebuggerWindow;
+import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.Json;
@@ -73,24 +74,26 @@ public class VizClient {
     private DataOutputStream out;
 
     private final SearchState state;
+    private final SearchSettings settings;
     private final StatePredicate invariant;
     private final String[] nodeNames;
     private final boolean trace;
 
     public VizClient(String host, int port, SearchState state,
-                     StatePredicate invariant, String[] nodeNames,
+                     SearchSettings settings, String[] nodeNames,
                      boolean trace) {
         this.host = host;
         this.port = port;
         this.state = state;
-        this.invariant = invariant;
+        this.settings = settings;
+        this.invariant = settings == null ? null : settings.whichInvariantViolated(state);
         this.nodeNames = nodeNames;
         this.trace = trace;
     }
 
-    public VizClient(SearchState state, StatePredicate invariant,
+    public VizClient(SearchState state, SearchSettings settings,
                      boolean trace) {
-        this(DEFAULT_HOST, DEFAULT_PORT, state, invariant,
+        this(DEFAULT_HOST, DEFAULT_PORT, state, settings,
                 Streams.stream(state.addresses()).map(Object::toString)
                        .toArray(String[]::new), trace);
     }
@@ -138,11 +141,7 @@ public class VizClient {
 
     public void run(Boolean startOddity) throws IOException {
         if (GlobalSettings.newViz()) {
-            if (invariant != null) {
-                new DebuggerWindow(state, Set.of(invariant));
-            } else {
-                new DebuggerWindow(state);
-            }
+            new DebuggerWindow(state, settings);
             return;
         }
 

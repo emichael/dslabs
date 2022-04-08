@@ -59,6 +59,17 @@ abstract class Utils {
                 c.getBlue());
     }
 
+    static Color desaturate(Color c, double factor) {
+        if (factor < 0 || factor > 1) {
+            throw new IllegalArgumentException(
+                    "factor to desaturate by must be between 0 and 1");
+        }
+        float[] hsb =
+                Color.RGBtoHSB(c.getRed(), c.getGreen(), c.getBlue(), null);
+        hsb[1] *= factor;
+        return new Color(Color.HSBtoRGB(hsb[0], hsb[1], hsb[2]));
+    }
+
     static boolean setupThemeOnStartup() {
         final Preferences prefs = Preferences.userNodeForPackage(Utils.class);
         final boolean darkModeEnabled = prefs.getBoolean(PREF_DARK_MODE, false);

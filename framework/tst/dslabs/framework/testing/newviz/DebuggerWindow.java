@@ -26,18 +26,18 @@ import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
@@ -62,6 +62,7 @@ import net.miginfocom.layout.AC;
 import net.miginfocom.layout.LC;
 import net.miginfocom.layout.PlatformDefaults;
 import net.miginfocom.swing.MigLayout;
+import org.apache.commons.lang3.tuple.Pair;
 import org.jdesktop.swingx.JXMultiSplitPane;
 import org.jdesktop.swingx.JXMultiSplitPane.DividerPainter;
 import org.jdesktop.swingx.JXTaskPane;
@@ -97,7 +98,11 @@ public class DebuggerWindow extends JFrame {
 
     private final Map<Address, SingleNodePanel> statePanels = new HashMap<>();
     private final Map<Address, JCheckBox> nodesActive = new HashMap<>();
-    private final Map<StatePredicate, JLabel> invariants = new HashMap<>();
+
+    private final List<Pair<StatePredicate, JLabel>> invariants =
+            new ArrayList<>();
+    private final List<Pair<StatePredicate, JLabel>> prunes = new ArrayList<>();
+    private final List<Pair<StatePredicate, JLabel>> goals = new ArrayList<>();
 
     private final JXMultiSplitPane splitPane;
 
@@ -106,21 +111,24 @@ public class DebuggerWindow extends JFrame {
 
     private EventTreeState currentState;
     private final SearchState initialState;
+    private final SearchSettings searchSettings;
 
     private boolean viewDeliveredMessages = false;
+    private boolean ignoreSearchSettings = false;
 
     public DebuggerWindow(final SearchState initialState) {
         this(initialState, null);
     }
 
     public DebuggerWindow(final SearchState initialState,
-                          Set<StatePredicate> invariants) {
+                          SearchSettings searchSettings) {
         super(WINDOW_TITLE);
 
         // Set LAF first so properties are available
         final boolean darkModeEnabled = Utils.setupThemeOnStartup();
 
         this.initialState = initialState;
+        this.searchSettings = searchSettings;
         currentState = EventTreeState.convert(initialState);
 
         {
@@ -159,12 +167,12 @@ public class DebuggerWindow extends JFrame {
             fileMenu.add(closeButton);
             closeButton.addActionListener(e -> DebuggerWindow.this.dispose());
 
-            final JMenu viewMenu = new JMenu("View");
-            menuBar.add(viewMenu);
+            final JMenu settingsMenu = new JMenu("Settings");
+            menuBar.add(settingsMenu);
 
             JCheckBoxMenuItem viewDeliveredMessagesMenuItem =
-                    new JCheckBoxMenuItem("View delivered messages", false);
-            viewMenu.add(viewDeliveredMessagesMenuItem);
+                    new JCheckBoxMenuItem("Show delivered messages", false);
+            settingsMenu.add(viewDeliveredMessagesMenuItem);
             viewDeliveredMessagesMenuItem.addActionListener(e -> {
                 boolean old = viewDeliveredMessages;
                 viewDeliveredMessages =
@@ -174,17 +182,35 @@ public class DebuggerWindow extends JFrame {
                 }
             });
 
-            viewMenu.addSeparator();
+            // TODO: only add menu item if searchSettings actually restricts events
+            // (has prunes or prevents message/timer delivery)
+            if (searchSettings != null) {
+                JCheckBoxMenuItem ignoreSearchSettingsMenuItem =
+                        new JCheckBoxMenuItem(
+                                "Ignore search event delivery restrictions",
+                                false);
+                settingsMenu.add(ignoreSearchSettingsMenuItem);
+                ignoreSearchSettingsMenuItem.addActionListener(e -> {
+                    boolean old = ignoreSearchSettings;
+                    ignoreSearchSettings =
+                            ignoreSearchSettingsMenuItem.getState();
+                    if (old != ignoreSearchSettings) {
+                        setState(currentState);
+                    }
+                });
+            }
+
+            settingsMenu.addSeparator();
 
             final ButtonGroup viewModeButtonGroup = new ButtonGroup();
             final JRadioButtonMenuItem lightMode =
                     new JRadioButtonMenuItem("Light theme", !darkModeEnabled);
             viewModeButtonGroup.add(lightMode);
-            viewMenu.add(lightMode);
+            settingsMenu.add(lightMode);
             final JRadioButtonMenuItem darkMode =
                     new JRadioButtonMenuItem("Dark theme", darkModeEnabled);
             viewModeButtonGroup.add(darkMode);
-            viewMenu.add(darkMode);
+            settingsMenu.add(darkMode);
 
             darkMode.addActionListener(e -> Utils.setupDarkTheme(true));
             lightMode.addActionListener(e -> Utils.setupLightTheme(true));
@@ -233,15 +259,14 @@ public class DebuggerWindow extends JFrame {
             }
             sideBar.add(viewHidePane);
 
-            if (invariants != null && !invariants.isEmpty()) {
-                JXTaskPane invariantPane = new JXTaskPane("Invariants");
-                for (StatePredicate invariant : invariants) {
-                    JLabel label = new JLabel(invariant.name());
-                    invariantPane.add(label);
-                    this.invariants.put(invariant, label);
-                }
-                sideBar.add(invariantPane);
-                updateInvariants();
+            if (searchSettings != null) {
+                addPredicatePaneToSidebar(sideBar, "Invariants",
+                        searchSettings.invariants(), this.invariants);
+                addPredicatePaneToSidebar(sideBar, "Prunes (Ignored States)",
+                        searchSettings.prunes(), this.prunes);
+                addPredicatePaneToSidebar(sideBar, "Goals",
+                        searchSettings.goals(), this.goals);
+                updatePredicatePanes();
             }
             sideBar.setMinimumSize(new Dimension(20, 0));
         }
@@ -251,7 +276,8 @@ public class DebuggerWindow extends JFrame {
             ADD THE NODES AND EVENT PANEL
            -------------------------------------------------------------------*/
         for (Address a : addresses) {
-            SingleNodePanel panel = new SingleNodePanel(currentState, a, this);
+            SingleNodePanel panel =
+                    new SingleNodePanel(currentState, searchSettings, a, this);
             statePanels.put(a, panel);
         }
 
@@ -319,17 +345,68 @@ public class DebuggerWindow extends JFrame {
         setVisible(true);
     }
 
-    private void updateInvariants() {
-        for (Entry<StatePredicate, JLabel> e : invariants.entrySet()) {
+    private void addPredicatePaneToSidebar(JXTaskPaneContainer sideBar,
+                                           String name,
+                                           Collection<StatePredicate> predicates,
+                                           List<Pair<StatePredicate, JLabel>> labels) {
+        if (predicates.isEmpty()) {
+            return;
+        }
+
+        JXTaskPane pane = new JXTaskPane(name);
+        for (StatePredicate predicate : predicates) {
+            JLabel label = new JLabel(predicate.name());
+            pane.add(label);
+            labels.add(Pair.of(predicate, label));
+        }
+        sideBar.add(pane);
+    }
+
+    private void updatePredicatePanes() {
+        for (Pair<StatePredicate, JLabel> e : invariants) {
             StatePredicate invariant = e.getKey();
             JLabel label = e.getValue();
 
             if (invariant.test(currentState.state())) {
                 label.setIcon(Utils.makeIcon(FontAwesome.CHECK_SQUARE));
+                label.setToolTipText(null);
             } else {
                 label.setIcon(Utils.makeIcon(FontAwesome.EXCLAMATION_TRIANGLE,
                         UIManager.getColor("warningColor")));
                 label.setToolTipText(invariant.detail(currentState.state()));
+            }
+        }
+
+        for (Pair<StatePredicate, JLabel> e : prunes) {
+            StatePredicate prune = e.getKey();
+            JLabel label = e.getValue();
+
+            if (prune.test(currentState.state())) {
+                label.setIcon(Utils.makeIcon(FontAwesome.EYE_SLASH,
+                        Utils.desaturate(UIManager.getColor("warningColor"),
+                                0.5)));
+                label.setToolTipText(prune.detail(currentState.state()));
+            } else {
+                // TODO: find better icons, the eye staring at you is creepy
+                label.setIcon(Utils.makeIcon(FontAwesome.EYE));
+                label.setToolTipText(null);
+            }
+        }
+
+        for (Pair<StatePredicate, JLabel> e : goals) {
+            StatePredicate goal = e.getKey();
+            JLabel label = e.getValue();
+
+            if (goal.test(currentState.state())) {
+                label.setIcon(Utils.makeIcon(FontAwesome.CHECK_CIRCLE,
+                        UIManager.getColor("successColor")));
+                label.setToolTipText(null);
+            } else {
+                // Not using an exclamation because even if the current state is not a goal,
+                // this isn't an error. FontAwesome apparently doesn't have a TIMES_SQUARE,
+                // so using a circle for both icons.
+                label.setIcon(Utils.makeIcon(FontAwesome.TIMES_CIRCLE));
+                label.setToolTipText(goal.detail(currentState.state()));
             }
         }
     }
@@ -421,10 +498,11 @@ public class DebuggerWindow extends JFrame {
         currentState = s;
         for (Address a : currentState.addresses()) {
             assert statePanels.containsKey(a);
-            statePanels.get(a).updateState(currentState, viewDeliveredMessages);
+            statePanels.get(a).updateState(currentState,
+                    ignoreSearchSettings ? null : searchSettings,
+                    viewDeliveredMessages);
         }
         eventsPanel.update(currentState);
-        updateInvariants();
+        updatePredicatePanes();
     }
 }
-

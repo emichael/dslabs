@@ -27,6 +27,7 @@ import dslabs.framework.Address;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
+import dslabs.framework.testing.search.SearchSettings;
 import java.awt.Graphics;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -59,13 +60,13 @@ class SingleNodePanel extends JPanel {
 
     private final JSplitPane mainSplitPane, eventPane;
 
-    private final Map<MessageEnvelope, Pair<JPanel, StateTree>> messages =
+    private final Map<MessageEnvelope, Pair<JButton, StateTree>> messages =
             new HashMap<>();
     private final List<Triple<TimerEnvelope, JPanel, StateTree>> timers =
             new ArrayList<>();
 
-    SingleNodePanel(final EventTreeState s, final Address a,
-                    final DebuggerWindow parent) {
+    SingleNodePanel(final EventTreeState s, final SearchSettings settings,
+                    final Address a, final DebuggerWindow parent) {
         this.parent = parent;
         address = a;
 
@@ -99,14 +100,7 @@ class SingleNodePanel extends JPanel {
         // XXX: why does this need w 100%, h 100%? Shouldn't grow handle it?
         add(mainSplitPane, "grow, h 100%");
 
-        for (MessageEnvelope message : s.network()) {
-            if (message.to().equals(address)) {
-                addMessage(message);
-            }
-        }
-        for (TimerEnvelope timer : s.timers(a)) {
-            addTimer(timer, s.canStepTimer(timer));
-        }
+        updateState(s, settings, false);
 
         add(new JLabel(a.toString()), "center");
     }
@@ -126,7 +120,8 @@ class SingleNodePanel extends JPanel {
     }
 
     // TODO: do this _much_ more incrementally without repainting everything
-    void updateState(EventTreeState s, boolean viewDeliveredMessages) {
+    void updateState(EventTreeState s, SearchSettings settings,
+                     boolean viewDeliveredMessages) {
         boolean nodeIsDiffed = !s.isInitialState() &&
                 s.previousEvent().locationRootAddress().equals(address);
         if (nodeIsDiffed) {
@@ -136,6 +131,8 @@ class SingleNodePanel extends JPanel {
             nodeState.update(s.node(address));
             nodeState.clearDiffObject();
         }
+
+        boolean pruned = settings != null && settings.shouldPrune(s.state());
 
         final Set<MessageEnvelope> ms = Sets.newHashSet(
                 viewDeliveredMessages ? s.network() : s.undeliveredMessages());
@@ -147,21 +144,26 @@ class SingleNodePanel extends JPanel {
             if (messages.containsKey(message)) {
                 continue;
             }
-            addMessage(message);
+            addMessage(message, pruned,
+                    settings != null && !settings.shouldDeliver(message));
             repaintMessageBox = true;
         }
         for (MessageEnvelope message : new HashSet<>(messages.keySet())) {
             if (!ms.contains(message)) {
-                messageBox.remove(messages.get(message).getLeft());
+                messageBox.remove(messages.get(message).getLeft().getParent());
                 repaintMessageBox = true;
                 messages.remove(message);
+            } else {
+                setDeliverability(messages.get(message).getLeft(), pruned,
+                        settings != null && !settings.shouldDeliver(message),
+                        "message");
             }
         }
         if (repaintMessageBox) {
             messageBox.revalidate();
             messageBox.repaint();
         }
-        for (Entry<MessageEnvelope, Pair<JPanel, StateTree>> messageEntry : messages.entrySet()) {
+        for (Entry<MessageEnvelope, Pair<JButton, StateTree>> messageEntry : messages.entrySet()) {
             MessageEnvelope message = messageEntry.getKey();
             StateTree tree = messageEntry.getValue().getRight();
             if (!s.isInitialState() &&
@@ -188,41 +190,43 @@ class SingleNodePanel extends JPanel {
         timerBox.removeAll();
 
         for (TimerEnvelope timer : s.timers(address)) {
-            addTimer(timer, s.canStepTimer(timer));
+            addTimer(timer, s.canStepTimer(timer), pruned,
+                    settings != null && !settings.deliverTimers(address));
         }
 
         timerBox.revalidate();
         timerBox.repaint();
     }
 
-    private void addMessage(final MessageEnvelope message) {
+    private void addMessage(final MessageEnvelope message, boolean pruned,
+                            boolean prohibited) {
         final JPanel mbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
         JButton deliveryButton =
                 new JButton(Utils.makeIcon(FontAwesome.DOWNLOAD));
         deliveryButton.setFocusable(false);
-        deliveryButton.setToolTipText("Deliver message");
         mbox.add(deliveryButton, "pad 0 0");
         deliveryButton.addActionListener(
                 e -> parent.deliverEvent(new Event(message)));
 
+        setDeliverability(deliveryButton, pruned, prohibited, "message");
         StateTree tree = new StateTree(message);
         tree.collapseRow(0);
         mbox.add(tree, "pad 0 0");
 
-        messages.put(message, Pair.of(mbox, tree));
+        messages.put(message, Pair.of(deliveryButton, tree));
         messageBox.add(mbox, "pad 0 0");
     }
 
-    private void addTimer(final TimerEnvelope timer, boolean deliverable) {
+    private void addTimer(final TimerEnvelope timer, boolean deliverable,
+                          boolean pruned, boolean prohibited) {
         final JPanel tbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
         final JButton deliveryButton =
                 new JButton(Utils.makeIcon(FontAwesome.DOWNLOAD));
         deliveryButton.setFocusable(false);
-        deliveryButton.setToolTipText("Deliver timer");
         deliveryButton.addActionListener(
                 e -> parent.deliverEvent(new Event(timer)));
         tbox.add(deliveryButton, "pad 0 0");
@@ -231,6 +235,8 @@ class SingleNodePanel extends JPanel {
             deliveryButton.setVisible(false);
         }
 
+        setDeliverability(deliveryButton, pruned, prohibited, "timer");
+
         StateTree tree = new StateTree(timer.timer());
         tree.collapseRow(0);
         tbox.add(tree);
@@ -238,5 +244,21 @@ class SingleNodePanel extends JPanel {
         timers.add(Triple.of(timer, tbox, tree));
 
         timerBox.add(tbox);
+    }
+
+    private void setDeliverability(JButton deliveryButton, boolean pruned,
+                                   boolean prohibited, String name) {
+        deliveryButton.setEnabled(!pruned && !prohibited);
+        String tooltip;
+        if (pruned) {
+            tooltip = "This " + name +
+                    " cannot be delivered because the current state is pruned by the search";
+        } else if (prohibited) {
+            tooltip = "This " + name +
+                    " cannot be delivered because delivery is prohibited by the search";
+        } else {
+            tooltip = "Deliver " + name;
+        }
+        deliveryButton.setToolTipText(tooltip);
     }
 }
