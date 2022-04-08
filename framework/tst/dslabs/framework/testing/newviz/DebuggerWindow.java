@@ -113,6 +113,7 @@ public class DebuggerWindow extends JFrame {
     private final SearchSettings searchSettings;
 
     private boolean viewDeliveredMessages = false;
+    private boolean ignoreSearchSettings = false;
 
     public DebuggerWindow(final SearchState initialState) {
         this(initialState, null);
@@ -165,12 +166,12 @@ public class DebuggerWindow extends JFrame {
             fileMenu.add(closeButton);
             closeButton.addActionListener(e -> DebuggerWindow.this.dispose());
 
-            final JMenu viewMenu = new JMenu("View");
-            menuBar.add(viewMenu);
+            final JMenu settingsMenu = new JMenu("Settings");
+            menuBar.add(settingsMenu);
 
             JCheckBoxMenuItem viewDeliveredMessagesMenuItem =
-                    new JCheckBoxMenuItem("View delivered messages", false);
-            viewMenu.add(viewDeliveredMessagesMenuItem);
+                    new JCheckBoxMenuItem("Show delivered messages", false);
+            settingsMenu.add(viewDeliveredMessagesMenuItem);
             viewDeliveredMessagesMenuItem.addActionListener(e -> {
                 boolean old = viewDeliveredMessages;
                 viewDeliveredMessages =
@@ -180,17 +181,29 @@ public class DebuggerWindow extends JFrame {
                 }
             });
 
-            viewMenu.addSeparator();
+            JCheckBoxMenuItem ignoreSearchSettingsMenuItem =
+                    new JCheckBoxMenuItem("Ignore search requirements", false);
+            settingsMenu.add(ignoreSearchSettingsMenuItem);
+            ignoreSearchSettingsMenuItem.addActionListener(e -> {
+                boolean old = ignoreSearchSettings;
+                ignoreSearchSettings =
+                        ignoreSearchSettingsMenuItem.getState();
+                if (old != ignoreSearchSettings) {
+                    setState(currentState);
+                }
+            });
+
+            settingsMenu.addSeparator();
 
             final ButtonGroup viewModeButtonGroup = new ButtonGroup();
             final JRadioButtonMenuItem lightMode =
                     new JRadioButtonMenuItem("Light theme", !darkModeEnabled);
             viewModeButtonGroup.add(lightMode);
-            viewMenu.add(lightMode);
+            settingsMenu.add(lightMode);
             final JRadioButtonMenuItem darkMode =
                     new JRadioButtonMenuItem("Dark theme", darkModeEnabled);
             viewModeButtonGroup.add(darkMode);
-            viewMenu.add(darkMode);
+            settingsMenu.add(darkMode);
 
             darkMode.addActionListener(e -> Utils.setupDarkTheme(true));
             lightMode.addActionListener(e -> Utils.setupLightTheme(true));
@@ -474,7 +487,9 @@ public class DebuggerWindow extends JFrame {
         currentState = s;
         for (Address a : currentState.addresses()) {
             assert statePanels.containsKey(a);
-            statePanels.get(a).updateState(currentState, searchSettings, viewDeliveredMessages);
+            statePanels.get(a).updateState(currentState,
+                                           ignoreSearchSettings ? null : searchSettings,
+                                           viewDeliveredMessages);
         }
         eventsPanel.update(currentState);
         updatePredicatePanes();
