@@ -66,7 +66,7 @@ public abstract class BaseJUnitTest {
     /* Settings */
     protected RunSettings runSettings;
     protected SearchSettings searchSettings;
-    private SearchSettings bfsSettings;
+    private SearchSettings lastSearchSettings;
 
     /* States */
     protected RunState runState;
@@ -156,7 +156,7 @@ public abstract class BaseJUnitTest {
                         cleanupTest();
                         runSettings = null;
                         searchSettings = null;
-                        bfsSettings = null;
+                        lastSearchSettings = null;
                         runState = null;
                         initSearchState = null;
                         bfsStartState = null;
@@ -254,7 +254,7 @@ public abstract class BaseJUnitTest {
                              SearchSettings searchSettings) {
         assert searchState != null;
         bfsStartState = searchState;
-        bfsSettings = searchSettings;
+        lastSearchSettings = searchSettings;
         searchResults = Search.bfs(searchState, searchSettings);
         assertEndConditionValid();
     }
@@ -266,6 +266,7 @@ public abstract class BaseJUnitTest {
     protected final void dfs(SearchState searchState,
                              SearchSettings searchSettings) {
         assert searchState != null;
+        lastSearchSettings = searchSettings;
         searchResults = Search.dfs(searchState, searchSettings);
         assertEndConditionValid();
     }
@@ -306,7 +307,7 @@ public abstract class BaseJUnitTest {
         }
 
         if (GlobalSettings.startVisualization()) {
-            final SearchSettings settings = bfsSettings;
+            final SearchSettings settings = lastSearchSettings;
             Thread thread = new Thread(() -> {
                 VizClient vc = new VizClient(humanReadable, settings, true);
                 try {
@@ -391,7 +392,7 @@ public abstract class BaseJUnitTest {
         if (GlobalSettings.startVisualization() && bfsStartState != null) {
             final SearchState humanReadable =
                 SearchState.humanReadableTraceEndState(bfsStartState);
-            final SearchSettings settings = bfsSettings;
+            final SearchSettings settings = lastSearchSettings;
             Thread thread = new Thread(() -> {
                 VizClient vc = new VizClient(humanReadable, settings, true);
                 try {
