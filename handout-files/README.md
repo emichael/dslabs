@@ -272,15 +272,18 @@ overriding those methods (and calling the `super` method of course).
 Included in this handout is a tool for visualizing and graphically debugging
 executions of distributed systems. You can run it in two different ways. First,
 you can start any lab from its initial state by calling `./run-tests.py --lab N
---debug NUM_SERVERS NUM_CLIENTS WORKLOAD`, where `WORKLOAD` is a comma-separated
-list of commands for the clients to send (e.g.,
-`PUT:foo:bar,APPEND:foo:baz,GET:foo`). You can even write custom parsers for the
-arguments to `--debug` by overriding `getInitialState(String[] args)` in the
-relevant subclass of `VizConfig`. The visualization tool will startup Google
-Chrome, which is the only supported browser at this time. If it cannot open a
-Chrome window, you should open a Chrome tab manually and navigate to
-`localhost:3000`. Once your list of servers appears in the top-right, click on
-"Debug!".
+--debug NUM_SERVERS NUM_CLIENTS WORKLOAD` or `./run-tests.py --lab N --debug
+NUM_SERVERS NUM_CLIENTS WORKLOAD_1 ... WORKLOAD_NUM_CLIENTS`. Here
+`WORKLOAD`/`WORKLOAD_i` is a comma-separated list of commands for the clients to
+send (e.g., `PUT:foo:bar,APPEND:foo:baz,GET:foo`). If only one workload is
+provided, all clients will send the same workload; if `NUM_CLIENTS` workloads
+are provided, then client `i` will send `WORKLOAD_i`. You can even write custom
+parsers for the arguments to `--debug` by overriding `getInitialState(String[]
+args)` in the relevant subclass of `VizConfig`. The visualization tool will
+startup Google Chrome, which is the only supported browser at this time. If it
+cannot open a Chrome window, you should open a Chrome tab manually and navigate
+to `localhost:3000`. Once your list of servers appears in the top-right, click
+on "Debug!".
 
 ![Debug Startup](img/debug-startup.png)
 
@@ -324,6 +327,13 @@ described above. You can also click on messages or timers to explore alternate
 traces branching off the one that violated the invariant.
 
 ![Trace](img/trace-servers.png)
+
+Adding the `--start-viz` flag to `./run-tests.py` will also start the
+visualization tool if the search is unable to find a particular state it is
+looking for. In this case, the tool will be pre-populated with a trace that ends
+in the state the search started from. This allows you to manually explore
+possible executions to check if a matching state actually exists.
+
 
 ### Run-until
 You can save some time by asking the visualization tool to find a state matching

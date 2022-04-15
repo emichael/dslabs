@@ -41,6 +41,8 @@ import java.util.Arrays;
 
 /**
  * Oddity client.
+ *
+ * @see Json
  */
 public class VizClient {
     private static final boolean VERBOSE = false;

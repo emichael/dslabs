@@ -1,6 +1,6 @@
 .PHONY: all test dependencies clean clean-all
 
-ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.38a/oddity.jar
+ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.39a/oddity.jar
 
 FRAMEWORK_FILES = $(shell find framework -type f | sed 's/ /\\ /g')
 LAB_FILES = $(shell find labs -type f | sed 's/ /\\ /g')
@@ -48,9 +48,9 @@ deps/oddity.jar:
 
 build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/ deps/oddity.jar
 	rm -rf $@
-	mkdir $@ $@jars
+	mkdir $@ build/handout/jars
 	$(CP) -r labs handout-files/. $(OTHER_FILES) $@
-	$(CP) $(JAR_FILES) deps/oddity.jar $@jars
+	$(CP) $(JAR_FILES) deps/oddity.jar build/handout/jars
 
 build/handout.tar.gz: build/handout/
 	$(TAR) -czf $@ --transform "s/^build\/handout/dslabs/" $^

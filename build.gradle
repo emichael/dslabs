@@ -152,7 +152,11 @@ jar.enabled = false
 javadoc {
   title = 'Distributed Systems Labs Framework'
   destinationDir = file("$buildDir/doc")
-  options.addStringOption('notimestamp', '-quiet')
+  options.noTimestamp(true)
+  options.noIndex(true)
+  options.noDeprecatedList(true)
+  options.noHelp(true)
+  options.setOutputLevel(JavadocOutputLevel.QUIET)
 }
 
 tasks.assemble.dependsOn tasks.scaffoldingJar

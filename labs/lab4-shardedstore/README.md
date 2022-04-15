@@ -242,8 +242,8 @@ You should pass the part 2 tests; execute them with `run-tests.py --lab 4 --part
   were valid but do not hold for this lab. In particular, you should be very
   cautious about dropping proposals when Paxos is running as a sub-node. As a
   sub-node, Paxos should be oblivious to `AMOApplication` logic and should be
-  able to decide same command for different slots. Some de-duplication at the
-  `PaxosServer` level is possible, but it must be done carefully.
+  able to decide the same command for different slots. Some de-duplication at
+  the `PaxosServer` level is possible, but it must be done carefully.
 
 
 ## Part 3: Transactions
@@ -272,7 +272,7 @@ node failure recovery protocol.
 Your system should guarantee linearizability of all transactions and be
 deadlock-free; it should never reach a state where it cannot make progress.
 Furthermore, it should always be able to process reconfigurations, and when
-there are no ongoing reconfigurations are no conflicting transactions, it should
+there are no ongoing reconfigurations and no conflicting transactions, it should
 be able to make progress and commit transactions (as long as the consensus
 protocol underlying each group continues to make progress, of course). You do
 not need to guarantee fairness, however (more on this below).
@@ -325,15 +325,21 @@ You should pass the part 3 tests; execute them with `run-tests.py --lab 4 --part
 The arguments to start the visual debugger for this lab are slightly different.
 To start the visual debugger, execute `./run-tests.py -d NUM_GROUPS
 NUM_SERVERS_PER_GROUP NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD
-[CONFIG_WORKLOAD]` where:
+[CONFIG_WORKLOAD]` or `./run-tests.py -d NUM_GROUPS NUM_SERVERS_PER_GROUP
+NUM_SHARDMASTERS NUM_CLIENTS CLIENT_WORKLOAD_1 ... CLIENT_WORKLOAD_NUM_CLIENTS
+[config=CONFIG_WORKLOAD]` where:
 - `NUM_GROUPS` is the number of `ShardStoreServer` groups
 - `NUM_SERVERS_PER_GROUP` is the number of `ShardStoreServer`s in each group
 - `NUM_SHARDMASTERS` is the number of Paxos servers replicating the
   `ShardMaster`
 - `NUM_CLIENTS` is the number of `ShardStoreClient`s
-- `CLIENT_WORKLOAD` is the `ShardStoreClient`'s workload, a comma-separated list
-  of `KVStoreCommand`s. These can include `GET`, `PUT`, and `APPEND`, which have
-  the normal syntax, as well as transactions, which have the following syntax:
+- `CLIENT_WORKLOAD`/`CLIENT_WORKLOAD_i` is a `ShardStoreClient`'s workload, a
+  comma-separated list of `KVStoreCommand`s. As before, if a single workload is
+  provided then all clients will send that workload, and if `NUM_CLIENTS`
+  workloads are provided then client `i` will send
+  `CLIENT_WORKLOAD_i`. Workloads can include `GET`, `PUT`, and `APPEND`, which
+  have the normal syntax, as well as transactions, which have the following
+  syntax:
   - `MULTIGET:key1:key2:...:keyN`
   - `MULTIPUT:key1:value1:key2:value2:...:keyN:valueN`
   - `SWAP:key1:key2`

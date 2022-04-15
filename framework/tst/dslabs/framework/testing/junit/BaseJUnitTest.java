@@ -71,6 +71,7 @@ public abstract class BaseJUnitTest {
     /* States */
     protected RunState runState;
     protected SearchState initSearchState;
+    private SearchState bfsStartState;
 
     /* Internal */
     private Set<Thread> startedThreads;
@@ -157,6 +158,7 @@ public abstract class BaseJUnitTest {
                         searchSettings = null;
                         runState = null;
                         initSearchState = null;
+                        bfsStartState = null;
                         startedThreads = null;
                         searchResults = null;
                         testDescription = null;
@@ -250,6 +252,7 @@ public abstract class BaseJUnitTest {
     protected final void bfs(SearchState searchState,
                              SearchSettings searchSettings) {
         assert searchState != null;
+        bfsStartState = searchState;
         searchResults = Search.bfs(searchState, searchSettings);
         assertEndConditionValid();
     }
@@ -354,6 +357,11 @@ public abstract class BaseJUnitTest {
         searchResults = null;
     }
 
+    protected final boolean goalFound() {
+        assert !searchResults.goalsSought().isEmpty();
+        return searchResults.endCondition() == GOAL_FOUND;
+    }
+
     protected final SearchState goalMatchingState() {
         assert !searchResults.goalsSought().isEmpty();
         assertGoalFound(true);
@@ -393,6 +401,27 @@ public abstract class BaseJUnitTest {
             case TIME_EXHAUSTED -> "\nSearch ran out of time.";
             default -> "";
         });
+
+        if (GlobalSettings.startVisualization() && bfsStartState != null) {
+            final SearchState humanReadable =
+                SearchState.humanReadableTraceEndState(bfsStartState);
+            Thread thread = new Thread(() -> {
+                VizClient vc = new VizClient(humanReadable, null, true);
+                try {
+                    vc.run();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }, "VizClient");
+            thread.setDaemon(false);
+            thread.start();
+
+            sb.append("\nStarting visualization from beginning of search.\n");
+
+            System.err.println(sb.toString());
+
+            throw new VizClientStarted();
+        }
 
         if (endTestOnFailure) {
             fail(sb.toString());

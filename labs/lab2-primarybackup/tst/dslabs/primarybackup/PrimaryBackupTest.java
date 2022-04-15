@@ -892,9 +892,11 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         initSearchState.addServer(server(3));
 
         initSearchState.addClientWorker(client(1),
-                KVStoreWorkload.builder().commands(append("foo", "x")).build());
+                KVStoreWorkload.builder().commands(append("foo", "w"),
+                                                   append("foo", "x")).build());
         initSearchState.addClientWorker(client(2),
-                KVStoreWorkload.builder().commands(append("foo", "y")).build());
+                KVStoreWorkload.builder().commands(append("foo", "y"),
+                                                   append("foo", "z")).build());
 
         searchSettings.maxDepth(1000).maxTimeSecs(45)
                       .addInvariant(APPENDS_LINEARIZABLE)

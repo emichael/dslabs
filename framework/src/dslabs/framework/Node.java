@@ -34,6 +34,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import lombok.EqualsAndHashCode;
@@ -57,10 +59,10 @@ import org.apache.commons.lang3.tuple.Triple;
  * Nodes should not use any other means to communicate (e.g., communication
  * through static variables is forbidden). Subclasses of Node define {@link
  * Message} handlers by creating methods with the correct name and method
- * signature. For instance, to define a message handler for the {@code Foo
- * extends Message}, a Node would define the method {@code handleFoo(Foo
- * message, Address sender)}. Similarly, to define a handler for {@code Bar
- * extends Timer} a Node would define the method {@code onBar(Bar timer)}.
+ * signature. For instance, to define a message handler for {@code Foo extends
+ * Message}, a Node would define the method {@code handleFoo(Foo message,
+ * Address sender)}. Similarly, to define a handler for {@code Bar extends
+ * Timer} a Node would define the method {@code onBar(Bar timer)}.
  *
  * <p>After creation (but before any {@link Message} or {@link Timer}
  * handlers are invoked), the {@link Node#init()} method will be invoked. Nodes
@@ -111,6 +113,9 @@ import org.apache.commons.lang3.tuple.Triple;
 @EqualsAndHashCode(of = {"subNodes"})
 @ToString(of = {"address", "subNodes"})
 public abstract class Node implements Serializable {
+    private static final Map<Class<? extends Node>, Map<String, Optional<Method>>>
+            methods = new ConcurrentHashMap<>();
+
     @JsonIgnore @NonNull private final Address address;
 
     transient private Consumer<Triple<Address, Address, Message>> messageAdder;
@@ -506,22 +511,34 @@ public abstract class Node implements Serializable {
             n = n.subNodes.get(id);
         }
 
-        // Call the method
-        Class c = n.getClass();
-        try {
-            // TODO: fix this hack, find a better way to look for methods?
-            while (!c.equals(Object.class)) {
-                for (Method method : c.getDeclaredMethods()) {
-                    if (method.getName().equals(methodName)) {
-                        method.setAccessible(true);
-                        return method.invoke(n, args);
+        final Class<? extends Node> c = n.getClass();
+        final Map<String, Optional<Method>> methodMap =
+                methods.computeIfAbsent(c, __ -> new ConcurrentHashMap<>());
+        final Optional<Method> method =
+                methodMap.computeIfAbsent(methodName, __ -> {
+                    Class<?> currentClass = c;
+                    // TODO: fix this hack, find a better way to look for methods?
+                    while (!currentClass.equals(Object.class)) {
+                        for (Method m : currentClass.getDeclaredMethods()) {
+                            if (m.getName().equals(methodName)) {
+                                m.setAccessible(true);
+                                return Optional.of(m);
+                            }
+                        }
+                        currentClass = currentClass.getSuperclass();
                     }
-                }
-                c = c.getSuperclass();
-            }
+                    return Optional.empty();
+                });
+
+        if (method.isEmpty()) {
             LOG.severe(String.format(
                     "Could not find method %s from %s with args %s", methodName,
-                    n.getClass().getSimpleName(), Arrays.toString(args)));
+                    c.getSimpleName(), Arrays.toString(args)));
+            return null;
+        }
+
+        try {
+            return method.get().invoke(n, args);
         } catch (Exception e) {
             Throwable t = e;
 

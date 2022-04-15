@@ -237,8 +237,8 @@ public class StatePredicate implements Predicate<AbstractState>, Serializable {
     public static StatePredicate resultPredicateWithMessage(String name,
                                                             Address clientWorkerAddress,
                                                             SerializableFunction<List<Result>, Pair<Boolean, String>> predicate) {
-        return statePredicateWithMessage(name, s -> predicate
-                .apply(s.clientWorker(clientWorkerAddress).results()));
+        return statePredicateWithMessage(name, s -> predicate.apply(
+                s.clientWorker(clientWorkerAddress).results()));
     }
 
     public static StatePredicate resultPredicate(String name,
@@ -291,27 +291,35 @@ public class StatePredicate implements Predicate<AbstractState>, Serializable {
     }
 
     public StatePredicate and(@NonNull StatePredicate other) {
-        // TODO: include both messages
         return statePredicateWithMessage(
                 String.format("(%s) ∧ (%s)", this.name, other.name), s -> {
-                    Pair<Boolean, String> ret = predicate.apply(s);
-                    if (!ret.getLeft()) {
-                        return ret;
+                    Pair<Boolean, String> ret1 = predicate.apply(s);
+                    Pair<Boolean, String> ret2;
+                    if (!ret1.getLeft()) {
+                        return ret1;
+                    } else if (!(ret2 = other.predicate.apply(s)).getLeft()) {
+                        return ret2;
                     } else {
-                        return other.predicate.apply(s);
+                        return Pair.of(true,
+                                String.format("(%s) and (%s)", ret1.getRight(),
+                                        ret2.getRight()));
                     }
                 });
     }
 
     public StatePredicate or(@NonNull StatePredicate other) {
-        // TODO: include both messages
         return statePredicateWithMessage(
                 String.format("(%s) ∨ (%s)", this.name, other.name), s -> {
-                    Pair<Boolean, String> ret = predicate.apply(s);
-                    if (ret.getLeft()) {
-                        return ret;
+                    Pair<Boolean, String> ret1 = predicate.apply(s);
+                    Pair<Boolean, String> ret2;
+                    if (ret1.getLeft()) {
+                        return ret1;
+                    } else if ((ret2 = other.predicate.apply(s)).getLeft()) {
+                        return ret2;
                     } else {
-                        return other.predicate.apply(s);
+                        return Pair.of(false,
+                                String.format("(%s) or (%s)", ret1.getRight(),
+                                        ret2.getRight()));
                     }
                 });
     }

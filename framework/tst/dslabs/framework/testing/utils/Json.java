@@ -61,11 +61,39 @@ import lombok.SneakyThrows;
 
 import static dslabs.framework.testing.utils.Json.TYPE_FIELD_NAME;
 
+/**
+ * Utility class for serializing and deserializing various objects to JSON. Used
+ * to interact with Oddity. Any {@link MessageEnvelope}, {@link TimerEnvelope},
+ * or {@link SearchState} JSON'd by this class is assigned an ID and cached.
+ * Responses from Oddity will reference this ID, and the {@link
+ * dslabs.framework.testing.visualization.VizClient} can use the provided
+ * methods to retrieve them.
+ *
+ * <p>All objects included in a {@link SearchState} (including the State
+ * itself) can be JSON'd. (However, {@link SearchState} itself is serialized
+ * through a custom serialization method in this class.) The JSON library will
+ * ignore {@code transient} (and {@code static}) fields. This behavior is
+ * congruent with the behavior of the {@link Cloning} utility class.
+ *
+ * <p>DSLabs classes, however, are not deserialized with JSON. All responses
+ * from Oddity are simple messages with IDs that reference cached objects
+ * previously sent.
+ *
+ * <p>The behavior JSON serialization can be customized through {@link
+ * com.fasterxml.jackson.annotation.JsonIgnore} and related annotations, as well
+ * as through custom serializers. Custom serializers can be registered in this
+ * utility class or on the class directly with {@link com.fasterxml.jackson.databind.annotation.JsonSerialize}.
+ * Students may need to write custom serializers if their objects contain
+ * circular references. This caveat is described in the handout README.
+ *
+ * @see dslabs.framework.testing.visualization.VizClient
+ * @see Cloning
+ */
 public abstract class Json {
-    public static final String MESSAGE_PREFIX = "m", TIMER_PREFIX = "t",
+    private static final String MESSAGE_PREFIX = "m", TIMER_PREFIX = "t",
             STATE_PREFIX = "s";
-    public static final String ID_FIELD_NAME = "@id";
-    public static final String TYPE_FIELD_NAME = "@type";
+    static final String ID_FIELD_NAME = "@id";
+    static final String TYPE_FIELD_NAME = "@type";
 
     private static final ObjectMapper rootMapper;
 
@@ -133,12 +161,12 @@ public abstract class Json {
         return stateIDs.inverse().get(id);
     }
 
-    public static String toJson(Object object) {
+    public static String toJson(SearchState object) {
         return toJson(object, null);
     }
 
     @SneakyThrows(JsonProcessingException.class)
-    public static String toJson(Object object, StatePredicate invariant) {
+    public static String toJson(SearchState object, StatePredicate invariant) {
 
         ObjectMapper stateMapper = rootMapper.copy();
         SimpleModule stateModule = new SimpleModule();

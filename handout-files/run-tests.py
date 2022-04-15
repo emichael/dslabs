@@ -215,7 +215,9 @@ def main():
                         help="save traces after search test failure")
 
     parser.add_argument('-z', '--start-viz', action='store_true',
-                        help="start the visualization on invariant violation")
+                        help="start the visualization on invariant violation "
+                             "or when the search is unable to find a "
+                             "particular state")
 
     parser.add_argument('-d', '--debugger', nargs='*', metavar="ARG",
                         help="Don't run any tests, instead start the visual "
@@ -223,7 +225,13 @@ def main():
                         "should be: NUM_SERVERS NUM_CLIENTS WORKLOAD where "
                         "WORKLOAD is a comma-separated list of commands (e.g., "
                         "PUT:foo:bar,APPEND:foo:baz,GET:foo in the default "
-                        "case of the KVStore).")
+                        "case of the KVStore); with these arguments, all "
+                        "clients request the same workload. To give different "
+                        "workloads for each client, the args should be: "
+                        "NUM_SERVERS NUM_CLIENTS WORKLOAD_1 WORKLOAD_2 ... "
+                        "WORKLOAD_NUM_CLIENTS where each WORLOAD_i is a "
+                        "comma-separated list of commands and a workload is "
+                        "provided for each client.")
 
     parser.add_argument('--no-viz-server', action='store_true',
                         help="do not automatically start the visualization "

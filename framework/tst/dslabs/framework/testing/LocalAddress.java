@@ -26,6 +26,7 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializable;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
+import com.rits.cloning.Immutable;
 import dslabs.framework.Address;
 import java.io.IOException;
 import lombok.AllArgsConstructor;
@@ -33,6 +34,7 @@ import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
 @AllArgsConstructor
+@Immutable
 public class LocalAddress implements Address, JsonSerializable {
     private final String address;
 
