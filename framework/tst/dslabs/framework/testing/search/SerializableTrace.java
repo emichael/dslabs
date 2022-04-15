@@ -67,7 +67,10 @@ class SerializableTrace implements Serializable {
         // Create the trace directory if it doesn't exist
         final File traceDir = new File(TRACE_DIR_NAME);
         if (!traceDir.exists()) {
-            traceDir.mkdirs();
+            if (!traceDir.mkdirs()) {
+                throw new RuntimeException(
+                        "Could not create directory " + traceDir);
+            }
         }
 
         final String baseName = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
