@@ -93,6 +93,7 @@ public class DebuggerWindow extends JFrame {
 
     static final String WINDOW_TITLE = "DSLabs Visual Debugger";
     static final int WINDOW_DEFAULT_WIDTH = 1440, WINDOW_DEFAULT_HEIGHT = 810;
+    static final String LINE_WRAPPING_FORMAT = "<html>%1s";
 
     private final Address[] addresses;
 
@@ -355,7 +356,7 @@ public class DebuggerWindow extends JFrame {
 
         JXTaskPane pane = new JXTaskPane(name);
         for (StatePredicate predicate : predicates) {
-            JLabel label = new JLabel(predicate.name());
+            JLabel label = new JLabel(String.format(LINE_WRAPPING_FORMAT, predicate.name()));
             pane.add(label);
             labels.add(Pair.of(predicate, label));
         }
