@@ -25,14 +25,11 @@ package dslabs.framework.testing.utils;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.Properties;
-import java.util.Set;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -40,17 +37,6 @@ public abstract class GlobalSettings {
     private static final Properties props = System.getProperties();
 
     private static final String TEST_NUM = "testNum", LOG_LEVEL = "logLevel";
-
-    @Getter private static final Set<Integer> testNum;
-
-    static {
-        if (props.containsKey(TEST_NUM)) {
-            testNum = Stream.of(props.getProperty(TEST_NUM).split(","))
-                            .map(Integer::parseInt).collect(Collectors.toSet());
-        } else {
-            testNum = null;
-        }
-    }
 
     @Getter private static final boolean verbose =
             Boolean.parseBoolean(lookupWithDefault("verbose", "true")),

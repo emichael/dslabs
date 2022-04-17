@@ -1,18 +1,18 @@
 package dslabs.clientserver;
 
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
 import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.HashMap;
 import java.util.Map;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.NONE_DECIDED;
@@ -31,11 +31,12 @@ import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
 import static org.junit.Assert.assertTrue;
 
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("1")
+@Part(3)
 public final class ClientServerPart2Test extends ClientServerBaseTest {
 
     @Test(timeout = 15 * 1000)
-    @PrettyTestName("Single client basic operations")
+    @TestDescription("Single client basic operations")
     @TestPointValue(20)
     @Category({RunTests.class, UnreliableTests.class})
     public void test01UnreliableClient() throws InterruptedException {
@@ -48,7 +49,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 15 * 1000)
-    @PrettyTestName("Single client sequential appends")
+    @TestDescription("Single client sequential appends")
     @TestPointValue(20)
     @Category({RunTests.class, UnreliableTests.class})
     public void test02SingleClientAppendsUnreliable()
@@ -64,7 +65,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 30 * 1000)
-    @PrettyTestName("Multi-client different key appends")
+    @TestDescription("Multi-client different key appends")
     @TestPointValue(20)
     @Category({RunTests.class, UnreliableTests.class})
     public void test03MultiClientDifferentKeyUnreliable()
@@ -82,7 +83,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 15 * 1000)
-    @PrettyTestName("Multi-client same key appends")
+    @TestDescription("Multi-client same key appends")
     @TestPointValue(20)
     @Category({RunTests.class, UnreliableTests.class})
     public void test04MultiClientSameKeyUnreliable()
@@ -100,7 +101,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Old commands garbage collected")
+    @TestDescription("Old commands garbage collected")
     @TestPointValue(20)
     @Category({RunTests.class})
     public void test05GarbageCollection() throws InterruptedException {
@@ -160,7 +161,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 40 * 1000)
-    @PrettyTestName("Long-running workload")
+    @TestDescription("Long-running workload")
     @TestPointValue(20)
     @Category({RunTests.class})
     public void test06LongRunningWorkload() throws InterruptedException {
@@ -184,7 +185,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test
-    @PrettyTestName("Single client; Put, Append, Get")
+    @TestDescription("Single client; Put, Append, Get")
     @TestPointValue(20)
     @Category(SearchTests.class)
     public void test07SingleClientSearch() {
@@ -211,7 +212,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test
-    @PrettyTestName("Single client; Append, Append, Get")
+    @TestDescription("Single client; Append, Append, Get")
     @TestPointValue(20)
     @Category(SearchTests.class)
     public void test08SingleClientAppendSearch() {
@@ -230,7 +231,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test
-    @PrettyTestName("Multi-client different keys")
+    @TestDescription("Multi-client different keys")
     @TestPointValue(20)
     @Category(SearchTests.class)
     public void test09MultiClientDifferentKeySearch() {
@@ -254,7 +255,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test
-    @PrettyTestName("Multi-client same key")
+    @TestDescription("Multi-client same key")
     @TestPointValue(20)
     @Category(SearchTests.class)
     public void test10MultiClientSameKeySearch() {
@@ -280,7 +281,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     }
 
     @Test
-    @PrettyTestName("Infinite workload searches")
+    @TestDescription("Infinite workload searches")
     @TestPointValue(20)
     @Category(SearchTests.class)
     public void test11RandomSearchInfiniteWorkloads() {

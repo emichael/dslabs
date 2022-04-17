@@ -8,9 +8,10 @@ import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SearchState;
@@ -21,15 +22,13 @@ import java.util.Objects;
 import lombok.NonNull;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("0")
 public final class PingTest extends BaseJUnitTest {
     static final Address sa = new LocalAddress("pingserver");
 
@@ -76,7 +75,7 @@ public final class PingTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Single client ping test")
+    @TestDescription("Single client ping test")
     @Category({RunTests.class})
     public void test01BasicPing() throws InterruptedException {
         Workload workload =
@@ -89,7 +88,7 @@ public final class PingTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Multiple clients can ping simultaneously")
+    @TestDescription("Multiple clients can ping simultaneously")
     @Category({RunTests.class})
     public void test02MultipleClientsPing() throws InterruptedException {
         Workload workload = Workload.builder().parser(new PingParser())
@@ -105,7 +104,7 @@ public final class PingTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Client can still ping if some messages are dropped")
+    @TestDescription("Client can still ping if some messages are dropped")
     @Category({RunTests.class, UnreliableTests.class})
     public void test03MessagesDropped() throws InterruptedException {
         runState.addClientWorker(client(1), repeatedPings(100));
@@ -117,7 +116,7 @@ public final class PingTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Single client repeatedly pings")
+    @TestDescription("Single client repeatedly pings")
     @Category(SearchTests.class)
     public void test04PingSearch() throws InterruptedException {
         initSearchState.addClientWorker(client(1), repeatedPings(10));
@@ -128,8 +127,8 @@ public final class PingTest extends BaseJUnitTest {
         bfs(initSearchState);
         assertGoalFound();
 
-        System.out
-                .println("Checking that all of the returned pongs match pings");
+        System.out.println(
+                "Checking that all of the returned pongs match pings");
         searchSettings.clearGoals().addPrune(CLIENTS_DONE);
         bfs(initSearchState);
         assertSpaceExhausted();

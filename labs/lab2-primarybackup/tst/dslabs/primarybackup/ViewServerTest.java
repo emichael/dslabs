@@ -5,28 +5,26 @@ import dslabs.framework.Message;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
-import dslabs.framework.testing.junit.DSLabsTestRunner;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.DSLabsJUnitTest;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
 import java.util.Objects;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 
-import static dslabs.framework.testing.junit.BaseJUnitTest.server;
 import static dslabs.primarybackup.ViewServer.STARTUP_VIEWNUM;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@RunWith(DSLabsTestRunner.class)
-public class ViewServerTest {
+@Lab("2")
+@Part(1)
+public class ViewServerTest extends DSLabsJUnitTest {
     static final Address VSA = new LocalAddress("viewserver"), TA =
             new LocalAddress("testserver");
 
@@ -153,28 +151,28 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Startup view")
+    @TestDescription("Startup view")
     @TestPointValue(5)
     public void test01StartupViewCorrect() {
         check(null, null, STARTUP_VIEWNUM);
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Primary initialized")
+    @TestDescription("Primary initialized")
     @TestPointValue(5)
     public void test02firstPrimary() {
         setupView(server(1), null);
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Backup initialized")
+    @TestDescription("Backup initialized")
     @TestPointValue(5)
     public void test03FirstBackup() {
         setupView(server(1), server(2));
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Backup pings first, initialized")
+    @TestDescription("Backup pings first, initialized")
     @TestPointValue(5)
     public void test04BackupPingsFirst() {
         setupView(server(1), null);
@@ -184,7 +182,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Backup takes over")
+    @TestDescription("Backup takes over")
     @TestPointValue(5)
     public void test05BackupTakesOver() {
         setupView(server(1), server(2), true);
@@ -202,7 +200,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Old primary becomes backup")
+    @TestDescription("Old primary becomes backup")
     @TestPointValue(5)
     public void test06OldServerBecomesBackup() {
         setupView(server(1), server(2), true);
@@ -220,7 +218,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Idle server becomes backup")
+    @TestDescription("Idle server becomes backup")
     @TestPointValue(5)
     public void test07IdleThirdServerBecomesBackup() {
         setupView(server(1), server(2), true);
@@ -229,7 +227,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Wait for primary ACK")
+    @TestDescription("Wait for primary ACK")
     @TestPointValue(5)
     public void test08WaitForPrimaryAck() {
         // Make sure primary acks before adding backup
@@ -246,7 +244,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Dead backup removed")
+    @TestDescription("Dead backup removed")
     @TestPointValue(5)
     public void test09DeadBackupRemoved() {
         setupView(server(1), server(2), true);
@@ -255,7 +253,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Uninitialized server not made primary")
+    @TestDescription("Uninitialized server not made primary")
     @TestPointValue(5)
     public void test10UninitializedNotPromoted() {
         setupView(server(1), server(2), true);
@@ -266,7 +264,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Dead idle server shouldn't become backup")
+    @TestDescription("Dead idle server shouldn't become backup")
     @TestPointValue(5)
     public void test11DeadServerNotMadeBackup() {
         setupView(server(1), null, false);
@@ -277,7 +275,7 @@ public class ViewServerTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Consecutive views have different configurations")
+    @TestDescription("Consecutive views have different configurations")
     @TestPointValue(5)
     public void test12NewViewNotStarted() {
         setupView(server(1), null, false);

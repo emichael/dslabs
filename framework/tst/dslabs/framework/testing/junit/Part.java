@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Ellis Michael (emichael@cs.washington.edu)
+ * Copyright (c) 2022 Ellis Michael (emichael@cs.washington.edu)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,17 @@
 
 package dslabs.framework.testing.junit;
 
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Use this annotation on test suites to denote parts of a multi-part lab.
+ */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface PrettyTestName {
-    String value();
+@Target(ElementType.TYPE)
+public @interface Part {
+    int value();
 }

@@ -4,7 +4,6 @@
 
 
 import argparse
-import os
 import platform
 import shutil
 import subprocess
@@ -83,9 +82,6 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if no_viz_server:
         command.append('-DnoVizServer=true')
 
-    if test_num:
-        command.append('-DtestNum=%s' % test_num)
-
     if do_checks:
         command.append('-DdoChecks=true')
 
@@ -98,24 +94,19 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
         RUNNER
     ]
 
-    if no_run or no_search:
-        exclude = []
-        if no_run:
-            exclude.append(RUN_CATEGORY)
-        if no_search:
-            exclude.append(SEARCH_CATEGORY)
+    command += ['--lab', str(lab)]
 
-        command.append('--filter=%s=%s' % (EXCLUDE_FILTER, ','.join(exclude)))
+    if part is not None:
+        command += ['--part', str(part)]
 
-    test_suite = 'dslabs.testsuites.Lab%s%sTestSuite' % (
-        lab, 'Part%s' % part if part else "")
+    if no_run:
+        command.append('--exclude-run-tests')
 
-    test_file = os.path.join('out/tst', *test_suite.split('.')) + '.class'
-    if not os.path.isfile(test_file):
-        print("Count not find test file %s" % test_file)
-        return
+    if no_search:
+        command.append('--exclude-search-tests')
 
-    command.append(test_suite)
+    if test_num:
+        command += ['--test-num', str(test_num)]
 
     returncode = subprocess.call(command)
     sys.exit(returncode)
@@ -136,7 +127,7 @@ def run_viz_debugger(lab, args, no_viz_server=False):
         VIZ_DEBUGGER
     ]
 
-    command.append(str(lab))
+    command += ['--lab', str(lab)]
     command += args
 
     returncode = subprocess.call(command)
@@ -181,8 +172,8 @@ def main():
     parser = argparse.ArgumentParser()
 
     group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-l', '--lab', type=int, nargs=None,
-                       help="lab number for tests to run")
+    group.add_argument('-l', '--lab', nargs=None,
+                       help="lab to run tests for")
     parser.add_argument('-p', '--part', type=int, nargs='?', default=None,
                         help="part number for tests to run")
 

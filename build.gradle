@@ -25,15 +25,6 @@ sourceSets {
     annotationProcessorPath += main.annotationProcessorPath
   }
 
-  test {
-    java {
-      srcDirs = ['framework/tst-self']
-    }
-    compileClasspath += grader.compileClasspath + grader.output
-    runtimeClasspath += grader.runtimeClasspath
-    annotationProcessorPath += grader.annotationProcessorPath
-  }
-
   labs {
     java {
       srcDirs = [ 'labs/lab0-pingpong/src',
@@ -57,6 +48,15 @@ sourceSets {
     compileClasspath += grader.compileClasspath + grader.output + labs.output
     annotationProcessorPath += grader.annotationProcessorPath
   }
+
+  test {
+    java {
+      srcDirs = ['framework/tst-self']
+    }
+    compileClasspath += grader.compileClasspath + grader.output
+    runtimeClasspath += grader.runtimeClasspath + labs.runtimeClasspath + labsTests.runtimeClasspath
+    annotationProcessorPath += grader.annotationProcessorPath
+  }
 }
 
 configurations {
@@ -78,8 +78,8 @@ dependencies {
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.20'
   sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.20', classifier: 'sources'
 
-  implementation group: 'com.google.guava', name: 'guava', version: '29.0-jre'
-  sources        group: 'com.google.guava', name: 'guava', version: '29.0-jre', classifier: 'sources'
+  implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
+  sources        group: 'com.google.guava', name: 'guava', version: '31.1-jre', classifier: 'sources'
   implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
   sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.10', classifier: 'sources'
   implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.0'
@@ -87,10 +87,13 @@ dependencies {
   implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
   sources        group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0', classifier: 'sources'
 
-  graderImplementation group: 'junit', name: 'junit', version: '4.13'
-  graderSources        group: 'junit', name: 'junit', version: '4.13', classifier: 'sources'
+  graderImplementation group: 'junit', name: 'junit', version: '4.13.2'
+  graderSources        group: 'junit', name: 'junit', version: '4.13.2', classifier: 'sources'
   graderImplementation group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3'
   graderSources        group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3', classifier: 'sources'
+
+  graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
+  graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.5.0', classifier: 'sources'
 
   graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.11.0'
   graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.11.0', classifier: 'sources'

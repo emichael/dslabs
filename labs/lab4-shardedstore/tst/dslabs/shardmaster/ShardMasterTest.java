@@ -4,8 +4,10 @@ import dslabs.framework.Address;
 import dslabs.framework.Command;
 import dslabs.framework.Result;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.junit.DSLabsTestRunner;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.DSLabsJUnitTest;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.utils.Cloning;
 import dslabs.shardmaster.ShardMaster.Error;
@@ -28,10 +30,7 @@ import java.util.stream.IntStream;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.shardmaster.ShardMaster.INITIAL_CONFIG_NUM;
 import static org.junit.Assert.assertEquals;
@@ -39,9 +38,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
-@RunWith(DSLabsTestRunner.class)
-public class ShardMasterTest {
+@Lab("4")
+@Part(1)
+public class ShardMasterTest extends DSLabsJUnitTest {
     private static final int DEFAULT_NUM_SHARDS = 10;
 
     private ShardMaster shardMaster;
@@ -194,7 +193,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Commands return OK")
+    @TestDescription("Commands return OK")
     @TestPointValue(5)
     public void test01commandsReturnOk() {
         Result result = execute(new Join(1, group(1)));
@@ -217,7 +216,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Initial query returns NO_CONFIG")
+    @TestDescription("Initial query returns NO_CONFIG")
     @TestPointValue(5)
     public void test02initialQueryReturnsNoConfig() {
         Result result = execute(new Query(-1));
@@ -225,7 +224,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Bad commands return ERROR")
+    @TestDescription("Bad commands return ERROR")
     @TestPointValue(5)
     public void test03CommandsReturnError() {
         execute(new Join(1, group(1)));
@@ -257,7 +256,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Initial config correct")
+    @TestDescription("Initial config correct")
     @TestPointValue(5)
     public void test04InitialConfigCorrect() {
         execute(new Join(1, group(1)));
@@ -270,7 +269,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Basic join/leave")
+    @TestDescription("Basic join/leave")
     @TestPointValue(5)
     public void test05BasicJoinLeave() {
         execute(new Join(1, group(1)));
@@ -302,7 +301,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Historical queries")
+    @TestDescription("Historical queries")
     @TestPointValue(5)
     public void test06HistoricalQueries() {
         test05BasicJoinLeave();
@@ -312,7 +311,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Move command")
+    @TestDescription("Move command")
     @TestPointValue(5)
     public void test07MoveShards() {
         execute(new Join(1, group(1)));
@@ -338,7 +337,7 @@ public class ShardMasterTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Application deterministic")
+    @TestDescription("Application deterministic")
     @TestPointValue(10)
     public void test08Determinism() {
         for (int i = 0; i < 10; i++) {
