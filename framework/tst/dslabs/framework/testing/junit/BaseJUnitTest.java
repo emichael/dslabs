@@ -22,13 +22,11 @@
 
 package dslabs.framework.testing.junit;
 
-import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Command;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.testing.ClientWorker;
-import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
@@ -50,7 +48,6 @@ import lombok.SneakyThrows;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
-import org.junit.runner.RunWith;
 import org.junit.runners.model.Statement;
 
 import static dslabs.framework.testing.search.SearchResults.EndCondition.EXCEPTION_THROWN;
@@ -61,8 +58,13 @@ import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EX
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
-@RunWith(DSLabsTestRunner.class)
-public abstract class BaseJUnitTest {
+/**
+ * Base test class with utility functions for running systems of Nodes and
+ * search tests. Test classes which do not need this functionality and would
+ * rather have a bare-bones setup should instead directly inherit from
+ * {@link DSLabsJUnitTest}.
+ */
+public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     /* Settings */
     protected RunSettings runSettings;
     protected SearchSettings searchSettings;
@@ -84,8 +86,8 @@ public abstract class BaseJUnitTest {
     }
 
     protected final boolean isSearchTest() {
-        return DSLabsTestListener
-                .isInCategory(testDescription, SearchTests.class);
+        return DSLabsTestListener.isInCategory(testDescription,
+                SearchTests.class);
     }
 
     protected void setupTest() {
@@ -183,17 +185,6 @@ public abstract class BaseJUnitTest {
         for (Thread thread : startedThreads) {
             thread.join();
         }
-    }
-
-
-    /* Addresses */
-
-    public static Address client(int i) {
-        return new LocalAddress("client" + i);
-    }
-
-    public static Address server(int i) {
-        return new LocalAddress("server" + i);
     }
 
 
@@ -386,7 +377,7 @@ public abstract class BaseJUnitTest {
 
         if (GlobalSettings.startVisualization() && bfsStartState != null) {
             final SearchState humanReadable =
-                SearchState.humanReadableTraceEndState(bfsStartState);
+                    SearchState.humanReadableTraceEndState(bfsStartState);
             Thread thread = new Thread(() -> {
                 VizClient vc = new VizClient(humanReadable, null, true);
                 try {
@@ -400,7 +391,7 @@ public abstract class BaseJUnitTest {
 
             sb.append("\nStarting visualization from beginning of search.\n");
 
-            System.err.println(sb.toString());
+            System.err.println(sb);
 
             throw new VizClientStarted();
         }
@@ -466,9 +457,8 @@ public abstract class BaseJUnitTest {
 
         final String[] units = new String[]{"B", "kB", "MB", "GB", "TB"};
         final int digitGroups = (int) (Math.log10(size) / Math.log10(1024));
-        final String baseStr = new DecimalFormat("#,##0.#")
-                .format(size / Math.pow(1024, digitGroups)) + " " +
-                units[digitGroups];
+        final String baseStr = new DecimalFormat("#,##0.#").format(
+                size / Math.pow(1024, digitGroups)) + " " + units[digitGroups];
         return prefix + baseStr;
     }
 }

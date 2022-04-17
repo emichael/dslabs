@@ -22,14 +22,31 @@
 
 package dslabs.framework.testing.junit;
 
+import com.google.common.base.Throwables;
+import com.google.common.collect.Sets;
+import dslabs.framework.testing.utils.ClassSearch;
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import org.junit.runner.Computer;
+import java.util.Set;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.junit.experimental.categories.Categories.CategoryFilter;
+import org.junit.internal.runners.ErrorReportingRunner;
+import org.junit.runner.Description;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
+
+import static dslabs.framework.testing.junit.DSLabsTestListener.fullTestNumber;
+
 
 public abstract class DSLabsTestCore {
     private static boolean EXIT_ON_TEST_FAILURE = true;
@@ -40,27 +57,154 @@ public abstract class DSLabsTestCore {
 
     public static void main(String[] args)
             throws ClassNotFoundException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException {
+            InvocationTargetException, IllegalAccessException, ParseException {
 
-        RunNotifier notifier = new RunNotifier();
-        RunListener listener = new DSLabsTestListener(notifier);
-        notifier.addListener(listener);
+        final Options options = new Options();
+        final Option lab = Option.builder("l").longOpt("lab").required(true)
+                                 .type(String.class).argName("LAB").hasArg(true)
+                                 .numberOfArgs(1).desc("lab identifier")
+                                 .build();
+        final Option part = Option.builder("p").longOpt("part").required(false)
+                                  .argName("PART").hasArg(true).numberOfArgs(1)
+                                  .desc("part number").build();
+        final Option testNum =
+                Option.builder("n").longOpt("test-num").required(false)
+                      .hasArg(true).numberOfArgs(1).argName("TEST_NUMS")
+                      .desc("comma-separated list of test numbers to run")
+                      .build();
+        final Option excludeRunTests =
+                Option.builder().longOpt("exclude-run-tests").build();
+        final Option excludeSearchTests =
+                Option.builder().longOpt("exclude-search-tests").build();
+        final Option help = Option.builder("h").longOpt("help").build();
+        options.addOption(lab);
+        options.addOption(part);
+        options.addOption(testNum);
+        options.addOption(excludeRunTests);
+        options.addOption(excludeSearchTests);
+        options.addOption(help);
 
-        // Use reflection to parse commandline arguments
-        Method method =
-                Class.forName("org.junit.runner.JUnitCommandLineParseResult")
-                     .getDeclaredMethod("parse", String[].class);
-        method.setAccessible(true);
-        Object parseResult = method.invoke(null, (Object) args);
-        method = Class.forName("org.junit.runner.JUnitCommandLineParseResult")
-                      .getDeclaredMethod("createRequest", Computer.class);
-        method.setAccessible(true);
-        Request request = (Request) method.invoke(parseResult, new Computer());
+        final CommandLineParser parser = new DefaultParser();
+        CommandLine line = null;
+        try {
+            line = parser.parse(options, args);
+            if (!line.getArgList().isEmpty()) {
+                throw new ParseException("Unrecognized options: " +
+                        String.join(" ", line.getArgs()));
+            }
+            if (line.hasOption(help)) {
+                throw new ParseException(null);
+            }
+        } catch (ParseException e) {
+            if (e.getMessage() != null) {
+                System.err.println(e.getMessage());
+            }
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp(
+                    "-l/--lab LAB [-p/--part PART] [-n/--test-num TEST_NUMS] <OTHER_OPTIONS> [-h/--help]",
+                    options);
+            return;
+        }
 
-        Runner runner = request.getRunner();
-        Result result = new Result();
+        final String labID = (String) line.getParsedOptionValue(lab);
 
-        RunListener defaultListener = result.createListener();
+        Request request = Request.classes(ClassSearch.testClasses());
+
+        // Only run test classes for this lab
+        request = request.filterWith(new Filter() {
+            @Override
+            public boolean shouldRun(Description description) {
+                if (!description.isSuite()) {
+                    return true;
+                }
+                var l = description.getAnnotation(Lab.class);
+                return l != null && l.value().equals(labID);
+            }
+
+            @Override
+            public String describe() {
+                return "lab " + labID;
+            }
+        });
+
+        // Only run test classes for this part
+        if (line.hasOption(part)) {
+            final int partNum = Integer.parseInt(line.getOptionValue(part));
+            request = request.filterWith(new Filter() {
+                @Override
+                public boolean shouldRun(Description description) {
+                    if (!description.isSuite()) {
+                        return true;
+                    }
+                    var p = description.getAnnotation(Part.class);
+                    return p != null && p.value() == partNum;
+                }
+
+                @Override
+                public String describe() {
+                    return "part " + partNum;
+                }
+            });
+        }
+
+        // Only run chosen test numbers
+        if (line.hasOption(testNum)) {
+            final Set<String> testNumbers =
+                    Sets.newHashSet(line.getOptionValue(testNum).split(","));
+
+            // If the part is selected, allow specifying test number only
+            if (line.hasOption(part)) {
+                for (var tn : line.getOptionValue(testNum).split(",")) {
+                    // XXX: not the best way of doing this, but it works
+                    testNumbers.add(line.getOptionValue(part) + "." + tn);
+                }
+            }
+
+            request = request.filterWith(new Filter() {
+                @Override
+                public boolean shouldRun(Description description) {
+                    if (!description.isTest()) {
+                        return true;
+                    }
+                    return testNumbers.contains(fullTestNumber(description));
+                }
+
+                @Override
+                public String describe() {
+                    return String.format("test numbers %s", testNumbers);
+                }
+            });
+        }
+
+        if (line.hasOption(excludeRunTests)) {
+            request =
+                    request.filterWith(CategoryFilter.exclude(RunTests.class));
+        }
+        if (line.hasOption(excludeSearchTests)) {
+            request = request.filterWith(
+                    CategoryFilter.exclude(SearchTests.class));
+        }
+
+        // Sort methods and test classes
+        request = request.sortWith(new TestOrder());
+
+        final Runner runner = request.getRunner();
+        final Result result = new Result();
+        final RunNotifier notifier = new RunNotifier();
+
+        if (runner instanceof ErrorReportingRunner) {
+            notifier.addListener(new RunListener() {
+                @Override
+                public void testFailure(Failure failure) {
+                    System.err.println(Throwables.getStackTraceAsString(
+                            failure.getException()));
+                }
+            });
+        } else {
+            notifier.addListener(new DSLabsTestListener(notifier));
+        }
+
+        final RunListener defaultListener = result.createListener();
         notifier.addFirstListener(defaultListener);
 
         try {

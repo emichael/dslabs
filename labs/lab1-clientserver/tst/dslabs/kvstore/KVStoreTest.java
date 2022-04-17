@@ -1,14 +1,15 @@
 package dslabs.kvstore;
 
+import dslabs.framework.testing.junit.DSLabsJUnitTest;
 import dslabs.framework.testing.junit.DSLabsTestRunner;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.junit.Before;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.kvstore.KVStoreWorkload.append;
 import static dslabs.kvstore.KVStoreWorkload.appendResult;
@@ -19,9 +20,10 @@ import static dslabs.kvstore.KVStoreWorkload.put;
 import static dslabs.kvstore.KVStoreWorkload.putOk;
 import static org.junit.Assert.assertEquals;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("1")
+@Part(1)
 @RunWith(DSLabsTestRunner.class)
-public class KVStoreTest {
+public class KVStoreTest extends DSLabsJUnitTest {
     private KVStore kvStore;
 
     @Before
@@ -31,7 +33,7 @@ public class KVStoreTest {
 
     @Test(timeout = 5 * 1000)
     @TestPointValue(5)
-    @PrettyTestName("Basic key-value operations")
+    @TestDescription("Basic key-value operations")
     public void test01BasicKVTests() {
         assertEquals(keyNotFound(), kvStore.execute(get("FOO")));
         assertEquals(putOk(), kvStore.execute(put("FOO", "BAR")));

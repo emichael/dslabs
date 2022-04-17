@@ -4,6 +4,7 @@ import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.visualization.VizConfig;
 import dslabs.kvstore.TransactionalKVStoreWorkload;
@@ -20,6 +21,7 @@ import static dslabs.shardkv.ShardStoreBaseTest.CCA;
 import static dslabs.shardkv.ShardStoreBaseTest.addServers;
 import static dslabs.shardkv.ShardStoreBaseTest.servers;
 
+@Lab("4")
 public class ShardStoreVizConfig extends VizConfig {
 
     private ShardMasterCommand parse(String command, int numServersPerGroup) {

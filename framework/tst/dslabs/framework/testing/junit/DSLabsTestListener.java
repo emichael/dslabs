@@ -44,7 +44,6 @@ class DSLabsTestListener extends RunListener {
 
     private int totalPoints = 0;
     private int pointsEarned = 0;
-    private int testNum = 1;
     private int numPassed = 0;
     private boolean testFailed = false;
     private long startMillis = 0;
@@ -61,8 +60,24 @@ class DSLabsTestListener extends RunListener {
         this.runNotifier = runNotifier;
     }
 
+    static int testNumber(Description d) {
+        assert d.isTest();
+        String n = d.getMethodName();
+        return Integer.parseInt(n.replaceFirst("test(\\d+)\\w+", "$1"));
+    }
+
+    static String fullTestNumber(Description d) {
+        assert d.isTest();
+        Part p = d.getTestClass().getAnnotation(Part.class);
+        if (p == null) {
+            return Integer.toString(testNumber(d));
+        } else {
+            return p.value() + "." + testNumber(d);
+        }
+    }
+
     @Override
-    public void testRunFinished(Result result) throws Exception {
+    public void testRunFinished(Result result) {
         out.println(large_sep);
         out.println();
         out.println("Tests passed: " + numPassed + "/" + result.getRunCount());
@@ -81,18 +96,19 @@ class DSLabsTestListener extends RunListener {
     }
 
     @Override
-    public void testStarted(Description description) throws Exception {
+    public void testStarted(Description description) {
         testFailed = false;
         startMillis = System.currentTimeMillis();
         out.println(small_sep);
-        out.println("TEST " + testNum + ": " + testName(description) + " (" +
-                totalPoints(description) + "pts)\n");
+
+        out.println("TEST " + fullTestNumber(description) + ": " +
+                testName(description) + " (" + totalPoints(description) +
+                "pts)\n");
         totalPoints += totalPoints(description);
-        testNum++;
     }
 
     @Override
-    public void testFailure(Failure failure) throws Exception {
+    public void testFailure(Failure failure) {
         testFailed = true;
 
         // If we dropped into the visualization client, halt other tests
@@ -111,7 +127,7 @@ class DSLabsTestListener extends RunListener {
     }
 
     @Override
-    public void testFinished(Description description) throws Exception {
+    public void testFinished(Description description) {
         if (!testFailed) {
             pointsEarned += totalPoints(description);
             numPassed++;
@@ -131,18 +147,13 @@ class DSLabsTestListener extends RunListener {
         out.println(small_sep);
     }
 
-    @Override
-    public void testIgnored(Description description) throws Exception {
-        testNum++;
-    }
-
     private String testName(Description description) {
         String name;
 
-        PrettyTestName prettyTestName =
-                description.getAnnotation(PrettyTestName.class);
-        if (prettyTestName != null) {
-            name = prettyTestName.value();
+        TestDescription testDescription =
+                description.getAnnotation(TestDescription.class);
+        if (testDescription != null) {
+            name = testDescription.value();
         } else {
             name = description.getDisplayName();
         }

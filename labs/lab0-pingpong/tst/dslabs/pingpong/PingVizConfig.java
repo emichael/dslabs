@@ -4,6 +4,7 @@ import dslabs.framework.Address;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.visualization.VizConfig;
 import dslabs.pingpong.PingApplication.Ping;
@@ -13,6 +14,7 @@ import java.util.stream.Collectors;
 import static dslabs.pingpong.PingTest.builder;
 import static dslabs.pingpong.PingTest.sa;
 
+@Lab("0")
 public class PingVizConfig extends VizConfig {
     @Override
     public SearchState getInitialState(int numServers, int numClients,

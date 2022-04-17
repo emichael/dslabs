@@ -23,8 +23,6 @@
 package dslabs.framework.testing;
 
 import dslabs.framework.Address;
-import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.TimerEnvelope;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
