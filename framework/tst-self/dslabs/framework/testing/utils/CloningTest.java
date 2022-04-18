@@ -5,22 +5,38 @@ import com.google.common.collect.HashMultimap;
 import com.google.common.collect.LinkedHashMultimap;
 import dslabs.framework.Address;
 import dslabs.framework.Application;
+import dslabs.framework.Client;
 import dslabs.framework.Command;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
+import dslabs.framework.testing.Event;
+import dslabs.framework.testing.LocalAddress;
+import dslabs.framework.testing.MessageEnvelope;
+import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.runner.RunState;
+import dslabs.framework.testing.search.SerializableTrace;
 import java.io.Serializable;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.TreeMap;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 import lombok.ToString;
+import org.apache.commons.lang3.tuple.ImmutablePair;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -292,6 +308,110 @@ public class CloningTest {
         assertNull(o2.foo);
     }
 
+    private void testStatePredicate(StatePredicate s1) {
+        StatePredicate s2 = Cloning.deserialize(Cloning.serialize(s1));
+        assertEquals(s1.toString(), s2.toString());
+        assertEquals(s1.name(), s2.name());
+        var s = new RunState(StateGenerator.builder().serverSupplier(a -> null)
+                                           .clientSupplier(ClientExample::new)
+                                           .workloadSupplier(new Workload() {
+                                               @Override
+                                               public Pair<Command, Result> nextCommandAndResult(
+                                                       Address clientAddress) {
+                                                   return null;
+                                               }
+
+                                               @Override
+                                               public boolean hasNext() {
+                                                   return false;
+                                               }
+
+                                               @Override
+                                               public boolean hasResults() {
+                                                   return false;
+                                               }
+
+                                               @Override
+                                               public void add(
+                                                       Command command) {
+
+                                               }
+
+                                               @Override
+                                               public void add(Command command,
+                                                               Result result) {
+
+                                               }
+
+                                               @Override
+                                               public void reset() {
+
+                                               }
+
+                                               @Override
+                                               public int size() {
+                                                   return 0;
+                                               }
+
+                                               @Override
+                                               public boolean infinite() {
+                                                   return false;
+                                               }
+                                           }).build());
+        s.addClientWorker(new LocalAddress("foo"));
+        assertEquals(s1.test(s), s2.test(s));
+        assertEquals(s1.errorMessage(s), s2.errorMessage(s));
+    }
+
+    @Test
+    public void predicatesSerialize() {
+        testStatePredicate(StatePredicate.RESULTS_OK);
+        testStatePredicate(StatePredicate.CLIENTS_DONE);
+        testStatePredicate(StatePredicate.clientDone(new LocalAddress("foo")));
+        testStatePredicate(
+                StatePredicate.clientHasResults(new LocalAddress("foo"), 3));
+        testStatePredicate(StatePredicate.NONE_DECIDED);
+        testStatePredicate(StatePredicate.ALL_RESULTS_SAME);
+        testStatePredicate(new StatePredicate("totally a test",
+                s -> new ImmutablePair<>(true, "bar")));
+    }
+
+    @Test
+    public void serializableTraces()
+            throws InvocationTargetException, InstantiationException,
+            IllegalAccessException {
+        List<Event> es = new ArrayList<>();
+        es.add(new Event(new MessageEnvelope(new LocalAddress("foo"),
+                new AddressExample("bar"), new MessageExample("asdf", false))));
+        es.add(new Event(new MessageEnvelope(new LocalAddress("asdf"),
+                new AddressExample("1234"), new MessageExample("baz", false))));
+
+        var con = SerializableTrace.class.getDeclaredConstructors()[0];
+        con.setAccessible(true);
+
+        SerializableTrace t1 = (SerializableTrace) con.newInstance(es,
+                List.of(StatePredicate.RESULTS_OK,
+                        StatePredicate.ALL_RESULTS_SAME),
+                StateGenerator.builder().serverSupplier(a -> null)
+                              .clientSupplier(ClientExample::new)
+                              .workloadSupplier(a -> null).build(),
+                List.of(new LocalAddress("foo")), Collections.emptyList(),
+                "lab-foo", 2, "FooClass", "fooMethod");
+
+        SerializableTrace t2 = Cloning.deserialize(Cloning.serialize(t1));
+
+        assertEquals(t1.history(), t2.history());
+        assertEquals(t1.invariants().size(), t2.invariants().size());
+        assertEquals(t1.servers(), t2.servers());
+        assertEquals(t1.clientWorkers(), t2.clientWorkers());
+        assertEquals(t1.labId(), t2.labId());
+        assertEquals(t1.labPart(), t2.labPart());
+        assertEquals(t1.testClassName(), t2.testClassName());
+        assertEquals(t1.testMethodName(), t2.testMethodName());
+        assertEquals(t1.createdDate(), t2.createdDate());
+        assertEquals(t1.stateGenerator().client(new LocalAddress("foo")),
+                t2.stateGenerator().client(new LocalAddress("foo")));
+    }
 }
 
 @ToString(callSuper = true)
@@ -308,7 +428,35 @@ class NodeExample extends Node {
     public void init() {
 
     }
+}
 
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
+class ClientExample extends Node implements Client {
+
+    protected ClientExample(@NonNull Address address) {
+        super(address);
+    }
+
+    @Override
+    public void sendCommand(Command command) {
+
+    }
+
+    @Override
+    public boolean hasResult() {
+        return false;
+    }
+
+    @Override
+    public Result getResult() throws InterruptedException {
+        return null;
+    }
+
+    @Override
+    public void init() {
+
+    }
 }
 
 @Data

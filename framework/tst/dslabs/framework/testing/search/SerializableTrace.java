@@ -77,7 +77,7 @@ public class SerializableTrace implements Serializable {
     private final String testClassName;
     private final String testMethodName;
 
-    @Getter private final LocalDateTime createdDate = LocalDateTime.now();
+    private final LocalDateTime createdDate = LocalDateTime.now();
 
     private transient String fileName = null;
 
