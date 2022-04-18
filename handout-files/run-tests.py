@@ -14,13 +14,12 @@ __author__ = 'Ellis Michael (emichael@cs.washington.edu)'
 
 
 RUNNER = 'dslabs.framework.testing.junit.DSLabsTestCore'
+VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
+TRACE_VIZ = 'dslabs.framework.testing.visualization.SavedTraceViz'
+
 EXCLUDE_FILTER = 'org.junit.experimental.categories.ExcludeCategories'
 RUN_CATEGORY = 'dslabs.framework.testing.junit.RunTests'
 SEARCH_CATEGORY = 'dslabs.framework.testing.junit.SearchTests'
-
-VIZ_DEBUGGER = 'dslabs.framework.testing.visualization.VizClient'
-
-TRACE_REPLAY = 'dslabs.framework.testing.search.CheckSavedTraces'
 
 BASE_COMMAND = (
     'java',
@@ -134,11 +133,31 @@ def run_viz_debugger(lab, args, no_viz_server=False):
     sys.exit(returncode)
 
 
-def replay_traces(log_level=None, start_viz=False, no_viz_server=False,
-                  do_checks=False, assertions=False):
-    """Run the specified tests."""
-    if not make():
-        return
+def visualize_trace(trace_name, no_viz_server=False):
+    """Visualize a trace."""
+    make()
+
+    command = list(BASE_COMMAND)
+
+    if no_viz_server:
+        command.append('-DnoVizServer=true')
+
+    command += [
+        '-cp',
+        RUNTIME_CLASSPATH,
+        TRACE_VIZ,
+        trace_name
+    ]
+
+    returncode = subprocess.call(command)
+    sys.exit(returncode)
+
+
+def replay_traces(trace_names=None, lab=None, part=None, log_level=None,
+                  start_viz=False, no_viz_server=False, do_checks=False,
+                  assertions=False):
+    """Replay traces."""
+    make()
 
     command = list(BASE_COMMAND)
 
@@ -161,88 +180,136 @@ def replay_traces(log_level=None, start_viz=False, no_viz_server=False,
         '-cp',
         RUNTIME_CLASSPATH,
         RUNNER,
-        TRACE_REPLAY
+        '--replay-traces'
     ]
 
-    subprocess.call(command)
+    if lab is not None:
+        command += ['--lab', lab]
+
+    if part is not None:
+        command += ['--part', str(part)]
+
+    if trace_names:
+        command += trace_names
+
+    returncode = subprocess.call(command)
+    sys.exit(returncode)
 
 
 def main():
     """Parse args and run tests."""
     parser = argparse.ArgumentParser()
+    run_modes = parser.add_argument_group("Alternate run modes",
+        "Execute one of the following options instead of running tests.")
+    group = run_modes.add_mutually_exclusive_group()
 
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument('-l', '--lab', nargs=None,
-                       help="lab to run tests for")
-    parser.add_argument('-p', '--part', type=int, nargs='?', default=None,
+    parser.add_argument('-l', '--lab', help="lab to run tests for")
+    parser.add_argument('-p', '--part', type=int,
                         help="part number for tests to run")
 
-    parser.add_argument('--checks', action='store_true',
-                        help="run checks on equals, hashCode, idempotence of "
-                        "handlers, etc. when running tests")
-
-    parser.add_argument('-n', '--test-num', nargs='?', default=None,
+    parser.add_argument('-n', '--test-num',
                         help="specific, comma-separated test numbers to run "
                         "(e.g., 2,5,7)")
-
     parser.add_argument('--no-run', action='store_true',
                         help="do not execute run tests")
     parser.add_argument('--no-search', action='store_true',
                         help="do not execure search tests")
-
+    parser.add_argument('--checks', action='store_true',
+                        help="run checks on equals, hashCode, idempotence of "
+                        "handlers, etc. when running tests")
     parser.add_argument('--no-timeouts', action='store_true',
                         help="stop tests from timing out")
-    parser.add_argument('-g', '--log-level', nargs='?', type=str,
+    parser.add_argument('-g', '--log-level',
                         help="level the default Java util logging should use")
     parser.add_argument('-ea', '--assertions', action='store_true',
                         help="enable Java assertions")
     parser.add_argument('--single-threaded', action='store_true',
                         help="run the tests using only a single thread")
-
-    group.add_argument('--replay-traces', action='store_true',
-                       help="replay and recheck saved traces instead of "
-                            "running provided tests")
     parser.add_argument('-s', '--save-traces', action='store_true',
                         help="save traces after search test failure")
-
     parser.add_argument('-z', '--start-viz', action='store_true',
                         help="start the visualization on invariant violation "
                              "or when the search is unable to find a "
                              "particular state")
 
-    parser.add_argument('-d', '--debugger', nargs='*', metavar="ARG",
-                        help="Don't run any tests, instead start the visual "
-                        "debugger with the given args. By default, the args "
-                        "should be: NUM_SERVERS NUM_CLIENTS WORKLOAD where "
-                        "WORKLOAD is a comma-separated list of commands (e.g., "
-                        "PUT:foo:bar,APPEND:foo:baz,GET:foo in the default "
-                        "case of the KVStore); with these arguments, all "
-                        "clients request the same workload. To give different "
-                        "workloads for each client, the args should be: "
-                        "NUM_SERVERS NUM_CLIENTS WORKLOAD_1 WORKLOAD_2 ... "
-                        "WORKLOAD_NUM_CLIENTS where each WORLOAD_i is a "
-                        "comma-separated list of commands and a workload is "
-                        "provided for each client.")
+    group.add_argument('-d', '--debugger', nargs='*', metavar="ARG",
+                       help="Don't run any tests, instead start the visual "
+                       "debugger with the given args. By default, the args "
+                       "should be: NUM_SERVERS NUM_CLIENTS WORKLOAD where "
+                       "WORKLOAD is a comma-separated list of commands (e.g., "
+                       "PUT:foo:bar,APPEND:foo:baz,GET:foo in the default "
+                       "case of the KVStore); with these arguments, all "
+                       "clients request the same workload. To give different "
+                       "workloads for each client, the args should be: "
+                       "NUM_SERVERS NUM_CLIENTS WORKLOAD_1 WORKLOAD_2 ... "
+                       "WORKLOAD_NUM_CLIENTS where each WORLOAD_i is a "
+                       "comma-separated list of commands and a workload is "
+                       "provided for each client.")
 
     parser.add_argument('--no-viz-server', action='store_true',
                         help="do not automatically start the visualization "
                         "server; instead, the user starts the server  and "
                         "opens the browser manually")
 
+    group.add_argument('--replay-traces', nargs='*', default=None,
+                       metavar="TRACE_NAME",
+                       help="Replay and recheck saved traces. Can specify "
+                       "--lab and --part to restrict which traces to run or "
+                       "supply one or more filenames of specific traces.")
+
+    group.add_argument('--visualize-trace', metavar="TRACE_NAME",
+                       help="immediately start the visual debugger with the "
+                       "specified trace, regardless of whether it still causes "
+                       "an invariant violation")
+
     args = parser.parse_args()
 
+    def disallow_arguments(current_option, disallowed_options):
+        for option in disallowed_options:
+            arg_name = option.split('/')[-1].lstrip('-').replace('-', '_')
+            if getattr(args, arg_name):
+                parser.error(
+                    f"argument {option} not allowed with argument "
+                    f"{current_option}")
+
     if args.debugger:
-        if args.replay_traces:
-            parser.error("starting the debugger with --replay-traces not "
-                         "currently supported")
+        if args.lab is None:
+            parser.error("-l/--lab is required with -d/--debugger")
+        disallow_arguments('-d/--debugger',
+            ('-p/--part', '--checks', '-n/--test-num', '--no-run',
+             '--no-search', '--no-timeouts', '-g/--log-level',
+             '-ea/--assertions', '--single-threaded', '-s/--save-traces',
+             '-z/--start-viz'))
         run_viz_debugger(args.lab, args.debugger, args.no_viz_server)
-    elif args.replay_traces:
-        replay_traces(log_level=args.log_level,
+
+    elif args.replay_traces is not None:
+        if args.part is not None and args.lab is None:
+            parser.error("cannot specify -p/--part without -l/--lab")
+        if args.lab is not None and args.replay_traces:
+            parser.error("cannot specify both -l/--lab and TRACE_NAME")
+        disallow_arguments('--replay-traces',
+            ('-n/--test-num', '--no-run', '--no-search', '--no-timeouts',
+             '--single-threaded', '-s/--save-traces'))
+        replay_traces(trace_names=args.replay_traces,
+                      lab=args.lab,
+                      part=args.part,
+                      log_level=args.log_level,
                       start_viz=args.start_viz,
                       no_viz_server=args.no_viz_server,
                       do_checks=args.checks,
                       assertions=args.assertions)
+
+    elif args.visualize_trace is not None:
+        disallow_arguments('--visualize-trace',
+            ('-l/--lab', '-p/--part', '--checks', '-n/--test-num', '--no-run',
+             '--no-search', '--no-timeouts', '-g/--log-level',
+             '-ea/--assertions', '--single-threaded', '-s/--save-traces',
+             '-z/--start-viz'))
+        visualize_trace(args.visualize_trace, no_viz_server=args.no_viz_server)
+
     else:
+        if args.lab is None:
+            parser.error("-l/--lab is required")
         run_tests(args.lab,
                   part=args.part,
                   no_run=args.no_run,

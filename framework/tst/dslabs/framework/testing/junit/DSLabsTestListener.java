@@ -37,8 +37,8 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 
 class DSLabsTestListener extends RunListener {
-    private static final String large_sep = StringUtils.repeat('=', 50);
-    private static final String small_sep = StringUtils.repeat('-', 50);
+    protected static final String large_sep = StringUtils.repeat('=', 50);
+    protected static final String small_sep = StringUtils.repeat('-', 50);
 
     private final RunNotifier runNotifier;
 
@@ -95,12 +95,16 @@ class DSLabsTestListener extends RunListener {
         out.println(large_sep);
     }
 
-    @Override
-    public void testStarted(Description description) {
+    protected void logTestStarted() {
         testFailed = false;
         startMillis = System.currentTimeMillis();
-        out.println(small_sep);
+    }
 
+    @Override
+    public void testStarted(Description description) {
+        logTestStarted();
+
+        out.println(small_sep);
         out.println("TEST " + fullTestNumber(description) + ": " +
                 testName(description) + " (" + totalPoints(description) +
                 "pts)\n");

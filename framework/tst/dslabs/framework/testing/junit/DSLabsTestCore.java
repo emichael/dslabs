@@ -25,12 +25,11 @@ package dslabs.framework.testing.junit;
 import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import dslabs.framework.testing.utils.ClassSearch;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Set;
+import java.util.function.Function;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
-import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
@@ -55,15 +54,45 @@ public abstract class DSLabsTestCore {
         EXIT_ON_TEST_FAILURE = false;
     }
 
-    public static void main(String[] args)
-            throws ClassNotFoundException, NoSuchMethodException,
-            InvocationTargetException, IllegalAccessException, ParseException {
+    private static void runRequest(Request request,
+                                   Function<RunNotifier, RunListener> listenerFunction) {
+        final Runner runner = request.getRunner();
+        final Result result = new Result();
+        final RunNotifier notifier = new RunNotifier();
 
+        if (runner instanceof ErrorReportingRunner) {
+            notifier.addListener(new RunListener() {
+                @Override
+                public void testFailure(Failure failure) {
+                    System.err.println(Throwables.getStackTraceAsString(
+                            failure.getException()));
+                }
+            });
+        } else {
+            notifier.addListener(listenerFunction.apply(notifier));
+        }
+
+        final RunListener defaultListener = result.createListener();
+        notifier.addFirstListener(defaultListener);
+
+        try {
+            notifier.fireTestRunStarted(runner.getDescription());
+            runner.run(notifier);
+            notifier.fireTestRunFinished(result);
+        } finally {
+            notifier.removeListener(defaultListener);
+        }
+
+        if (EXIT_ON_TEST_FAILURE && !result.wasSuccessful()) {
+            System.exit(1);
+        }
+    }
+
+    public static void main(String[] args) throws Exception {
         final Options options = new Options();
-        final Option lab = Option.builder("l").longOpt("lab").required(true)
-                                 .type(String.class).argName("LAB").hasArg(true)
-                                 .numberOfArgs(1).desc("lab identifier")
-                                 .build();
+        final Option lab =
+                Option.builder("l").longOpt("lab").argName("LAB").hasArg(true)
+                      .numberOfArgs(1).desc("lab identifier").build();
         final Option part = Option.builder("p").longOpt("part").required(false)
                                   .argName("PART").hasArg(true).numberOfArgs(1)
                                   .desc("part number").build();
@@ -76,37 +105,45 @@ public abstract class DSLabsTestCore {
                 Option.builder().longOpt("exclude-run-tests").build();
         final Option excludeSearchTests =
                 Option.builder().longOpt("exclude-search-tests").build();
-        final Option help = Option.builder("h").longOpt("help").build();
+        final Option replaySavedTraces =
+                Option.builder().longOpt("replay-traces").build();
+
         options.addOption(lab);
         options.addOption(part);
         options.addOption(testNum);
         options.addOption(excludeRunTests);
         options.addOption(excludeSearchTests);
-        options.addOption(help);
+        options.addOption(replaySavedTraces);
 
         final CommandLineParser parser = new DefaultParser();
         CommandLine line = null;
         try {
-            line = parser.parse(options, args);
-            if (!line.getArgList().isEmpty()) {
-                throw new ParseException("Unrecognized options: " +
-                        String.join(" ", line.getArgs()));
-            }
-            if (line.hasOption(help)) {
-                throw new ParseException(null);
-            }
+            line = parser.parse(options, args, true);
         } catch (ParseException e) {
-            if (e.getMessage() != null) {
-                System.err.println(e.getMessage());
-            }
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp(
-                    "-l/--lab LAB [-p/--part PART] [-n/--test-num TEST_NUMS] <OTHER_OPTIONS> [-h/--help]",
-                    options);
+            System.exit(1);
             return;
         }
 
-        final String labID = (String) line.getParsedOptionValue(lab);
+        if (line.hasOption(replaySavedTraces)) {
+            if (line.getArgs().length > 0) {
+                CheckSavedTracesTest.traceNames(line.getArgs());
+            }
+
+            if (line.hasOption(lab)) {
+                CheckSavedTracesTest.labId(line.getOptionValue(lab));
+            }
+
+            if (line.hasOption(part)) {
+                CheckSavedTracesTest.labPart(
+                        Integer.parseInt(line.getOptionValue(part)));
+            }
+
+            Request request = Request.classes(CheckSavedTracesTest.class);
+            runRequest(request, ReplaySavedTracesTestListener::new);
+            return;
+        }
+
+        final String labID = line.getOptionValue(lab);
 
         Request request = Request.classes(ClassSearch.testClasses());
 
@@ -188,35 +225,6 @@ public abstract class DSLabsTestCore {
         // Sort methods and test classes
         request = request.sortWith(new TestOrder());
 
-        final Runner runner = request.getRunner();
-        final Result result = new Result();
-        final RunNotifier notifier = new RunNotifier();
-
-        if (runner instanceof ErrorReportingRunner) {
-            notifier.addListener(new RunListener() {
-                @Override
-                public void testFailure(Failure failure) {
-                    System.err.println(Throwables.getStackTraceAsString(
-                            failure.getException()));
-                }
-            });
-        } else {
-            notifier.addListener(new DSLabsTestListener(notifier));
-        }
-
-        final RunListener defaultListener = result.createListener();
-        notifier.addFirstListener(defaultListener);
-
-        try {
-            notifier.fireTestRunStarted(runner.getDescription());
-            runner.run(notifier);
-            notifier.fireTestRunFinished(result);
-        } finally {
-            notifier.removeListener(defaultListener);
-        }
-
-        if (EXIT_ON_TEST_FAILURE && !result.wasSuccessful()) {
-            System.exit(1);
-        }
+        runRequest(request, DSLabsTestListener::new);
     }
 }

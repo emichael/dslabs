@@ -263,16 +263,11 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         dfs(searchState, searchSettings);
     }
 
-    protected final void traceReplay(SearchState searchState, List<Event> trace,
-                                     SearchSettings searchSettings) {
+    final void traceReplay(SearchState searchState, List<Event> trace) {
         assert searchState != null;
-        searchResults = Search.traceReplay(searchState, trace, searchSettings);
+        searchResults =
+                new TraceReplaySearch(searchSettings, trace).run(searchState);
         assertEndConditionValid();
-    }
-
-    protected final void traceReplay(SearchState searchState,
-                                     List<Event> trace) {
-        traceReplay(searchState, trace, searchSettings);
     }
 
     @SneakyThrows
@@ -307,7 +302,13 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         }
 
         if (GlobalSettings.saveTraces()) {
-            SearchState.saveTrace(terminal, searchResults.invariantsTested());
+            var testClass = testDescription.getTestClass();
+            var labAnnotation = testClass.getAnnotation(Lab.class);
+            var partAnnotation = testClass.getAnnotation(Part.class);
+            SearchState.saveTrace(terminal, searchResults.invariantsTested(),
+                    labAnnotation.value(),
+                    partAnnotation == null ? null : partAnnotation.value(),
+                    testClass.getName(), testDescription.getMethodName());
         }
 
         if (GlobalSettings.startVisualization()) {

@@ -27,22 +27,27 @@ import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.utils.GlobalSettings;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serial;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.tuple.Pair;
 
 /**
@@ -51,9 +56,14 @@ import org.apache.commons.lang3.tuple.Pair;
  * model checking test case failures.
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-@Getter(AccessLevel.PACKAGE)
-class SerializableTrace implements Serializable {
-    final static String TRACE_DIR_NAME = "traces";
+@Getter
+public class SerializableTrace implements Serializable {
+    // Increment this when compatability is broken
+    @Serial private static final long serialVersionUID = 42L;
+
+
+    private final static String TRACE_DIR_NAME = "traces",
+            TRACE_FILE_EXTENSION = ".trace";
 
     private final List<Event> history;
     private final Collection<StatePredicate> invariants;
@@ -61,98 +71,144 @@ class SerializableTrace implements Serializable {
     private final Collection<Address> servers;
     private final Collection<Pair<Address, Workload>> clientWorkers;
 
-    private final LocalDateTime createdDate = LocalDateTime.now();
+    @NonNull private final String labId;
+    private final Integer labPart;
 
-    void save() {
-        // Create the trace directory if it doesn't exist
+    private final String testClassName;
+    private final String testMethodName;
+
+    @Getter private final LocalDateTime createdDate = LocalDateTime.now();
+
+    private transient String fileName = null;
+
+    private static void ensureTraceDirExists() {
         final File traceDir = new File(TRACE_DIR_NAME);
-        if (!traceDir.exists()) {
+        if (!traceDir.exists() || !traceDir.isDirectory()) {
             if (!traceDir.mkdirs()) {
                 throw new RuntimeException(
                         "Could not create directory " + traceDir);
             }
         }
+    }
 
-        final String baseName = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
-                                                 .format(createdDate);
+    private String defaultBaseName() {
+        final String dateString =
+                DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm")
+                                 .format(createdDate);
+        return String.format("lab%s%s_%s", labId,
+                labPart == null ? "" : "part" + labPart, dateString);
+    }
+
+    private Path savePath() {
+        final String baseName = defaultBaseName();
         Path filePath;
         int n = 0;
         do {
-            filePath = Path.of(TRACE_DIR_NAME,
-                    String.format("%s_%s.trace", baseName, n));
+            if (n == 0) {
+                filePath = Path.of(TRACE_DIR_NAME,
+                        String.format("%s%s", baseName, TRACE_FILE_EXTENSION));
+            } else {
+                filePath = Path.of(TRACE_DIR_NAME,
+                        String.format("%s_%s%s", baseName, n,
+                                TRACE_FILE_EXTENSION));
+            }
             n++;
         } while (Files.exists(filePath));
 
+        return filePath;
+    }
+
+    void save() {
+        ensureTraceDirExists();
+        final Path filePath = savePath();
         try (ObjectOutputStream traceFile = new ObjectOutputStream(
                 new FileOutputStream(filePath.toString()))) {
             traceFile.writeObject(this);
-            System.err.println("Saved trace to " + filePath + "\n");
+            if (GlobalSettings.verbose()) {
+                System.out.println("Saved trace to " + filePath + "\n");
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-}
+    public SearchState initialState() {
+        SearchState ret = new SearchState(stateGenerator);
+        for (Address a : servers) {
+            ret.addServer(a);
+        }
 
+        for (Pair<Address, Workload> p : clientWorkers) {
+            ret.addClientWorker(p.getLeft(), p.getRight());
+        }
 
-class TraceReplay extends Search {
-    private SearchState initialState;
-    private final List<Event> trace;
-    private boolean startedReplay = false, eventsExhausted = false;
-
-    TraceReplay(@NonNull SearchSettings settings, @NonNull List<Event> trace) {
-        super(settings);
-        assert settings.singleThreaded();
-        assert !settings.shouldOutputStatus();
-        this.trace = trace;
+        return ret;
     }
 
-    @Override
-    protected void initSearch(SearchState initialState) {
-        this.initialState = initialState;
+    public SearchState endState() {
+        SearchState s = initialState();
+        for (Event e : history) {
+            s = s.stepEvent(e, null, false);
+            if (s == null) {
+                return null;
+            }
+        }
+        return s;
     }
 
-    @Override
-    protected String searchType() {
-        throw new NotImplementedException();
+    private boolean replays() {
+        return endState() != null;
     }
 
-    @Override
-    protected String status(double elapsedSecs) {
-        throw new NotImplementedException();
+    private static Path[] traceFilePaths() {
+        final File traceDir = new File(TRACE_DIR_NAME);
+        if (!traceDir.exists() || !traceDir.isDirectory()) {
+            return new Path[0];
+        }
+
+        return Arrays.stream(Objects.requireNonNull(traceDir.list(
+                             (dir, name) -> name.endsWith(TRACE_FILE_EXTENSION))))
+                     .map(s -> Path.of(TRACE_DIR_NAME, s)).toArray(Path[]::new);
     }
 
-    @Override
-    protected boolean spaceExhausted() {
-        return eventsExhausted;
-    }
-
-    @Override
-    protected Runnable getWorker() {
-        if (startedReplay) {
+    private static SerializableTrace loadTrace(Path tracePath) {
+        SerializableTrace trace;
+        try (ObjectInputStream is = new ObjectInputStream(
+                new FileInputStream(tracePath.toFile()))) {
+            trace = (SerializableTrace) is.readObject();
+            trace.fileName = tracePath.getFileName().toString();
+        } catch (ClassNotFoundException | IOException e) {
+            if (GlobalSettings.verbose()) {
+                System.err.println("Trace " + tracePath.getFileName() +
+                        " no longer loads; message/timer definitions may have changed");
+            }
             return null;
         }
-        startedReplay = true;
-        return this::replayTrace;
+        return trace;
     }
 
-    private void replayTrace() {
-        SearchState s = initialState;
-        checkState(s, false);
-        for (Event e : trace) {
-            s = s.stepEvent(e, settings, false);
-            if (s == null) {
-                eventsExhausted = true;
-                return;
-            }
+    public static SerializableTrace loadTrace(String traceFileName) {
+        final Path defaultPath = Path.of(traceFileName);
 
-            StateStatus status = checkState(s, true);
-            // replaying a trace should never prune states
-            assert status != StateStatus.PRUNED;
-            if (status == StateStatus.TERMINAL) {
-                return;
-            }
+        // If traceFileName starts with a base name, consider the same path in traces/
+        final Path pathInDir =
+                traceFileName.startsWith(".") || traceFileName.startsWith("/") ?
+                        defaultPath : Path.of(TRACE_DIR_NAME, traceFileName);
+
+        final Path path =
+                defaultPath.toFile().exists() ? defaultPath : pathInDir;
+
+        if (!path.toFile().exists()) {
+            System.err.println("Could not find trace file: " + traceFileName);
+            return null;
         }
-        eventsExhausted = true;
+
+        return loadTrace(path);
+    }
+
+    public static SerializableTrace[] traces() {
+        return Arrays.stream(traceFilePaths()).map(SerializableTrace::loadTrace)
+                     .filter(Objects::nonNull)
+                     .toArray(SerializableTrace[]::new);
     }
 }

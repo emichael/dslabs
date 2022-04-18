@@ -469,8 +469,11 @@ public final class SearchState extends AbstractState
         printTrace(System.err);
     }
 
-    public static void saveTrace(SearchState state,
-                                 Collection<StatePredicate> invariants) {
+    public static void saveTrace(@NonNull SearchState state,
+                                 Collection<StatePredicate> invariants,
+                                 @NonNull String labId, Integer labPart,
+                                 @NonNull String testClassName,
+                                 @NonNull String testMethodName) {
         final Iterable<SearchState> trace = state.trace();
         final SearchState initialState = Iterables.getFirst(trace, null);
         assert initialState != null;
@@ -496,7 +499,8 @@ public final class SearchState extends AbstractState
         SerializableTrace serializableTrace =
                 new SerializableTrace(history, invariants, state.gen,
                         ImmutableList.copyOf(state.serverAddresses()),
-                        clientWorkers);
+                        clientWorkers, labId, labPart, testClassName,
+                        testMethodName);
 
         serializableTrace.save();
     }

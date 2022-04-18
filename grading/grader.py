@@ -84,13 +84,13 @@ for student in os.listdir(STUDENT_SUBMISSION_DIR):
         # Extract their solutions
         tar_path = os.path.join(student_path, TAR_NAME)
         subprocess.call(['tar', '-xf', tar_path, '--directory', student_path])
-
+ 
 	# Copy over all test folders
 	for lab in os.listdir(os.path.join(HANDOUT_DIRECTORY, 'labs')):
 		src_test_path = os.path.join(HANDOUT_DIRECTORY, 'labs', lab, 'tst')
 		dst_test_path = os.path.join(student_path, 'labs', lab, 'tst')
 	        copy_tree(src_test_path, dst_test_path)
-
+        
 	for f in os.listdir(HANDOUT_DIRECTORY):
             full_file_path = os.path.join(HANDOUT_DIRECTORY, f)
             # Copy jars/Makefile/lombok.config/etc.
@@ -105,15 +105,14 @@ for student in os.listdir(STUDENT_SUBMISSION_DIR):
 	# Remove all the MacOS files that have crazy characters in them
 	subprocess.Popen(['find', '.', '-name', '._*', '|', 'xargs', 'rm'], cwd=student_path, shell=True)
 
-	# Calculate the score for this student
+	# Calculate the score for this student        
 	SCORES[student] = {}
         for run_index in range(TIMES_TO_RUN):
 
             # Run tests and collect output
             log_out_path = os.path.join(student_result_path, STUDENT_TEST_LOG_NAME + '-' + str(run_index) + '.txt')
             with open(log_out_path, 'w+') as out:
-                cmd = ['python', 'run-tests.py', '--no-save-traces',
-                       '--lab', str(LAB_NUMBER)]
+                cmd = ['python', 'run-tests.py', '--lab', str(LAB_NUMBER)]
                 run(cmd, out, student_path, TIMEOUT)
 
             # Add to the summary
