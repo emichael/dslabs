@@ -104,7 +104,6 @@ dependencies {
   graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0', classifier: 'sources'
 
   // Swing stuff
-  graderImplementation group: 'com.intellij', name: 'forms_rt', version: '7.0.3'
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1'
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1', classifier: 'sources'
   graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '2.0.1'
