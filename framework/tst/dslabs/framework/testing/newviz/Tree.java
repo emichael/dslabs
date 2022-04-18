@@ -245,6 +245,11 @@ abstract class StateTreeNode extends DefaultMutableTreeNode {
 
     @SneakyThrows
     static protected StateTreeNode createNode(Class<?> clz, Object value) {
+        // Non-default tree nodes don't handle null values
+        if (value == null) {
+            return new DefaultObjectNode(null);
+        }
+
         for (Class<?> c : NODE_TYPES_IN_PRIORITY_ORDER) {
             if ((Boolean) c.getDeclaredMethod("canHandle", Class.class)
                            .invoke(null, clz)) {
