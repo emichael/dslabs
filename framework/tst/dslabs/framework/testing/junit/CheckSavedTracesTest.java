@@ -85,7 +85,19 @@ public class CheckSavedTracesTest extends BaseJUnitTest {
     @Test
     @Category(SearchTests.class)
     public void checkTrace() {
-        System.out.println("Replaying trace " + trace.fileName() + "\n");
+        StringBuilder msg = new StringBuilder();
+        msg.append("Replaying trace ");
+        msg.append(trace.fileName().toString());
+        if (trace.testMethodName() != null) {
+            msg.append(" generated from ");
+            msg.append(trace.testMethodName());
+            if (trace.testClassName() != null) {
+                msg.append(" in ");
+                msg.append(trace.testClassName());
+            }
+        }
+        msg.append("\n");
+        System.out.println(msg);
         searchSettings.outputFreqSecs(-1);
         searchSettings.singleThreaded(true);
         for (StatePredicate invariant : trace.invariants()) {
