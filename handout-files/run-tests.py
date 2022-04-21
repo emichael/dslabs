@@ -209,7 +209,7 @@ def main():
 
     parser.add_argument('-n', '--test-num',
                         help="specific, comma-separated test numbers to run "
-                        "(e.g., 2,5,7)")
+                        "(e.g., 2,5,7 or 2.2,2.5,2.7)")
     parser.add_argument('--no-run', action='store_true',
                         help="do not execute run tests")
     parser.add_argument('--no-search', action='store_true',
