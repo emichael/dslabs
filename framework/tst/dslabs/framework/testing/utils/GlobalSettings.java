@@ -31,6 +31,7 @@ import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import lombok.Getter;
+import lombok.Setter;
 
 public abstract class GlobalSettings {
     private static final Properties props = System.getProperties();
@@ -50,6 +51,9 @@ public abstract class GlobalSettings {
             !Boolean.parseBoolean(lookupWithDefault("noVizServer", "false")),
 
     doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
+
+    @Getter @Setter private static boolean saveTraces =
+            Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
 
     private static final boolean timeoutsDisabled = Boolean.parseBoolean(
             lookupWithDefault("testTimeoutsDisabled", "false"));

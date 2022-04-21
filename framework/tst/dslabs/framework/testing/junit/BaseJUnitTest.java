@@ -27,6 +27,7 @@ import dslabs.framework.Command;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.testing.ClientWorker;
+import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
@@ -262,6 +263,13 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         dfs(searchState, searchSettings);
     }
 
+    final void traceReplay(SearchState searchState, List<Event> trace) {
+        assert searchState != null;
+        searchResults =
+                new TraceReplaySearch(searchSettings, trace).run(searchState);
+        assertEndConditionValid();
+    }
+
     @SneakyThrows
     private void assertEndConditionValid() {
         final EndCondition ec = searchResults.endCondition();
@@ -291,6 +299,16 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
                     "\n" + invariant.errorMessage(humanReadable) + "\n");
         } else {
             System.err.println();
+        }
+
+        if (GlobalSettings.saveTraces()) {
+            var testClass = testDescription.getTestClass();
+            var labAnnotation = testClass.getAnnotation(Lab.class);
+            var partAnnotation = testClass.getAnnotation(Part.class);
+            SearchState.saveTrace(terminal, searchResults.invariantsTested(),
+                    labAnnotation.value(),
+                    partAnnotation == null ? null : partAnnotation.value(),
+                    testClass.getName(), testDescription.getMethodName());
         }
 
         if (GlobalSettings.startVisualization()) {

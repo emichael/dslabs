@@ -23,11 +23,13 @@
 package dslabs.framework.testing.utils;
 
 import com.google.common.reflect.ClassPath;
+import dslabs.framework.testing.junit.CheckSavedTracesTest;
 import dslabs.framework.testing.junit.DSLabsJUnitTest;
 import dslabs.framework.testing.visualization.VizConfig;
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public abstract class ClassSearch {
@@ -73,8 +75,12 @@ public abstract class ClassSearch {
         return classes.toArray(Class[]::new);
     }
 
+    @SuppressWarnings("unchecked")
     public static Class<? extends DSLabsJUnitTest>[] testClasses() {
-        return subclassesOf(DSLabsJUnitTest.class, true, true, "dslabs");
+        return Arrays.stream(
+                             subclassesOf(DSLabsJUnitTest.class, true, true, "dslabs"))
+                     .filter(c -> !c.equals(CheckSavedTracesTest.class))
+                     .toArray(Class[]::new);
     }
 
     public static Class<? extends VizConfig>[] vizConfigs() {
