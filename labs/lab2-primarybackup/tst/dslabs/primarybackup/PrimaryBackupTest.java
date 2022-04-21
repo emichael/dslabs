@@ -15,9 +15,11 @@ import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
 import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunSettings;
@@ -37,10 +39,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.ALL_RESULTS_SAME;
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
@@ -70,7 +70,8 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("2")
+@Part(2)
 public class PrimaryBackupTest extends BaseJUnitTest {
 
     static StateGeneratorBuilder builder() {
@@ -283,7 +284,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     /* Tests */
 
     @Test(timeout = 2 * 1000, expected = InterruptedException.class)
-    @PrettyTestName("Client throws InterruptedException")
+    @TestDescription("Client throws InterruptedException")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test01ThrowsException() throws InterruptedException {
@@ -304,7 +305,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Single client, single server, simple operations")
+    @TestDescription("Single client, single server, simple operations")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test02Basic() throws InterruptedException {
@@ -316,7 +317,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Primary chosen")
+    @TestDescription("Primary chosen")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test03PrimaryChosen() throws InterruptedException {
@@ -324,7 +325,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Backup is chosen")
+    @TestDescription("Backup is chosen")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test04BackupChosen() throws InterruptedException {
@@ -332,7 +333,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 15 * 1000)
-    @PrettyTestName("Count number of ViewServer requests")
+    @TestDescription("Count number of ViewServer requests")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test05MaxViewServerPingsCount() throws InterruptedException {
@@ -362,7 +363,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Backup takes over")
+    @TestDescription("Backup takes over")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test06BackupTakesOver() throws InterruptedException {
@@ -389,7 +390,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Kill all servers")
+    @TestDescription("Kill all servers")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test07KillLastServerRun() throws InterruptedException {
@@ -416,7 +417,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("At-most-once append")
+    @TestDescription("At-most-once append")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(15)
     public void test08AtMostOnceUnreliable() throws InterruptedException {
@@ -433,7 +434,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Fail to new backup")
+    @TestDescription("Fail to new backup")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test09FailPut() throws InterruptedException {
@@ -470,7 +471,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Concurrent puts, same keys, fail to backup")
+    @TestDescription("Concurrent puts, same keys, fail to backup")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test10ConcurrentPut() throws InterruptedException {
@@ -529,7 +530,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Concurrent appends, same key, fail to backup")
+    @TestDescription("Concurrent appends, same key, fail to backup")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test11ConcurrentAppend() throws InterruptedException {
@@ -581,7 +582,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 30 * 1000)
-    @PrettyTestName("Concurrent puts, same keys, fail to backup")
+    @TestDescription("Concurrent puts, same keys, fail to backup")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(20)
     public void test12ConcurrentPutUnreliable() throws InterruptedException {
@@ -592,7 +593,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 30 * 1000)
-    @PrettyTestName("Concurrent appends, same key, fail to backup")
+    @TestDescription("Concurrent appends, same key, fail to backup")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(20)
     public void test13ConcurrentAppendUnreliable() throws InterruptedException {
@@ -603,7 +604,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 50 * 1000)
-    @PrettyTestName("Repeated crashes")
+    @TestDescription("Repeated crashes")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test14RepeatedCrashes() throws InterruptedException {
@@ -665,7 +666,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 50 * 1000)
-    @PrettyTestName("Repeated crashes")
+    @TestDescription("Repeated crashes")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(20)
     public void test15RepeatedCrashesUnreliable() throws InterruptedException {
@@ -675,7 +676,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Single client, single server")
+    @TestDescription("Single client, single server")
     @Category(SearchTests.class)
     @TestPointValue(15)
     public void test16SingleClientSearch() {
@@ -694,7 +695,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Single client, multi-server")
+    @TestDescription("Single client, multi-server")
     @Category(SearchTests.class)
     @TestPointValue(15)
     public void test17SingleClientMultiServerSearch() {
@@ -726,7 +727,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Multi-client, multi-server; writes visible")
+    @TestDescription("Multi-client, multi-server; writes visible")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test18MultiClientWritesVisibleSearch() {
@@ -833,7 +834,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Multi-client, multi-server; multiple failures to backup")
+    @TestDescription("Multi-client, multi-server; multiple failures to backup")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test19MultipleFailuresSearch() {
@@ -883,7 +884,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Multi-client, multi-server random depth-first search")
+    @TestDescription("Multi-client, multi-server random depth-first search")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test20RandomSearch() {

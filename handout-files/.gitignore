@@ -1,6 +1,9 @@
 # Compiled Java
 out/
 
+# Saved traces
+traces/
+*.trace
 
 # IntelliJ
 .idea/workspace.xml

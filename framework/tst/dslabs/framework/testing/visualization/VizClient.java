@@ -28,9 +28,11 @@ import com.google.common.collect.Streams;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.TimerEnvelope;
+import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.newviz.DebuggerWindow;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
+import dslabs.framework.testing.utils.ClassSearch;
 import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.Json;
 import java.io.DataInputStream;
@@ -39,10 +41,13 @@ import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
-import java.util.Set;
-import javax.swing.JFrame;
-import javax.swing.WindowConstants;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 /**
  * Oddity client.
@@ -86,7 +91,8 @@ public class VizClient {
         this.port = port;
         this.state = state;
         this.settings = settings;
-        this.invariant = settings == null ? null : settings.whichInvariantViolated(state);
+        this.invariant = settings == null ? null :
+                settings.whichInvariantViolated(state);
         this.nodeNames = nodeNames;
         this.trace = trace;
     }
@@ -324,12 +330,49 @@ public class VizClient {
     }
 
     public static void main(String[] args) throws Exception {
-        int labNum = Integer.parseInt(args[0]);
-        String className = "dslabs.vizconfigs.Lab" + labNum + "VizConfig";
-        VizConfig config =
-                (VizConfig) Class.forName(className).getDeclaredConstructor()
-                                 .newInstance();
-        String[] vizArgs = Arrays.copyOfRange(args, 1, args.length);
+        final Options options = new Options();
+        final Option lab = Option.builder("l").longOpt("lab").required(true)
+                                 .type(String.class).argName("LAB").hasArg(true)
+                                 .numberOfArgs(1).desc("lab identifier")
+                                 .build();
+        final Option help = Option.builder("h").longOpt("help").build();
+        options.addOption(lab);
+        options.addOption(help);
+        final CommandLineParser parser = new DefaultParser();
+        CommandLine line = null;
+        try {
+            line = parser.parse(options, args);
+            if (line.hasOption(help)) {
+                throw new ParseException(null);
+            }
+        } catch (ParseException e) {
+            if (e.getMessage() != null) {
+                System.err.println(e.getMessage());
+            }
+            HelpFormatter formatter = new HelpFormatter();
+            formatter.printHelp("-l/--lab LAB <VIZ_ARGUMENTS> [-h/--help]",
+                    options);
+            return;
+        }
+
+        final String labID = line.getOptionValue(lab);
+
+        VizConfig config = null;
+        for (var c : ClassSearch.vizConfigs()) {
+            Lab l;
+            if ((l = c.getAnnotation(Lab.class)) != null &&
+                    l.value().equals(labID)) {
+                config = c.getDeclaredConstructor().newInstance();
+                break;
+            }
+        }
+
+        if (config == null) {
+            throw new RuntimeException(
+                    "Could not find viz config for lab " + labID);
+        }
+
+        String[] vizArgs = line.getArgs();
         SearchState state = config.getInitialState(vizArgs);
         VizClient client = new VizClient(state, false);
         client.run();

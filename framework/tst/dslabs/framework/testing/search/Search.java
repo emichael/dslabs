@@ -78,7 +78,7 @@ public abstract class Search {
 
     private long startTimeMillis;
 
-    Search(SearchSettings settings) {
+    protected Search(SearchSettings settings) {
         this.settings = settings;
         results.invariantsTested(new LinkedList<>(settings.invariants()));
         results.goalsSought(new LinkedList<>(settings.goals()));
@@ -240,7 +240,7 @@ public abstract class Search {
         return StateStatus.VALID;
     }
 
-    SearchResults run(SearchState initialState) {
+    protected SearchResults run(SearchState initialState) {
         startTimeMillis = System.currentTimeMillis();
         initSearch(initialState);
 

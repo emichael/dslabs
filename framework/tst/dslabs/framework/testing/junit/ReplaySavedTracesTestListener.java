@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2018 Ellis Michael (emichael@cs.washington.edu)
+ * Copyright (c) 2022 Ellis Michael (emichael@cs.washington.edu)
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -22,13 +22,23 @@
 
 package dslabs.framework.testing.junit;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.junit.runner.Description;
+import org.junit.runner.Result;
+import org.junit.runner.notification.RunNotifier;
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface PrettyTestName {
-    String value();
+class ReplaySavedTracesTestListener extends DSLabsTestListener {
+    ReplaySavedTracesTestListener(RunNotifier runNotifier) {
+        super(runNotifier);
+    }
+
+    @Override
+    public void testRunFinished(Result result) {
+        // Don't print out final results
+    }
+
+    @Override
+    public void testStarted(Description description) {
+        logTestStarted();
+        System.out.println(small_sep);
+    }
 }

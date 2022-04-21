@@ -23,8 +23,7 @@
 package dslabs.framework.testing;
 
 import dslabs.framework.Address;
-import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.TimerEnvelope;
+import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
@@ -37,7 +36,7 @@ import lombok.Getter;
  */
 @Getter
 @EqualsAndHashCode
-public class Event {
+public class Event implements Serializable {
     // invariant: exactly one of the {message, timer} fields is null
     private final MessageEnvelope message;
     private final TimerEnvelope timer;

@@ -59,7 +59,7 @@ public final class ClientWorker extends Node {
 
     // Configuration
     private final Client client;
-    @JsonIgnore private final Workload workload;
+    @Getter @JsonIgnore private final Workload workload;
 
     // Properties
     // TODO: move this to Workload

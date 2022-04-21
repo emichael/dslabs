@@ -23,9 +23,6 @@
 package dslabs.framework.testing.junit;
 
 import dslabs.framework.testing.utils.GlobalSettings;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
 import org.junit.runners.BlockJUnit4ClassRunner;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.InitializationError;
@@ -34,31 +31,17 @@ import org.junit.runners.model.Statement;
 public class DSLabsTestRunner extends BlockJUnit4ClassRunner {
     private static final boolean TIMEOUTS_ENABLED =
             GlobalSettings.timeoutsEnabled();
-    private static final Set<Integer> TEST_NUM = GlobalSettings.testNum();
-
-    private static final Map<FrameworkMethod, Boolean> isIgnored =
-            new HashMap<>();
-    private static volatile int testNum = 1;
 
     public DSLabsTestRunner(Class<?> klass) throws InitializationError {
         super(klass);
-    }
-
-    @Override
-    protected boolean isIgnored(FrameworkMethod child) {
-        synchronized (DSLabsTestRunner.class) {
-            if (isIgnored.containsKey(child)) {
-                return isIgnored.get(child);
-            }
-
-            Boolean result = TEST_NUM != null ? !TEST_NUM.contains(testNum) :
-                    super.isIgnored(child);
-            isIgnored.put(child, result);
-
-            testNum++;
-
-            return result;
-        }
+        /*
+         * Sort the tests here to make sure they are sorted both when running
+         * from the command line and also in IntelliJ without having to mark
+         * every class as sorted on method name. This is a hack, to be sure.
+         * Methods within a test class are sorted multiple times. It works,
+         * though.
+         */
+        sort(new TestOrder());
     }
 
     @SuppressWarnings("deprecation")

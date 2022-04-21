@@ -1,14 +1,14 @@
 package dslabs.clientserver;
 
 import dslabs.framework.Client;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
 import dslabs.framework.testing.junit.RunTests;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
 import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
@@ -17,11 +17,12 @@ import static dslabs.kvstore.KVStoreWorkload.appendSameKeyWorkload;
 import static dslabs.kvstore.KVStoreWorkload.get;
 import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("1")
+@Part(2)
 public final class ClientServerPart1Test extends ClientServerBaseTest {
 
     @Test(timeout = 2 * 1000, expected = InterruptedException.class)
-    @PrettyTestName("Client throws InterruptedException")
+    @TestDescription("Client throws InterruptedException")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test01ThrowsException() throws InterruptedException {
@@ -42,7 +43,7 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Single client basic operations")
+    @TestDescription("Single client basic operations")
     @Category(RunTests.class)
     @TestPointValue(20)
     public void test02SingleClient() throws InterruptedException {
@@ -52,7 +53,7 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Multi-client different key appends")
+    @TestDescription("Multi-client different key appends")
     @Category(RunTests.class)
     @TestPointValue(20)
     public void test03MultiClient() throws InterruptedException {
@@ -68,7 +69,7 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Multi-client same key appends")
+    @TestDescription("Multi-client same key appends")
     @Category(RunTests.class)
     @TestPointValue(30)
     public void test04MultiClientAppends() throws InterruptedException {
@@ -84,7 +85,7 @@ public final class ClientServerPart1Test extends ClientServerBaseTest {
     }
 
     @Test(timeout = 30 * 1000)
-    @PrettyTestName("Single client can finish operations")
+    @TestDescription("Single client can finish operations")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(20)
     public void test05SingleClientFinishesUnreliable()

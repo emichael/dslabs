@@ -12,9 +12,10 @@ import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunState;
@@ -31,10 +32,8 @@ import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.ALL_RESULTS_SAME;
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
@@ -65,7 +64,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("3")
 public class PaxosTest extends BaseJUnitTest {
     static StateGeneratorBuilder builder(Address[] servers) {
         final StateGeneratorBuilder builder = StateGenerator.builder();
@@ -356,7 +355,7 @@ public class PaxosTest extends BaseJUnitTest {
     /* Tests */
 
     @Test(timeout = 2 * 1000, expected = InterruptedException.class)
-    @PrettyTestName("Client throws InterruptedException")
+    @TestDescription("Client throws InterruptedException")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test01ThrowsException() throws InterruptedException {
@@ -378,7 +377,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Single client, simple operations")
+    @TestDescription("Single client, simple operations")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test02Basic() throws InterruptedException {
@@ -428,7 +427,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Progress with no partition")
+    @TestDescription("Progress with no partition")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test03NoPartition() throws InterruptedException {
@@ -445,7 +444,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Progress in majority")
+    @TestDescription("Progress in majority")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test04ProgressInMajority() throws InterruptedException {
@@ -459,7 +458,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("No progress in minority")
+    @TestDescription("No progress in minority")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test05NoProgressInMinority() throws InterruptedException {
@@ -478,7 +477,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Progress after partition healed")
+    @TestDescription("Progress after partition healed")
     @Category(RunTests.class)
     @TestPointValue(5)
     public void test06ProgressAfterHeal() throws InterruptedException {
@@ -503,7 +502,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("One server switches partitions")
+    @TestDescription("One server switches partitions")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test07ServerSwitchesPartitions() throws InterruptedException {
@@ -526,7 +525,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Multiple clients, synchronous put/get")
+    @TestDescription("Multiple clients, synchronous put/get")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test08SynchronousClients() throws InterruptedException {
@@ -554,7 +553,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Multiple clients, concurrent appends")
+    @TestDescription("Multiple clients, concurrent appends")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test09ConcurrentAppends() throws InterruptedException {
@@ -572,7 +571,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Message count")
+    @TestDescription("Message count")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test10MessageCount() throws InterruptedException {
@@ -598,7 +597,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("Old commands garbage collected")
+    @TestDescription("Old commands garbage collected")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test11ClearsMemory() throws InterruptedException {
@@ -652,7 +651,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Single client, simple operations")
+    @TestDescription("Single client, simple operations")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(10)
     public void test12BasicUnreliable() throws InterruptedException {
@@ -661,7 +660,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 10 * 1000)
-    @PrettyTestName("Two sequential clients")
+    @TestDescription("Two sequential clients")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(10)
     public void test13SimplePutGetUnreliable() throws InterruptedException {
@@ -676,7 +675,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 30 * 1000)
-    @PrettyTestName("Multiple clients, synchronous put/get")
+    @TestDescription("Multiple clients, synchronous put/get")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(15)
     public void test14SynchronousClientsUnreliable()
@@ -686,7 +685,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("Multiple clients, concurrent appends")
+    @TestDescription("Multiple clients, concurrent appends")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(15)
     public void test15ConcurrentAppendsUnreliable()
@@ -696,7 +695,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("Multiple clients, single partition and heal")
+    @TestDescription("Multiple clients, single partition and heal")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test16SinglePartition() throws InterruptedException {
@@ -740,7 +739,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 35 * 1000)
-    @PrettyTestName("Constant repartitioning, check maximum wait time")
+    @TestDescription("Constant repartitioning, check maximum wait time")
     @Category(RunTests.class)
     @TestPointValue(20)
     public void test17ConstantRepartition() throws InterruptedException {
@@ -804,7 +803,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 35 * 1000)
-    @PrettyTestName("Constant repartitioning, check maximum wait time")
+    @TestDescription("Constant repartitioning, check maximum wait time")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(30)
     public void test18ConstantRepartitionUnreliable()
@@ -814,7 +813,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 70 * 1000)
-    @PrettyTestName("Constant repartitioning, full throughput")
+    @TestDescription("Constant repartitioning, full throughput")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(30)
     public void test19RepartitionFullThroughput() throws InterruptedException {
@@ -895,7 +894,7 @@ public class PaxosTest extends BaseJUnitTest {
 
 
     @Test
-    @PrettyTestName("Single client, simple operations")
+    @TestDescription("Single client, simple operations")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test20basicSearch() {
@@ -925,7 +924,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Single client, no progress in minority")
+    @TestDescription("Single client, no progress in minority")
     @Category(SearchTests.class)
     @TestPointValue(15)
     public void test21NoProgressInMinoritySearch() {
@@ -943,7 +942,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Two clients, sequential appends visible")
+    @TestDescription("Two clients, sequential appends visible")
     @Category(SearchTests.class)
     @TestPointValue(30)
     public void test22TwoClientsSearch() {
@@ -995,7 +994,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Two clients, five servers, multiple leader changes")
+    @TestDescription("Two clients, five servers, multiple leader changes")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test23QuorumCheckingSearch() {
@@ -1094,7 +1093,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Handling of logs with holes")
+    @TestDescription("Handling of logs with holes")
     @Category(SearchTests.class)
     @TestPointValue(0)
     public void test24LogsWithHolesSearch() {
@@ -1146,7 +1145,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Three server random search")
+    @TestDescription("Three server random search")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test25ThreeServerRandomSearch() {
@@ -1155,7 +1154,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test
-    @PrettyTestName("Five server random search")
+    @TestDescription("Five server random search")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test26FiveServerRandomSearch() {
@@ -1164,7 +1163,7 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     @Test(timeout = 40 * 1000)
-    @PrettyTestName("Paxos runs in singleton group")
+    @TestDescription("Paxos runs in singleton group")
     @Category({RunTests.class, SearchTests.class})
     @TestPointValue(0)
     public void test27SingletonPaxos() throws InterruptedException {

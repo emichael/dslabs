@@ -6,9 +6,11 @@ import dslabs.framework.Client;
 import dslabs.framework.Result;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
-import dslabs.framework.testing.junit.PrettyTestName;
+import dslabs.framework.testing.junit.Lab;
+import dslabs.framework.testing.junit.Part;
 import dslabs.framework.testing.junit.RunTests;
 import dslabs.framework.testing.junit.SearchTests;
+import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.kvstore.KVStoreWorkload;
@@ -27,10 +29,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.RandomStringUtils;
-import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.runners.MethodSorters;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
@@ -44,10 +44,11 @@ import static dslabs.kvstore.KVStoreWorkload.putOk;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@FixMethodOrder(MethodSorters.NAME_ASCENDING)
+@Lab("4")
+@Part(2)
 public final class ShardStorePart1Test extends ShardStoreBaseTest {
     @Test(timeout = 5 * 1000)
-    @PrettyTestName("Single group, basic workload")
+    @TestDescription("Single group, basic workload")
     @Category(RunTests.class)
     @TestPointValue(10)
     public void test01Basic() throws InterruptedException {
@@ -67,7 +68,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("Multi-group join/leave")
+    @TestDescription("Multi-group join/leave")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test02JoinLeave() throws InterruptedException {
@@ -119,7 +120,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 25 * 1000)
-    @PrettyTestName("Shards move when group joins")
+    @TestDescription("Shards move when group joins")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test03ShardsMoveOnJoin() throws InterruptedException {
@@ -173,7 +174,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 25 * 1000)
-    @PrettyTestName("Shards move when moved by ShardMaster")
+    @TestDescription("Shards move when moved by ShardMaster")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test04ShardsMoveOnMove() throws InterruptedException {
@@ -271,7 +272,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 20 * 1000)
-    @PrettyTestName("Progress with majorities in each group")
+    @TestDescription("Progress with majorities in each group")
     @Category(RunTests.class)
     @TestPointValue(15)
     public void test05ProgressWithMajorities() throws InterruptedException {
@@ -288,7 +289,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 60 * 1000)
-    @PrettyTestName("Repeated partitioning of each group")
+    @TestDescription("Repeated partitioning of each group")
     @Category(RunTests.class)
     @TestPointValue(20)
     public void test06RepeatedPartitioning() throws InterruptedException {
@@ -353,7 +354,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 60 * 1000)
-    @PrettyTestName("Repeated shard movement")
+    @TestDescription("Repeated shard movement")
     @Category(RunTests.class)
     @TestPointValue(20)
     public void test07ConstantMovement() throws InterruptedException {
@@ -390,7 +391,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 40 * 1000)
-    @PrettyTestName("Multi-group join/leave")
+    @TestDescription("Multi-group join/leave")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(20)
     public void test08JoinLeaveUnreliable() throws InterruptedException {
@@ -399,7 +400,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test(timeout = 60 * 1000)
-    @PrettyTestName("Repeated shard movement")
+    @TestDescription("Repeated shard movement")
     @Category({RunTests.class, UnreliableTests.class})
     @TestPointValue(30)
     public void test09ConstantMovementUnreliable() throws InterruptedException {
@@ -408,7 +409,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test
-    @PrettyTestName("Single client, single group")
+    @TestDescription("Single client, single group")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test10SingleClientSingleGroupSearch() {
@@ -419,7 +420,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test
-    @PrettyTestName("Single client, multi-group")
+    @TestDescription("Single client, multi-group")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test11SingleClientMultiGroupSearch() {
@@ -430,7 +431,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test
-    @PrettyTestName("Multi-client, multi-group")
+    @TestDescription("Multi-client, multi-group")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test12MultiClientMultiGroupSearch() {
@@ -485,7 +486,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test
-    @PrettyTestName("One server per group random search")
+    @TestDescription("One server per group random search")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test13SingleServerRandomSearch() {
@@ -493,7 +494,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     @Test
-    @PrettyTestName("Multiple servers per group random search")
+    @TestDescription("Multiple servers per group random search")
     @Category(SearchTests.class)
     @TestPointValue(20)
     public void test14MultiServerRandomSearch() {

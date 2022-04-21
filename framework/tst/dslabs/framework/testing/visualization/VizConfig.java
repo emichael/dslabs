@@ -42,6 +42,9 @@ import java.util.List;
  * behavior as taking the arguments: "numServers numClients WORKLOAD_STRING".
  * And deviation from that convention should be clearly documented in that lab's
  * README.
+ *
+ * Sub-classes should be labeled with @Lab and should be in a package beginning
+ * with "dslabs".
  */
 public abstract class VizConfig {
     public SearchState getInitialState(String[] args) {
