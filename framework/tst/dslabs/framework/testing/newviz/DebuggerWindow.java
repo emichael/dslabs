@@ -32,6 +32,9 @@ import java.awt.Dimension;
 import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -82,14 +85,34 @@ public class DebuggerWindow extends JFrame {
          */
         PlatformDefaults.setPlatform(PlatformDefaults.GNOME);
 
-        // Try to enable GPU acceleration (doesn't seem to work) and disable UI scaling
-        System.setProperty("sun.java2d.opengl", "true");
+        /*
+         * Try to enable GPU acceleration (doesn't seem to work very well) and
+         * disable UI scaling.
+         *
+         * Don't enable GPU acceleration in WSL, though. It does not like it.
+         */
+        if (!runningInWSL()) {
+            System.setProperty("sun.java2d.opengl", "true");
+        }
         System.setProperty("sun.java2d.nodraw", "true");
         System.setProperty("sun.java2d.uiScale.enabled", "false");
         System.setProperty("sun.java2d.win.uiScaleX", "1.0");
         System.setProperty("sun.java2d.win.uiScaleX", "1.0");
     }
 
+    /**
+     * Try to detect whether the visual debugger is running under the Windows
+     * Subsystem for Linux.
+     */
+    private static boolean runningInWSL() {
+        try {
+            String procVersion = Files.readString(Path.of("/proc/version"));
+            return procVersion.toLowerCase().contains("microsoft") &&
+                    procVersion.toLowerCase().contains("wsl");
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
     static final String WINDOW_TITLE = "DSLabs Visual Debugger";
     static final int WINDOW_DEFAULT_WIDTH = 1440, WINDOW_DEFAULT_HEIGHT = 810;
@@ -216,7 +239,7 @@ public class DebuggerWindow extends JFrame {
             darkMode.addActionListener(e -> Utils.setupDarkTheme(true));
             lightMode.addActionListener(e -> Utils.setupLightTheme(true));
         }
-        add(menuBar, "dock north");
+        setJMenuBar(menuBar);
 
         /* ---------------------------------------------------------------------
             Setup the side bar
@@ -339,8 +362,10 @@ public class DebuggerWindow extends JFrame {
         add(stateTreeCanvas, "dock south");
 
         pack();
+
         // TODO: don't exceed size of screen
         setSize(new Dimension(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT));
+        setLocationRelativeTo(null);
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
@@ -356,7 +381,8 @@ public class DebuggerWindow extends JFrame {
 
         JXTaskPane pane = new JXTaskPane(name);
         for (StatePredicate predicate : predicates) {
-            JLabel label = new JLabel(String.format(LINE_WRAPPING_FORMAT, predicate.name()));
+            JLabel label = new JLabel(
+                    String.format(LINE_WRAPPING_FORMAT, predicate.name()));
             pane.add(label);
             labels.add(Pair.of(predicate, label));
         }
