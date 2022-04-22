@@ -6,7 +6,8 @@ THIS REPOSITORY WITH SOLUTION CODE PRIVATE.**
 
 1. [Introduction](#introduction)
 2. [Getting Started](#getting-started)
-    1. [On Windows](#on-windows)
+    1. [Command-line Tools On Windows](#command-line-tools-on-windows)
+    2. [Visual Debugger On Windows](#visual-debugger-on-windows)
 3. [Framework Overview and Documentation](#framework-overview-and-documentation)
 4. [Included Libraries](#included-libraries)
     1. [Lombok](#lombok)
@@ -113,14 +114,74 @@ In order to run the tests from the terminal, however, you also will need Python
 3 and Make.
 
 
-### On Windows
-Because of the messy terminal situation on Windows, we would strongly recommend
-using the Bash on Ubuntu on Windows terminal, which will give you a Linux
-environment. We recommend installing `python3` and `java14` through `apt-get`.
-For IntelliJ, you would have to separately install Java to be able to run tests,
-but even though you'd end up with two Java installations (one on the Linux
-subsystem and one on native Windows), it'll make your life a lot easier in the
-long run.
+### Command-line Tools On Windows
+We do not recommend using Windows. It is possible, however. You will need to
+install `make`, Python 3, and Java 14. You can do this on native Windows.
+However, installing a Windows Subsystem for Linux will make installing and
+running the command-line tools much easier (though it will potentially make
+running the visual debugger more difficult depending on your version of Windows
+and WSL; see below).
+
+If you install WSL, you can install `python3`, `java14`, and `make` through
+`apt-get`. You will still need to install Java directly on Windows, though, for
+IntelliJ. (This will result in two installations of Java.)
+
+### Visual Debugger on Windows
+On native Windows, the visual debugger will work without any additional
+configuration. However, if you are running `run-tests.py` from WSL, you may need
+to follow additional steps to be able to run GUI applications.
+
+#### WSL 2 on Windows 11
+If you are running WSL 2 on Windows 11 Build 22000 or higher, the new visual
+debugger should work without any additional configuration.
+
+#### WSL 2
+On older versions of Windows, you will need to install
+[vcXsrv](https://sourceforge.net/projects/vcxsrv/) or a similar X server to be
+able to run the new visual debugger from WSL 2.
+
+Then, configure your `.bashrc` in Ubuntu with these settings
+```bash
+echo "export DISPLAY=\$(awk '/nameserver / {print \$2; exit}' /etc/resolv.conf 2>/dev/null):0" >> ~/.bashrc
+echo "export LIBGL_ALWAYS_INDIRECT=1" >> ~/.bashrc
+```
+and reload `.bashrc`.
+```bash
+. ~/.bashrc
+```
+
+Next, we need to allow WSL 2 access through the Windows Firewall. Open "Firewall
+& Network Protection > Advanced Settings". Right-click "Inbound Rules". Then
+choose "New Rule". Set the type to "Port". Enter TCP, port 6000. Click through,
+leaving the rest of the settings default, and name the rule "WSL2 X Forwarding".
+This rule currently allows access from all locations, however, which is a
+security risk. To fix that, find the rule in "Inbound Rules", right-click, and
+select properties. Choose "Scope", and under "Remote IP Addresses" choose "These
+IP Addresses". Add `172.16.0.0/12` and `192.168.0.0/16`.
+
+You can start vcXsrv using the `XLaunch` command. You will need to have vcXsrc
+running whenever you want to run the visual debugger. Because traffic from WSL 2
+comes from a separate subnet, you will need to disable access control from
+`XLaunch`.
+
+#### WSL 1
+On WSL 1, the situation is simpler. You will still need to install
+[vcXsrv](https://sourceforge.net/projects/vcxsrv/) or a similar X server to be
+able to run the new visual debugger.
+
+Then, configure your `.bashrc` in Ubuntu with these settings
+```bash
+echo "export DISPLAY=:0" >> ~/.bashrc
+echo "export LIBGL_ALWAYS_INDIRECT=1" >> ~/.bashrc
+```
+and reload `.bashrc`.
+```bash
+. ~/.bashrc
+```
+
+You can start vcXsrv using the `XLaunch` command. You will need to have vcXsrc
+running whenever you want to run the visual debugger. The default settings are
+sufficient.
 
 
 ## Framework Overview and Documentation
