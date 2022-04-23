@@ -292,7 +292,12 @@ public class DebuggerWindow extends JFrame {
                         searchSettings.goals(), this.goals);
                 updatePredicatePanes();
             }
+
             sideBar.setMinimumSize(new Dimension(20, 0));
+            // Don't let sidebar be too large on startup
+            sideBar.setPreferredSize(new Dimension(
+                    Math.min(sideBar.getPreferredSize().width, 300),
+                    sideBar.getPreferredSize().height));
         }
         add(topSplitPane);
 

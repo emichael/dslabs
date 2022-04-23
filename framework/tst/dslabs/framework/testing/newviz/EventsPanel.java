@@ -61,9 +61,11 @@ class EventsPanel extends JPanel {
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         add(scrollPane, "grow");
 
-        setPreferredSize(new Dimension(300, getPreferredSize().height));
-
         update(initialState);
+
+        // TODO: should this go in DebuggerWindow?
+        setPreferredSize(new Dimension(300, getPreferredSize().height));
+        setMinimumSize(new Dimension(5, 0));
     }
 
     private StateTree addEventTreeState(final EventTreeState s) {
