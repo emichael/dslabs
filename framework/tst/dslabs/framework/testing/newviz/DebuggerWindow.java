@@ -74,6 +74,7 @@ import org.jdesktop.swingx.MultiSplitLayout;
 import org.jdesktop.swingx.MultiSplitLayout.Divider;
 import org.jdesktop.swingx.MultiSplitLayout.Leaf;
 import org.jdesktop.swingx.MultiSplitLayout.Split;
+import org.jdesktop.swingx.VerticalLayout;
 
 
 public class DebuggerWindow extends JFrame {
@@ -385,6 +386,9 @@ public class DebuggerWindow extends JFrame {
         }
 
         JXTaskPane pane = new JXTaskPane(name);
+        // Add some space between predicates
+        ((VerticalLayout) pane.getContentPane().getLayout()).setGap(12);
+
         for (StatePredicate predicate : predicates) {
             JLabel label = new JLabel(
                     String.format(LINE_WRAPPING_FORMAT, predicate.name()));
