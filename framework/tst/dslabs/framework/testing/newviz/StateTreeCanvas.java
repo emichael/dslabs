@@ -22,12 +22,15 @@ class StateTreeCanvas extends ZoomableCanvas {
     Set<Node> nodes = new HashSet<>();
     Node selected = null;
 
-    private static final int DEFAULT_X_SIZE = 1080, DEFAULT_Y_SIZE = 200;
+    private static final int DEFAULT_X_SIZE = 1080, DEFAULT_Y_SIZE = 200,
+            MIN_Y_SIZE = 150;
 
     private static final int CIRCLE_RADIUS = 40, CIRCLE_GAP = 60;
-    private static final int X_OFFSET = 100, Y_OFFSET = 100;
+    private static final int X_OFFSET = 100, Y_OFFSET = 75;
 
     StateTreeCanvas(DebuggerWindow parent) {
+        // XXX: is allowing flexibility okay? Do we want this to sometimes resize?
+        setMinimumSize(new Dimension(getMinimumSize().width, MIN_Y_SIZE));
         setPreferredSize(new Dimension(DEFAULT_X_SIZE, DEFAULT_Y_SIZE));
 
         addMouseListener(new MouseListener() {
@@ -136,6 +139,8 @@ class StateTreeCanvas extends ZoomableCanvas {
     }
 
     void showEvent(EventTreeState state) {
+        // TODO: resize to show entire tree?
+
         if (root == null) {
             root = Node.createRoot(state.pathFromInitial().get(0));
             nodes.add(root);
