@@ -108,8 +108,7 @@ public class DebuggerWindow extends JFrame {
     private static boolean runningInWSL() {
         try {
             String procVersion = Files.readString(Path.of("/proc/version"));
-            return procVersion.toLowerCase().contains("microsoft") &&
-                    procVersion.toLowerCase().contains("wsl");
+            return procVersion.toLowerCase().contains("microsoft");
         } catch (IOException e) {
             return false;
         }
