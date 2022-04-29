@@ -37,6 +37,7 @@ import java.awt.Component;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -231,9 +232,9 @@ class StateTreeCellRenderer extends BaseTreeCellRenderer {
  */
 abstract class StateTreeNode extends DefaultMutableTreeNode {
     private static final Class<?>[] NODE_TYPES_IN_PRIORITY_ORDER =
-            {PrimitiveNode.class, BoxedPrimitiveNode.class, StringNode.class,
-                    ListNode.class, MapNode.class, SetNode.class,
-                    AddressNode.class, DefaultObjectNode.class};
+            {ArrayNode.class, PrimitiveNode.class, BoxedPrimitiveNode.class,
+                    StringNode.class, ListNode.class, MapNode.class,
+                    SetNode.class, AddressNode.class, DefaultObjectNode.class};
 
     @SneakyThrows
     static protected StateTreeNode createNode(Object value) {
@@ -326,7 +327,7 @@ abstract class StateTreeNode extends DefaultMutableTreeNode {
         assert Objects.equals(keyInstance, newNode.keyInstance);
         Object oldValueObject = valueObj;
         valueObj = newNode.valueObj;
-        if (!Objects.equals(oldValueObject, newNode.valueObj)) {
+        if (!Objects.deepEquals(oldValueObject, newNode.valueObj)) {
             treeModel.nodeChanged(this);
         }
 
@@ -460,7 +461,7 @@ abstract class StateTreeNode extends DefaultMutableTreeNode {
             return DiffStatus.NEW;
         }
 
-        if (!Objects.equals(valueObj, diffTarget.valueObj)) {
+        if (!Objects.deepEquals(valueObj, diffTarget.valueObj)) {
             return DiffStatus.CHANGED;
         }
 
@@ -476,7 +477,6 @@ abstract class StateTreeNode extends DefaultMutableTreeNode {
     }
 
     protected String treeCellTextInternal() {
-
         if (renderKey() == null && valueObj() != null &&
                 (valueObj() instanceof ClientWorker ||
                         valueObj() instanceof MessageEnvelope ||
@@ -710,6 +710,125 @@ abstract class StateTreeNode extends DefaultMutableTreeNode {
         }
     }
 
+    private static final class ArrayNode extends StateTreeNode {
+        static boolean canHandle(Class<?> clz) {
+            return clz.isArray();
+        }
+
+        @Data
+        private static class ArrayKey implements ChildKey {
+            @NonNull private final Integer key;
+
+            @Override
+            public String renderKey() {
+                return String.format("[%s]:", key);
+            }
+        }
+
+        @Override
+        protected String treeCellTextInternal() {
+            // TODO: repeated code from super
+            StringBuilder sb = new StringBuilder();
+            if (renderKey() != null) {
+                sb.append(renderKey());
+            }
+            if (valueObj() != null) {
+                sb.append(String.format("<font color='%s'>(%s)</font>",
+                        secondaryColor(),
+                        valueObj().getClass().getSimpleName()));
+
+                Object o = valueObj();
+
+                if (o instanceof byte[]) {
+                    sb.append(Arrays.toString((byte[]) o));
+                } else if (o instanceof short[]) {
+                    sb.append(Arrays.toString((short[]) o));
+                } else if (o instanceof int[]) {
+                    sb.append(Arrays.toString((int[]) o));
+                } else if (o instanceof long[]) {
+                    sb.append(Arrays.toString((long[]) o));
+                } else if (o instanceof char[]) {
+                    sb.append(Arrays.toString((char[]) o));
+                } else if (o instanceof float[]) {
+                    sb.append(Arrays.toString((float[]) o));
+                } else if (o instanceof double[]) {
+                    sb.append(Arrays.toString((double[]) o));
+                } else if (o instanceof boolean[]) {
+                    sb.append(Arrays.toString((boolean[]) o));
+                } else {
+                    sb.append(Arrays.deepToString((Object[]) valueObj()));
+                }
+            } else {
+                sb.append(String.format("<font color='%s'>null</font>",
+                        secondaryColor()));
+            }
+            return sb.toString();
+        }
+
+        ArrayNode(Object value) {
+            super(value);
+        }
+
+        @Override
+        protected void expand(BiConsumer<ChildKey, StateTreeNode> childAdder) {
+            Object o = valueObj();
+            int i = 0;
+            if (o instanceof byte[]) {
+                for (byte item : (byte[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(byte.class, item));
+                    i++;
+                }
+            } else if (o instanceof short[]) {
+                for (short item : (short[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(short.class, item));
+                    i++;
+                }
+            } else if (o instanceof int[]) {
+                for (int item : (int[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(int.class, item));
+                    i++;
+                }
+            } else if (o instanceof long[]) {
+                for (long item : (long[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(long.class, item));
+                    i++;
+                }
+            } else if (o instanceof char[]) {
+                for (char item : (char[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(char.class, item));
+                    i++;
+                }
+            } else if (o instanceof float[]) {
+                for (float item : (float[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(float.class, item));
+                    i++;
+                }
+            } else if (o instanceof double[]) {
+                for (double item : (double[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(double.class, item));
+                    i++;
+                }
+            } else if (o instanceof boolean[]) {
+                for (boolean item : (boolean[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i),
+                            createNode(boolean.class, item));
+                    i++;
+                }
+            } else {
+                for (Object item : (Object[]) valueObj()) {
+                    childAdder.accept(new ArrayKey(i), createNode(item));
+                    i++;
+                }
+            }
+        }
+    }
 
     private static final class SetNode extends StateTreeNode {
         static boolean canHandle(Class<?> clz) {
