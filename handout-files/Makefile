@@ -43,7 +43,7 @@ $(OUT)/tst/: $(JAVA_TST) $(OUT)/src
 	@ $(JC) -d $@ -cp "$(TST_JARS)$(SEP)$(OUT)/src" $(JAVA_TST)
 
 
-submit.tar.gz:
+submit.tar.gz: $(JAVA_SRC)
 	@ echo "[tar] submit.tar.gz"
 	@ tar -cvzf $@ labs/*/src
 
