@@ -41,6 +41,7 @@ import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -373,8 +374,21 @@ public class VizClient {
         }
 
         String[] vizArgs = line.getArgs();
-        SearchState state = config.getInitialState(vizArgs);
-        VizClient client = new VizClient(state, false);
+        SearchState state;
+        try {
+            state = config.getInitialState(vizArgs);
+        } catch (Exception e) {
+            System.err.println("Could not start viz for lab " + labID +
+                    " with arguments: " + Arrays.toString(vizArgs));
+            String helpString;
+            if ((helpString = config.argumentHelpString()) != null) {
+                System.err.println("Usage: " + helpString);
+            }
+            throw e;
+        }
+        SearchSettings settings = new SearchSettings();
+        VizClient client =
+                new VizClient(state, config.defaultSearchSettings(), false);
         client.run();
     }
 }

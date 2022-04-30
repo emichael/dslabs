@@ -25,6 +25,7 @@ package dslabs.framework.testing.visualization;
 import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import java.util.Arrays;
 import java.util.Collections;
@@ -73,6 +74,20 @@ public abstract class VizConfig {
             }
         }
         return getInitialState(numServers, numClients, commands);
+    }
+
+    /**
+     * Should always be called after {@link #getInitialState(String[])}.
+     */
+    public SearchSettings defaultSearchSettings() {
+        return new SearchSettings();
+    }
+
+    /**
+     * Printed if there is an error parsing args, after "Usage: ".
+     */
+    public String argumentHelpString() {
+        return null;
     }
 
     protected SearchState getInitialState(int numServers, int numClients,
