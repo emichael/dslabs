@@ -230,6 +230,7 @@ class Proposer extends Node {
                                                   p1.accepted.getLeft() > p2.accepted.getLeft() ? p1 : p2)
                                           .get().accepted.getRight();
             }
+            prepareAcks.clear();
             broadcast(new Accept(proposalNumber, proposalValue), acceptors);
         }
     }
