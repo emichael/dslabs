@@ -68,7 +68,6 @@ import org.apache.commons.lang3.ClassUtils;
 
 import static dslabs.framework.testing.newviz.Utils.makeIcon;
 
-// TODO: add a ton of tests for this...
 
 enum JTreeDisplayType {
     NEW("new"), HIGHLIGHT("highlight"), LOWLIGHT("lowlight"), DEFAULT(null);
