@@ -32,6 +32,7 @@ import javax.swing.UIManager;
 import jiconfont.IconCode;
 import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.swing.IconFontSwing;
+import lombok.NonNull;
 
 abstract class Utils {
     static {
@@ -54,12 +55,12 @@ abstract class Utils {
         return IconFontSwing.buildIcon(iconCode, ICON_SIZE, color);
     }
 
-    static String colorToHex(Color c) {
+    static String colorToHex(@NonNull Color c) {
         return String.format("#%02x%02x%02x", c.getRed(), c.getGreen(),
                 c.getBlue());
     }
 
-    static Color desaturate(Color c, double factor) {
+    static Color desaturate(@NonNull Color c, double factor) {
         if (factor < 0 || factor > 1) {
             throw new IllegalArgumentException(
                     "factor to desaturate by must be between 0 and 1");

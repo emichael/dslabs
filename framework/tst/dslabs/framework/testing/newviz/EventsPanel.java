@@ -40,8 +40,8 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 class EventsPanel extends JPanel {
-    private BaseTree initialState;
-    private final List<Pair<EventTreeState, StateTree>> events =
+    private BaseJTree initialState;
+    private final List<Pair<EventTreeState, ObjectJTree>> events =
             new ArrayList<>();
     private final JPanel inner;
     private final DebuggerWindow parent;
@@ -68,7 +68,7 @@ class EventsPanel extends JPanel {
         setMinimumSize(new Dimension(5, 0));
     }
 
-    private StateTree addEventTreeState(final EventTreeState s) {
+    private ObjectJTree addEventTreeState(final EventTreeState s) {
         final JPanel box =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
@@ -81,7 +81,7 @@ class EventsPanel extends JPanel {
         if (s.isInitialState()) {
             // XXX: kind of ugly way to do this
             initialState =
-                    new BaseTree(new DefaultMutableTreeNode("Initial State"));
+                    new BaseJTree(new DefaultMutableTreeNode("Initial State"));
             initialState.rootIcon(Utils.makeIcon(FontAwesome.FLAG));
             box.add(initialState);
             inner.add(box);
@@ -97,7 +97,8 @@ class EventsPanel extends JPanel {
         }
 
         Event e = s.previousEvent();
-        StateTree tree = new StateTree(e.isMessage() ? e.message() : e.timer());
+        ObjectJTree tree =
+                new ObjectJTree(e.isMessage() ? e.message() : e.timer());
 
         tree.collapseRow(0);
         box.add(tree);
@@ -111,7 +112,7 @@ class EventsPanel extends JPanel {
 
     void update(EventTreeState s) {
         Iterator<EventTreeState> i1 = s.pathFromInitial().iterator();
-        Iterator<Pair<EventTreeState, StateTree>> i2 = events.iterator();
+        Iterator<Pair<EventTreeState, ObjectJTree>> i2 = events.iterator();
 
         // Ignore initial state, handle separately using label
         assert i1.hasNext();
@@ -124,14 +125,14 @@ class EventsPanel extends JPanel {
 
         // TODO: slightly hacky
         if (i1.hasNext()) {
-            initialState.setTreeDisplayType(TreeDisplayType.DEFAULT);
+            initialState.setTreeDisplayType(JTreeDisplayType.DEFAULT);
         } else {
-            initialState.setTreeDisplayType(TreeDisplayType.HIGHLIGHT);
+            initialState.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
         }
 
         while (i1.hasNext() && i2.hasNext()) {
             EventTreeState e = i1.next();
-            Pair<EventTreeState, StateTree> p = i2.next();
+            Pair<EventTreeState, ObjectJTree> p = i2.next();
 
             // TODO: use .equals??
             if (e != p.getLeft()) {
@@ -142,10 +143,10 @@ class EventsPanel extends JPanel {
                     inner.remove(i2.next().getRight().getParent());
                     i2.remove();
                 }
-                StateTree tree = addEventTreeState(e);
+                ObjectJTree tree = addEventTreeState(e);
                 // TODO: don't actually update if unnecessary
                 if (!i1.hasNext()) {
-                    tree.setTreeDisplayType(TreeDisplayType.HIGHLIGHT);
+                    tree.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
                 }
                 i2 = null;
                 break;
@@ -153,17 +154,17 @@ class EventsPanel extends JPanel {
 
             // TODO: don't actually update if unnecessary
             if (i1.hasNext()) {
-                p.getRight().setTreeDisplayType(TreeDisplayType.DEFAULT);
+                p.getRight().setTreeDisplayType(JTreeDisplayType.DEFAULT);
             } else {
-                p.getRight().setTreeDisplayType(TreeDisplayType.HIGHLIGHT);
+                p.getRight().setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
             }
         }
 
         while (i1.hasNext()) {
-            StateTree tree = addEventTreeState(i1.next());
+            ObjectJTree tree = addEventTreeState(i1.next());
             // TODO: don't actually update if unnecessary
             if (!i1.hasNext()) {
-                tree.setTreeDisplayType(TreeDisplayType.HIGHLIGHT);
+                tree.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
             }
             i2 = null;
         }
@@ -173,7 +174,7 @@ class EventsPanel extends JPanel {
         // If i2's list was altered, it was previously empty
         while (i1.hasNext() && i2 != null && i2.hasNext()) {
             EventTreeState e = i1.next();
-            Pair<EventTreeState, StateTree> p = i2.next();
+            Pair<EventTreeState, ObjectJTree> p = i2.next();
 
             // XXX: repeated code...
             // TODO: use .equals??
@@ -185,20 +186,20 @@ class EventsPanel extends JPanel {
                     inner.remove(i2.next().getRight().getParent());
                     i2.remove();
                 }
-                StateTree tree = addEventTreeState(e);
+                ObjectJTree tree = addEventTreeState(e);
                 // TODO: don't actually update if unnecessary
-                tree.setTreeDisplayType(TreeDisplayType.LOWLIGHT);
+                tree.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
                 i2 = null;
                 break;
             } else {
-                p.getRight().setTreeDisplayType(TreeDisplayType.LOWLIGHT);
+                p.getRight().setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
             }
         }
 
         while (i1.hasNext()) {
             i2 = null;
-            StateTree tree = addEventTreeState(i1.next());
-            tree.setTreeDisplayType(TreeDisplayType.LOWLIGHT);
+            ObjectJTree tree = addEventTreeState(i1.next());
+            tree.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
         }
 
         // TODO: this giant method barely works and depends on how the best path is chosen...

@@ -55,14 +55,14 @@ class SingleNodePanel extends JPanel {
     private final Address address;
 
     private final JPanel messageBox, timerBox;
-    private final StateTree nodeState;
+    private final ObjectJTree nodeState;
     private final DebuggerWindow parent;
 
     private final JSplitPane mainSplitPane, eventPane;
 
-    private final Map<MessageEnvelope, Pair<JButton, StateTree>> messages =
+    private final Map<MessageEnvelope, Pair<JButton, ObjectJTree>> messages =
             new HashMap<>();
-    private final List<Triple<TimerEnvelope, JPanel, StateTree>> timers =
+    private final List<Triple<TimerEnvelope, JPanel, ObjectJTree>> timers =
             new ArrayList<>();
 
     SingleNodePanel(final EventTreeState s, final SearchSettings settings,
@@ -92,7 +92,7 @@ class SingleNodePanel extends JPanel {
         mainSplitPane = new JSplitPane(VERTICAL_SPLIT);
         mainSplitPane.setDividerLocation(0.5);
         mainSplitPane.add(eventPane);
-        nodeState = new StateTree(s.node(a));
+        nodeState = new ObjectJTree(s.node(a));
         scrollPane = new JScrollPane(nodeState);
         mainSplitPane.add(scrollPane);
         mainSplitPane.setResizeWeight(0.4);
@@ -163,14 +163,14 @@ class SingleNodePanel extends JPanel {
             messageBox.revalidate();
             messageBox.repaint();
         }
-        for (Entry<MessageEnvelope, Pair<JButton, StateTree>> messageEntry : messages.entrySet()) {
+        for (Entry<MessageEnvelope, Pair<JButton, ObjectJTree>> messageEntry : messages.entrySet()) {
             MessageEnvelope message = messageEntry.getKey();
-            StateTree tree = messageEntry.getValue().getRight();
+            ObjectJTree tree = messageEntry.getValue().getRight();
             if (!s.isInitialState() &&
                     s.messageIsNew(message, viewDeliveredMessages)) {
-                tree.setTreeDisplayType(TreeDisplayType.NEW);
+                tree.setTreeDisplayType(JTreeDisplayType.NEW);
             } else {
-                tree.setTreeDisplayType(TreeDisplayType.DEFAULT);
+                tree.setTreeDisplayType(JTreeDisplayType.DEFAULT);
             }
         }
 
@@ -211,7 +211,7 @@ class SingleNodePanel extends JPanel {
                 e -> parent.deliverEvent(new Event(message)));
 
         setDeliverability(deliveryButton, pruned, prohibited, "message");
-        StateTree tree = new StateTree(message);
+        ObjectJTree tree = new ObjectJTree(message);
         tree.collapseRow(0);
         mbox.add(tree, "pad 0 0");
 
@@ -237,7 +237,7 @@ class SingleNodePanel extends JPanel {
 
         setDeliverability(deliveryButton, pruned, prohibited, "timer");
 
-        StateTree tree = new StateTree(timer.timer());
+        ObjectJTree tree = new ObjectJTree(timer.timer());
         tree.collapseRow(0);
         tbox.add(tree);
 
