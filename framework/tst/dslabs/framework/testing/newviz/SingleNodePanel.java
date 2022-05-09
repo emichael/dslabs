@@ -216,7 +216,7 @@ class SingleNodePanel extends JPanel {
         mbox.add(tree, "pad 0 0");
 
         messages.put(message, Pair.of(deliveryButton, tree));
-        messageBox.add(mbox, "pad 0 0");
+        messageBox.add(mbox, "pad 0 0", 0);
     }
 
     private void addTimer(final TimerEnvelope timer, boolean deliverable,
