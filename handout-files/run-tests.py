@@ -115,11 +115,15 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     sys.exit(returncode)
 
 
-def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False):
+def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False,
+                     assertions=False):
     """Start the visual debugger."""
     make()
 
     command = list(BASE_COMMAND)
+
+    if assertions:
+        command.append('-ea')
 
     if no_viz_server:
         command.append('-DnoVizServer=true')
@@ -140,11 +144,15 @@ def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False):
     sys.exit(returncode)
 
 
-def visualize_trace(trace_name, no_viz_server=False, new_viz=False):
+def visualize_trace(trace_name, no_viz_server=False, new_viz=False,
+                    assertions=False):
     """Visualize a trace."""
     make()
 
     command = list(BASE_COMMAND)
+
+    if assertions:
+        command.append('-ea')
 
     if no_viz_server:
         command.append('-DnoVizServer=true')
@@ -293,10 +301,9 @@ def main():
         disallow_arguments('-d/--debugger',
             ('-p/--part', '--checks', '-n/--test-num', '--no-run',
              '--no-search', '--no-timeouts', '-g/--log-level',
-             '-ea/--assertions', '--single-threaded', '-s/--save-traces',
-             '-z/--start-viz'))
+             '--single-threaded', '-s/--save-traces', '-z/--start-viz'))
         run_viz_debugger(args.lab, args.debugger, args.no_viz_server,
-                         new_viz=args.new_viz)
+                         new_viz=args.new_viz, assertions=args.assertions)
 
     elif args.replay_traces is not None:
         if args.part is not None and args.lab is None:
@@ -320,10 +327,9 @@ def main():
         disallow_arguments('--visualize-trace',
             ('-l/--lab', '-p/--part', '--checks', '-n/--test-num', '--no-run',
              '--no-search', '--no-timeouts', '-g/--log-level',
-             '-ea/--assertions', '--single-threaded', '-s/--save-traces',
-             '-z/--start-viz'))
+             '--single-threaded', '-s/--save-traces', '-z/--start-viz'))
         visualize_trace(args.visualize_trace, no_viz_server=args.no_viz_server,
-                        new_viz=args.new_viz)
+                        new_viz=args.new_viz, assertions=args.assertions)
 
     else:
         if args.lab is None:

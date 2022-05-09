@@ -295,6 +295,8 @@ class SingleNodePanel extends JPanel {
             }
         }
 
+        assert i >= timers.size();
+
         if (repaintTimerBox) {
             timerBox.revalidate();
             timerBox.repaint();
