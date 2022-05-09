@@ -75,10 +75,10 @@ public class DebuggerPerformanceTest {
         return null;
     }
 
-    @Test
-    public void testDebuggerPerformance()
+    private double singleTestTimeSecs()
             throws NoSuchMethodException, InvocationTargetException,
             InstantiationException, IllegalAccessException, AWTException {
+
         VizConfig config = null;
         for (var c : ClassSearch.vizConfigs()) {
             Lab l;
@@ -127,5 +127,28 @@ public class DebuggerPerformanceTest {
         final long endTime = System.nanoTime();
         final double seconds = (endTime - startTime) / 1000000000f;
         System.out.println("Total time seconds: " + seconds);
+
+        window.dispose();
+
+        return seconds;
+    }
+
+    @Test
+    public void testDebuggerPerformance()
+            throws NoSuchMethodException, InvocationTargetException,
+            InstantiationException, IllegalAccessException, AWTException {
+        singleTestTimeSecs();
+    }
+
+    @Test
+    public void multiRunPerformanceTest()
+            throws InvocationTargetException, NoSuchMethodException,
+            InstantiationException, IllegalAccessException, AWTException {
+        final int NUM_RUNS = 10;
+        double totalSecs = 0;
+        for (int i = 0; i < NUM_RUNS; i++) {
+            totalSecs += singleTestTimeSecs();
+        }
+        System.out.println("Average time: " + totalSecs/NUM_RUNS);
     }
 }
