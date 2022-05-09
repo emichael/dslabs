@@ -362,7 +362,7 @@ class ObjectJTree extends BaseJTree {
          */
         final void update(ObjectTreeNode newNode, DefaultTreeModel treeModel) {
             assert Objects.equals(keyInstance, newNode.keyInstance);
-            Object oldValueObject = valueObj;
+            final Object oldValueObject = valueObj;
             valueObj = newNode.valueObj;
             if (!Objects.deepEquals(oldValueObject, newNode.valueObj)) {
                 treeModel.nodeChanged(this);
@@ -379,9 +379,7 @@ class ObjectJTree extends BaseJTree {
                 final Map<KeyInstance, ObjectTreeNode> newChildren =
                         newNode.childMap();
 
-                for (TreeNode c : children) {
-                    assert c instanceof ObjectTreeNode;
-                    ObjectTreeNode n = (ObjectTreeNode) c;
+                for (ObjectTreeNode n : iterableChildren()) {
                     if (!newChildren.containsKey(n.keyInstance)) {
                         toRemove.add(n);
                     } else {
@@ -398,9 +396,7 @@ class ObjectJTree extends BaseJTree {
 
             if (newNode.children != null) {
                 final Map<KeyInstance, ObjectTreeNode> oldChildren = childMap();
-                for (TreeNode c : newNode.children) {
-                    assert c instanceof ObjectTreeNode;
-                    ObjectTreeNode n = (ObjectTreeNode) c;
+                for (ObjectTreeNode n : newNode.iterableChildren()) {
                     if (!oldChildren.containsKey(n.keyInstance)) {
                         n.parent = null;
                         treeModel.insertNodeInto(n, this, getChildCount());
@@ -409,60 +405,74 @@ class ObjectJTree extends BaseJTree {
             }
         }
 
-        void setDiffObject(ObjectTreeNode node, DefaultTreeModel treeModel) {
-            isDiffed = true;
+        void setDiffObject(ObjectTreeNode diffNode,
+                           DefaultTreeModel treeModel) {
+            final ObjectTreeNode oldDiffTarget = diffTarget;
+            final boolean wasDiffed = isDiffed;
 
-            if (node == null) {
-                diffTarget = null;
-                if (treeModel != null) {
+            isDiffed = true;
+            diffTarget = diffNode;
+
+            if (diffTarget == null) {
+                if (treeModel != null &&
+                        (!wasDiffed || oldDiffTarget != null)) {
                     treeModel.nodeChanged(this);
                 }
-                if (children != null) {
-                    for (TreeNode c : children) {
-                        ObjectTreeNode n = (ObjectTreeNode) c;
-                        n.setDiffObject(null, treeModel);
-                    }
+                for (ObjectTreeNode n : iterableChildren()) {
+                    n.setDiffObject(null, treeModel);
                 }
-
                 return;
             }
 
-            assert Objects.equals(keyInstance, node.keyInstance);
-            assert node.diffTarget == null;
-            assert !node.isDiffed;
+            assert Objects.equals(keyInstance, diffTarget.keyInstance);
+            assert diffTarget.diffTarget == null;
+            assert !diffTarget.isDiffed;
 
-            diffTarget = node;
             // TODO: don't always call changed
             if (treeModel != null) {
                 treeModel.nodeChanged(this);
             }
 
-            if (children != null) {
-                node.expandInternal();
-                Map<KeyInstance, ObjectTreeNode> diffChildren = node.childMap();
-                for (TreeNode c : children) {
-                    ObjectTreeNode n = (ObjectTreeNode) c;
-                    n.setDiffObject(
-                            diffChildren.getOrDefault(n.keyInstance, null),
-                            treeModel);
-                }
+            if (!hasExpanded) {
+                return;
+            }
+
+            diffTarget.expandInternal();
+            Map<KeyInstance, ObjectTreeNode> diffChildren = diffTarget.childMap();
+            for (ObjectTreeNode n : iterableChildren()) {
+                n.setDiffObject(diffChildren.getOrDefault(n.keyInstance, null),
+                        treeModel);
             }
         }
 
         void clearDiffObject(DefaultTreeModel treeModel) {
+            if (!isDiffed) {
+                return;
+            }
+
             diffTarget = null;
             isDiffed = false;
-
-            // TODO: don't always change
             treeModel.nodeChanged(this);
 
-            if (children != null) {
-                // TODO: pattern for iterating children...
-                for (TreeNode c : children) {
-                    ObjectTreeNode n = (ObjectTreeNode) c;
-                    n.clearDiffObject(treeModel);
-                }
+            for (ObjectTreeNode n : iterableChildren()) {
+                n.clearDiffObject(treeModel);
             }
+        }
+
+        /**
+         * Use to iterate through the current children vector. Does not expand
+         * the node.
+         *
+         * @return an iterable of child nodes
+         */
+        private Iterable<ObjectTreeNode> iterableChildren() {
+            if (children == null) {
+                return Collections.emptyList();
+            }
+            return children.stream().map(t -> {
+                assert t instanceof ObjectTreeNode;
+                return (ObjectTreeNode) t;
+            }).collect(Collectors.toList());
         }
 
         final IconCode icon() {
