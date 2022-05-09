@@ -31,6 +31,9 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
+ * Stores a timer, its delivery address, its duration, and its creation time.
+ * Equality is based on delivery address, timer object, and duration only.
+ *
  * Note: this class has a natural ordering that is inconsistent with equals.
  */
 @Data
@@ -43,12 +46,10 @@ public final class TimerEnvelope
     private final Address to;
     private final Timer timer;
 
-    @VizIgnore
-    private final int minTimerLengthMillis, maxTimerLengthMillis,
+    @VizIgnore private final int minTimerLengthMillis, maxTimerLengthMillis,
             timerLengthMillis;
 
-    @VizIgnore
-    private final long startTimeNanos;
+    @VizIgnore private final long startTimeNanos;
 
     public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis,
                          int maxTimerLengthMillis) {
