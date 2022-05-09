@@ -24,6 +24,7 @@ package dslabs.framework.testing.newviz;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
+import dslabs.framework.Address;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
@@ -118,6 +119,14 @@ class EventTreeState implements Serializable {
         if (oldHeight != height && parent != null) {
             parent.updateHeight();
         }
+    }
+
+    Map<TimerEnvelope, Integer> timerFrequencies(Address address) {
+        Map<TimerEnvelope, Integer> ret = new HashMap<>();
+        for (TimerEnvelope t : state.timers(address)) {
+            ret.compute(t, (__, i) -> i == null ? 1 : i + 1);
+        }
+        return ret;
     }
 
     @Getter(value = AccessLevel.PRIVATE,
