@@ -120,19 +120,18 @@ class EventTreeState implements Serializable {
         }
     }
 
+    @Getter(value = AccessLevel.PRIVATE,
+            lazy = true) private final Set<MessageEnvelope> cachedNetwork =
+            Sets.newHashSet(state.network());
+
     boolean messageIsNew(MessageEnvelope m, boolean viewDelieveredMessages) {
         if (parent == null) {
             return true;
         }
 
         if (viewDelieveredMessages) {
-            // TODO: super slow to do this every time...
-            HashSet<MessageEnvelope> current = Sets.newHashSet(state.network());
-            HashSet<MessageEnvelope> previous =
-                    Sets.newHashSet(state.previous().network());
-
-            assert current.contains(m);
-            return !previous.contains(m);
+            assert cachedNetwork().contains(m);
+            return !parent.cachedNetwork().contains(m);
         }
 
         assert undeliveredMessages.contains(m);
