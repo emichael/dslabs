@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
+import java.util.function.Supplier;
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -53,7 +54,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
 
 import static javax.swing.JSplitPane.VERTICAL_SPLIT;
-
 
 // TODO: add tests, especially for message and timer boxes
 
@@ -227,8 +227,8 @@ class SingleNodePanel extends JPanel {
 
         /*
             settings.canStepTimer(t) only tells us if a timer equal to t can be
-             delivered. If there are duplicate timers in the queue, the result
-             will be the same for all of them.
+            delivered. If there are duplicate timers in the queue, the result
+            will be the same for all of them.
 
             However, the delivery rules for timers mean that if two identical
             timers (with identical durations) are in the queue, then only the
@@ -241,14 +241,16 @@ class SingleNodePanel extends JPanel {
             var t = newTimers.get(i);
             final int tf = ctf.getOrDefault(t, 0) + 1;
             final boolean tIsNew = otf != null && tf > otf.getOrDefault(t, 0);
-            final boolean tIsDeliverable = timerSet.add(t) && s.canStepTimer(t);
+            // This is too clever by half, but it works
+            final Supplier<Boolean> tIsDeliverable =
+                    () -> timerSet.add(t) && s.canStepTimer(t);
 
             var c = i < timers.size() ? timers.get(i) : null;
 
             if (c != null && Objects.equals(t, c.getLeft())) {
                 JButton deliveryButton =
                         (JButton) c.getMiddle().getComponent(0);
-                deliveryButton.setVisible(tIsDeliverable);
+                deliveryButton.setVisible(tIsDeliverable.get());
                 if (tIsNew) {
                     c.getRight().setTreeDisplayType(JTreeDisplayType.NEW);
                 } else {
@@ -276,7 +278,7 @@ class SingleNodePanel extends JPanel {
 
             if (c == null || newTimers.size() > timers.size()) {
                 // When there are more timers, insert t
-                var r = timerPanel(t, tIsDeliverable, pruned,
+                var r = timerPanel(t, tIsDeliverable.get(), pruned,
                         settings != null && !settings.deliverTimers(t.to()),
                         parent);
                 timers.add(i, Triple.of(t, r.getLeft(), r.getRight()));
