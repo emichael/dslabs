@@ -45,7 +45,8 @@ $(OUT)/tst/: $(JAVA_TST) $(OUT)/src
 
 submit.tar.gz: $(JAVA_SRC)
 	@ echo "[tar] submit.tar.gz"
-	@ tar -cvzf $@ labs/*/src
+	@ # prevent MacOS extended attrs from generating extra files
+	@ COPYFILE_DISABLE=1 tar -cvzf $@ labs/*/src
 
 
 clean:
