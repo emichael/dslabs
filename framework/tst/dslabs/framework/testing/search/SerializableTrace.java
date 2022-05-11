@@ -128,7 +128,9 @@ public class SerializableTrace implements Serializable {
                 System.out.println("Saved trace to " + filePath + "\n");
             }
         } catch (IOException e) {
+            System.err.println("Could not save trace");
             e.printStackTrace();
+            System.err.println();
         }
     }
 
