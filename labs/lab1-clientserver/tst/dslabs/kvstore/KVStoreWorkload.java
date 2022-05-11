@@ -31,7 +31,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import static dslabs.framework.testing.StatePredicate.statePredicate;
+import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
+import static dslabs.framework.testing.StatePredicate.statePredicateWithMessage;
 
 public abstract class KVStoreWorkload extends Workload {
     public static final String OK = "Ok", KEY_NOT_FOUND = "KeyNotFound";
@@ -270,7 +271,7 @@ public abstract class KVStoreWorkload extends Workload {
      */
     private static StatePredicate appendsLinearizableInternal(
             Iterable<Address> clientWorkers) {
-        return statePredicate(
+        return statePredicateWithMessage(
                 "Sequence of appends to the same key is linearizable", s -> {
                     List<String> allResults = new ArrayList<>();
 
@@ -290,7 +291,8 @@ public abstract class KVStoreWorkload extends Workload {
                             }
 
                             if (!(r instanceof AppendResult)) {
-                                return false;
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s got %s as result for %s", a, r, c));
                             }
 
                             Append append = (Append) c;
@@ -298,7 +300,8 @@ public abstract class KVStoreWorkload extends Workload {
 
                             if (!appendResult.value()
                                              .endsWith(append.value())) {
-                                return false;
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s got %s as result for %s", a, r, c));
                             }
 
                             allResults.add(appendResult.value());
@@ -313,11 +316,15 @@ public abstract class KVStoreWorkload extends Workload {
                                        .startsWith(allResults.get(i)) ||
                                 allResults.get(i + 1)
                                           .equals(allResults.get(i))) {
-                            return false;
+                            return new ImmutablePair<>(false,
+                                    String.format("%s is inconsistent with %s",
+                                            appendResult(allResults.get(i)),
+                                            appendResult(
+                                                    allResults.get(i + 1))));
                         }
                     }
 
-                    return true;
+                    return TRUE_NO_MESSAGE;
                 });
     }
 
