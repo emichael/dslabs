@@ -29,11 +29,13 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import org.apache.commons.lang3.RandomStringUtils;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
+import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
 import static dslabs.kvstore.KVStoreWorkload.append;
 import static dslabs.kvstore.KVStoreWorkload.appendResult;
 import static dslabs.kvstore.KVStoreWorkload.appendsLinearizable;
@@ -247,8 +249,8 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         // Count number of keys gotten
         runSettings.addInvariant(RESULTS_OK);
-        runSettings.addInvariant(StatePredicate
-                .statePredicate("Only group 2 operations completed", s -> {
+        runSettings.addInvariant(StatePredicate.statePredicateWithMessage(
+                "Only group 2 operations completed", s -> {
                     for (Entry<Address, List<Result>> e : s.results()
                                                            .entrySet()) {
                         Address a = e.getKey();
@@ -259,15 +261,17 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
                         if (e.getValue().isEmpty() &&
                                 group2Clients.contains(a)) {
-                            return false;
+                            return new ImmutablePair<>(false, String.format(
+                                    "%s is a client of group 2 but could not complete operation"));
                         }
 
                         if (!e.getValue().isEmpty() &&
                                 group1Clients.contains(a)) {
-                            return false;
+                            return new ImmutablePair<>(false, String.format(
+                                    "%s is a client of group 1 but could complete operation"));
                         }
                     }
-                    return true;
+                    return TRUE_NO_MESSAGE;
                 }));
     }
 
