@@ -33,6 +33,7 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 import static dslabs.framework.testing.StatePredicate.resultsPredicate;
+import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
 
 public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
     public static MultiGet multiGet(@NonNull Object... keys) {
