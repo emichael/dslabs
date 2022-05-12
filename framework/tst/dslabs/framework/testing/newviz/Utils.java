@@ -26,8 +26,11 @@ import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLaf;
 import java.awt.Color;
+import java.awt.Component;
 import java.util.prefs.Preferences;
 import javax.swing.Icon;
+import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.UIManager;
 import jiconfont.IconCode;
 import jiconfont.icons.font_awesome.FontAwesome;
@@ -105,5 +108,21 @@ abstract class Utils {
     private static void saveThemePreference(boolean darkMode) {
         final Preferences prefs = Preferences.userNodeForPackage(Utils.class);
         prefs.putBoolean(PREF_DARK_MODE, darkMode);
+    }
+
+    /**
+     * Creates a new scroll pane and sets the default options
+     *
+     * @param component
+     *         the inner component
+     * @return the new JScrollPane
+     */
+    static JScrollPane scrollPane(Component component) {
+        JScrollPane scrollPane = new JScrollPane(component);
+        scrollPane.getViewport().setScrollMode(JViewport.BLIT_SCROLL_MODE);
+        // This seems okay, but it might not work for all components
+        scrollPane.getVerticalScrollBar().setUnitIncrement(10);
+        scrollPane.getHorizontalScrollBar().setUnitIncrement(10);
+        return scrollPane;
     }
 }

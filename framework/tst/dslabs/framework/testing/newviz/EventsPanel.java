@@ -57,7 +57,7 @@ class EventsPanel extends JPanel {
                 new MigLayout(new LC().wrapAfter(1), new AC().gap("0"),
                         new AC().gap("0")));
 
-        JScrollPane scrollPane = new JScrollPane(inner);
+        JScrollPane scrollPane = Utils.scrollPane(inner);
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         add(scrollPane, "grow");
 

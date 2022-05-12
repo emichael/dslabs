@@ -83,14 +83,14 @@ class SingleNodePanel extends JPanel {
         messageBox = new JPanel(
                 new MigLayout(new LC().wrapAfter(1), new AC().gap("0"),
                         new AC().gap("0")));
-        JScrollPane scrollPane = new JScrollPane(messageBox);
+        JScrollPane scrollPane = Utils.scrollPane(messageBox);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Messages"));
         eventPane.add(scrollPane);
 
         timerBox = new JPanel(
                 new MigLayout(new LC().wrapAfter(1), new AC().gap("0"),
                         new AC().gap("0")));
-        scrollPane = new JScrollPane(timerBox);
+        scrollPane = Utils.scrollPane(timerBox);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Timers"));
         eventPane.add(scrollPane);
         eventPane.setResizeWeight(0.5);
@@ -99,7 +99,7 @@ class SingleNodePanel extends JPanel {
         mainSplitPane.setDividerLocation(0.5);
         mainSplitPane.add(eventPane);
         nodeState = new ObjectJTree(s.node(a));
-        scrollPane = new JScrollPane(nodeState);
+        scrollPane = Utils.scrollPane(nodeState);
         mainSplitPane.add(scrollPane);
         mainSplitPane.setResizeWeight(0.4);
 
