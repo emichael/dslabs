@@ -32,7 +32,7 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import static dslabs.framework.testing.StatePredicate.resultsPredicate;
+import static dslabs.framework.testing.StatePredicate.resultsPredicateWithMessage;
 import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
 
 public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
