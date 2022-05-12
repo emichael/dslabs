@@ -18,13 +18,15 @@ import dslabs.shardmaster.ShardMaster.Leave;
 import dslabs.shardmaster.ShardMaster.Ok;
 import java.util.List;
 import java.util.Objects;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static dslabs.framework.testing.StatePredicate.CLIENTS_DONE;
 import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
+import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
 import static dslabs.framework.testing.StatePredicate.resultsHaveType;
-import static dslabs.framework.testing.StatePredicate.statePredicate;
+import static dslabs.framework.testing.StatePredicate.statePredicateWithMessage;
 import static dslabs.kvstore.KVStoreWorkload.KEY_NOT_FOUND;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.MULTI_GETS_MATCH;
 import static dslabs.kvstore.TransactionalKVStoreWorkload.OK;
@@ -291,21 +293,33 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
                         multiGet("foo-1", "foo-2")).build());
 
         searchSettings.maxDepth(1000).maxTimeSecs(20).addInvariant(
-                statePredicate("MultiGet returns correct results", s -> {
-                    List<Result> results = s.clientWorker(client(2)).results();
-                    if (results.isEmpty()) {
-                        return true;
-                    }
-                    if (results.size() > 1) {
-                        return false;
-                    }
-                    Result r = results.get(0);
-                    return Objects.equals(r,
-                            multiGetResult("foo-1", "X", "foo-2", "Y")) ||
-                            Objects.equals(r,
+                statePredicateWithMessage("MultiGet returns correct results",
+                        s -> {
+                            List<Result> results =
+                                    s.clientWorker(client(2)).results();
+                            if (results.isEmpty()) {
+                                return TRUE_NO_MESSAGE;
+                            }
+                            if (results.size() > 1) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s received multiple MultiGetResults",
+                                        client(2)));
+                            }
+                            Result r = results.get(0);
+                            if (!Objects.equals(r,
+                                    multiGetResult("foo-1", "X", "foo-2",
+                                            "Y")) && !Objects.equals(r,
                                     multiGetResult("foo-1", KEY_NOT_FOUND,
-                                            "foo-2", KEY_NOT_FOUND));
-                })).addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
+                                            "foo-2", KEY_NOT_FOUND))) {
+                                return new ImmutablePair<>(false, String.format(
+                                        "%s matches neither of %s or %s", r,
+                                        multiGetResult("foo-1", KEY_NOT_FOUND,
+                                                "foo-2", KEY_NOT_FOUND),
+                                        multiGetResult("foo-1", "X", "foo-2",
+                                                "Y")));
+                            }
+                            return TRUE_NO_MESSAGE;
+                        })).addInvariant(RESULTS_OK).addPrune(CLIENTS_DONE);
 
         dfs(initSearchState);
 
