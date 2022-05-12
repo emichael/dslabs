@@ -32,7 +32,8 @@ import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
-import static dslabs.framework.testing.StatePredicate.resultsPredicate;
+import static dslabs.framework.testing.StatePredicate.resultsPredicateWithMessage;
+import static dslabs.framework.testing.StatePredicate.TRUE_NO_MESSAGE;
 
 public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
     public static MultiGet multiGet(@NonNull Object... keys) {
@@ -259,8 +260,8 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
 
     /* TransactionalKVStore-specific predicates */
     public static final StatePredicate MULTI_GETS_MATCH =
-            resultsPredicate("Multi-get returns same values for all keys",
-                    rs -> {
+            resultsPredicateWithMessage(
+                    "Multi-get returns same values for all keys", rs -> {
                         for (List<Result> r : rs) {
                             for (Result result : r) {
                                 if (!(result instanceof MultiGetResult)) {
@@ -269,10 +270,13 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
                                 MultiGetResult mgr = (MultiGetResult) result;
                                 if (mgr.values().values().stream().distinct()
                                        .count() != 1) {
-                                    return false;
+                                    return new ImmutablePair<>(false,
+                                            String.format(
+                                                    "%s has multiple distinct values",
+                                                    mgr));
                                 }
                             }
                         }
-                        return true;
+                        return TRUE_NO_MESSAGE;
                     });
 }
