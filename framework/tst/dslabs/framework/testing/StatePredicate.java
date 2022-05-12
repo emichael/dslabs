@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Getter;
 import lombok.NonNull;
@@ -94,8 +95,19 @@ public class StatePredicate implements Predicate<AbstractState>, Serializable {
     }
 
     public static final StatePredicate ALL_RESULTS_SAME =
-            resultsPredicate("All clients' results are the same",
-                    rs -> rs.stream().distinct().limit(2).count() <= 1);
+            resultsPredicateWithMessage("All clients' results are the same",
+                    rs -> {
+                        List<List<Result>> distinctResults =
+                                rs.stream().distinct().limit(2)
+                                  .collect(Collectors.toList());
+                        if (distinctResults.size() > 1) {
+                            return new ImmutablePair<>(false,
+                                    String.format("%s does not match %s",
+                                            distinctResults.get(0),
+                                            distinctResults.get(1)));
+                        }
+                        return TRUE_NO_MESSAGE;
+                    });
 
     private static StatePredicate resultsMatch(List<Result> expectedResults,
                                                Quantifier quantifier) {
