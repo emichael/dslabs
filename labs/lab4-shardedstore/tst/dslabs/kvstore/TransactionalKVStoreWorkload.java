@@ -259,8 +259,8 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
 
     /* TransactionalKVStore-specific predicates */
     public static final StatePredicate MULTI_GETS_MATCH =
-            resultsPredicate("Multi-get returns same values for all keys",
-                    rs -> {
+            resultsPredicateWithMessage(
+                    "Multi-get returns same values for all keys", rs -> {
                         for (List<Result> r : rs) {
                             for (Result result : r) {
                                 if (!(result instanceof MultiGetResult)) {
@@ -269,10 +269,13 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
                                 MultiGetResult mgr = (MultiGetResult) result;
                                 if (mgr.values().values().stream().distinct()
                                        .count() != 1) {
-                                    return false;
+                                    return new ImmutablePair<>(false,
+                                            String.format(
+                                                    "%s has multiple distinct values",
+                                                    mgr));
                                 }
                             }
                         }
-                        return true;
+                        return TRUE_NO_MESSAGE;
                     });
 }
