@@ -22,13 +22,13 @@
 
 package dslabs.framework.testing.utils;
 
-import com.google.common.base.Objects;
 import com.rits.cloning.Cloner;
 import com.rits.cloning.ICloningStrategy;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.SerializationUtils;
@@ -131,7 +131,8 @@ public abstract class Cloning {
 
         if (GlobalSettings.doChecks()) {
             // Check equals and hashCode
-            if (!Objects.equal(ret, object)) {
+            if (!Objects.deepEquals(ret, object) ||
+                    !Objects.deepEquals(object, ret)) {
                 CheckLogger.notEqualToClone(object);
             }
             if (ret != null && object.hashCode() != ret.hashCode()) {
