@@ -184,8 +184,8 @@ public abstract class Node implements Serializable {
 
     /**
      * Send a message to a Node with the given {@link Address}. The message will
-     * be cloned immediately as it is sent; there is no need to deep copy data
-     * structures when creating messages.
+     * be cloned or serialized immediately as it is sent; there is no need to
+     * deep copy data structures when creating messages.
      *
      * @param message
      *         the message to send
@@ -407,8 +407,10 @@ public abstract class Node implements Serializable {
      * <p>Can be used to send messages between two nodes within the same root
      * node (e.g., between parent Node and sub-Node). The message is handled
      * <i>immediately</i>. If the handler is successfully executed and returns
-     * a value, that value is returned. Otherwise, this method returns null.
-     * This value is not cloned or modified in any way.
+     * a value, that value is returned. Otherwise, this method returns null. The
+     * message and the return value are not cloned or modified in any way; note
+     * that this behavior differs from {@link #send(Message, Address)}, which
+     * clones or serializes messages immediately.
      *
      * @param message
      *         the message to deliver
@@ -425,7 +427,10 @@ public abstract class Node implements Serializable {
      * (rather than sending the message over the network). The message is
      * handled <i>immediately</i>. If the handler is successfully executed and
      * returns a value, that value is returned. Otherwise, this method returns
-     * null. This value is not cloned or modified in any way.
+     * null. The message and the return value are not cloned or modified in any
+     * way; note that this behavior differs from
+     * {@link #send(Message, Address)}, which clones or serializes messages
+     * immediately.
      *
      * @param message
      *         the message to deliver
@@ -475,7 +480,8 @@ public abstract class Node implements Serializable {
     /**
      * <p>Can be used to invoke a timer handler on a Node, rather than
      * setting the timer and waiting for it to expire. The timer handler is
-     * handled <i>immediately</i>.
+     * handled <i>immediately</i>. The timer is not cloned or modified in any
+     * way.
      *
      * @param timer
      *         the timer to deliver
