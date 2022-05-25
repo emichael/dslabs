@@ -183,6 +183,24 @@ particular, note that `transient` and `static` fields are ignored by default by
 all cloning, serialization, and `toString` methods.
 
 
+## Acknowledgements
+The framework and labs have been improved thanks to valuable contributions from:
+- Alex Saveau
+- Andrew Wei
+- Doug Woos
+- James Wilcox
+- John Depaszthory
+- Kaelin Laundry
+- Logan Gnanapragasam
+- Nick Anderson
+- Paul Yau
+- Sarang Joshi
+- Thomas Anderson
+
+The lab assignments, especially labs 2 and 4, were adapted with permission from
+the MIT 6.824 labs developed by Robert Morris and colleagues.
+
+
 ## Contact
 Bug reports and feature requests should be submitted using the GitHub issues
 tool. Email Ellis Michael (emichael@cs.washington.edu) with any other questions.
