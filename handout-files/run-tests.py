@@ -44,7 +44,7 @@ RUNTIME_CLASSPATH = CP_SEP.join((
 ))
 
 def make():
-    """Compile the source files, return True if successful."""
+    """Compile the source files, exit script if unsuccessful."""
     try:
         subprocess.check_output(['make'], stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as ex:

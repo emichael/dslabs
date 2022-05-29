@@ -863,23 +863,30 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         bfs(primaryAlone);
         final SearchState client1Done = goalMatchingState();
 
-        // Make sure that the second client can finish, sending message to backup
+        // Disconnect primary and second client; fail to backup
         searchSettings.maxTimeSecs(30).resetNetwork()
                       .partition(server(1), server(2), client(2), VSA)
                       .linkActive(server(1), client(2), false)
                       .linkActive(client(2), server(1), false).clearGoals()
-                      .addGoal(CLIENTS_DONE).clearPrunes().addPrune(
-                hasViewReply(INITIAL_VIEWNUM + 3).implies(
-                        hasViewReply(INITIAL_VIEWNUM + 3, server(1), server(2)))
-                                                 .negate()).addPrune(
-                hasViewReply(INITIAL_VIEWNUM + 4).implies(
-                        hasViewReply(INITIAL_VIEWNUM + 4, server(2), null))
-                                                 .negate())
+                      .addGoal(hasViewReply(INITIAL_VIEWNUM + 4, server(2),null))
+                      .clearPrunes()
+                      .addPrune(hasViewReply(INITIAL_VIEWNUM + 3)
+                              .implies(hasViewReply(INITIAL_VIEWNUM + 3, server(1), server(2)))
+                              .negate())
+                      .addPrune(hasViewReply(INITIAL_VIEWNUM + 4)
+                              .implies(hasViewReply(INITIAL_VIEWNUM + 4, server(2), null))
+                              .negate())
                       .addPrune(hasViewReply(INITIAL_VIEWNUM + 5));
         bfs(client1Done);
+        final SearchState backupAlone = goalMatchingState();
+
+        // Make sure that the second client can finish, sending messages to backup
+        searchSettings.clearGoals().addGoal(CLIENTS_DONE);
+        bfs(backupAlone);
         assertGoalFound();
 
         searchSettings.clearGoals();
+        bfs(backupAlone);
         bfs(client1Done);
     }
 

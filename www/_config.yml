@@ -1,0 +1,20 @@
+permalink: /:title/
+
+markdown: kramdown
+kramdown:
+  entity_output: symbolic
+  auto_ids: False
+  input: GFM
+  hard_wrap: False
+  syntax_highlighter: rouge
+
+include:
+  - .nojekyll
+exclude:
+  - Makefile
+  - Gemfile
+  - Gemfile.lock
+
+sass:
+  style: :compressed
+  sourcemap: development

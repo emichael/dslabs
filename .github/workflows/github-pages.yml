@@ -1,0 +1,41 @@
+name: Github Pages
+
+on:
+  push:
+    branches:
+      - master
+    # Only run this when the JavaDoc or website could have changed
+    paths:
+      - 'framework/src/**'
+      - 'www/**'
+
+jobs:
+  github-pages:
+    if: ${{ github.repository == 'emichael/dslabs' }}
+    name: Deploy to GitHub pages
+    runs-on: ubuntu-latest
+    concurrency: github-pages
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/cache@v2
+        with:
+          path: vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('www/Gemfile.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-gems-
+
+      - uses: actions/setup-java@v2
+        with:
+          distribution: 'adopt'
+          java-version: '17'
+          cache: 'gradle'
+
+      - run: make www/javadoc/
+
+      - uses: helaili/jekyll-action@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          target_branch: 'gh-pages'
+          jekyll_src: ./www
+          jekyll_build_options: --baseurl /dslabs/

@@ -153,6 +153,7 @@ at the University of Washington.
   handout, including the main `README` and `run-tests.py`.
 - `grading` contains scripts created by previous TAs for the course to batch
   grade submissions.
+- `www` contains the DSLabs website which is built with Jekyll.
 
 The `master` branch of this repository is not setup to be distributed to
 students as-is. The `Makefile` has targets to build the `handout` directory and
@@ -181,6 +182,24 @@ cloned correctly and serialized to JSON correctly, if applicable. See
 `@ToString` annotation for more information about customizing its behavior. In
 particular, note that `transient` and `static` fields are ignored by default by
 all cloning, serialization, and `toString` methods.
+
+
+## Acknowledgements
+The framework and labs have been improved thanks to valuable contributions from:
+- Alex Saveau
+- Andrew Wei
+- Doug Woos
+- James Wilcox
+- John Depaszthory
+- Kaelin Laundry
+- Logan Gnanapragasam
+- Nick Anderson
+- Paul Yau
+- Sarang Joshi
+- Thomas Anderson
+
+The lab assignments, especially labs 2 and 4, were adapted with permission from
+the MIT 6.824 labs developed by Robert Morris and colleagues.
 
 
 ## Contact
