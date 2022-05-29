@@ -242,7 +242,7 @@ public class DebuggerWindow extends JFrame {
         setJMenuBar(menuBar);
 
         /* ---------------------------------------------------------------------
-            Setup the side bar
+            SETUP THE SIDE BAR
            -------------------------------------------------------------------*/
         final JSplitPane topSplitPane =
                 new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
