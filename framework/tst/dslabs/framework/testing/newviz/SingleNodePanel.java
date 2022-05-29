@@ -58,6 +58,10 @@ import static javax.swing.JSplitPane.VERTICAL_SPLIT;
 // TODO: add tests, especially for message and timer boxes
 
 class SingleNodePanel extends JPanel {
+    // Relative sizes of events panels (combined) to node and messages to timers
+    private static final float EVENTS_PANEL_SIZE = 0.4f, MESSAGE_BOX_SIZE =
+            0.5f;
+
     private final Address address;
 
     private final JPanel messageBox, timerBox;
@@ -93,15 +97,14 @@ class SingleNodePanel extends JPanel {
         scrollPane = Utils.scrollPane(timerBox);
         scrollPane.setBorder(BorderFactory.createTitledBorder("Timers"));
         eventPane.add(scrollPane);
-        eventPane.setResizeWeight(0.5);
+        eventPane.setResizeWeight(MESSAGE_BOX_SIZE);
 
         mainSplitPane = new JSplitPane(VERTICAL_SPLIT);
-        mainSplitPane.setDividerLocation(0.5);
         mainSplitPane.add(eventPane);
         nodeState = new ObjectJTree(s.node(a));
         scrollPane = Utils.scrollPane(nodeState);
         mainSplitPane.add(scrollPane);
-        mainSplitPane.setResizeWeight(0.4);
+        mainSplitPane.setResizeWeight(EVENTS_PANEL_SIZE);
 
         // XXX: why does this need w 100%, h 100%? Shouldn't grow handle it?
         add(mainSplitPane, "grow, h 100%");
@@ -120,8 +123,8 @@ class SingleNodePanel extends JPanel {
 
         if (!painted) {
             painted = true;
-            mainSplitPane.setDividerLocation(0.4f);
-            eventPane.setDividerLocation(0.5f);
+            mainSplitPane.setDividerLocation(EVENTS_PANEL_SIZE);
+            eventPane.setDividerLocation(MESSAGE_BOX_SIZE);
         }
     }
 
