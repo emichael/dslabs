@@ -38,8 +38,7 @@ import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.Cloning;
 import dslabs.framework.testing.utils.GlobalSettings;
-import dslabs.framework.testing.visualization.VizClient;
-import java.io.IOException;
+import dslabs.framework.testing.visualization.DebuggerWindow;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -319,13 +318,8 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         if (GlobalSettings.startVisualization()) {
             final SearchSettings settings = lastSearchSettings;
             Thread thread = new Thread(() -> {
-                VizClient vc = new VizClient(humanReadable, settings, true);
-                try {
-                    vc.run();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }, "VizClient");
+                new DebuggerWindow(humanReadable, settings);
+            }, "VizDebugger");
             thread.setDaemon(false);
             thread.start();
 
@@ -404,13 +398,8 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
                     SearchState.humanReadableTraceEndState(bfsStartState);
             final SearchSettings settings = lastSearchSettings;
             Thread thread = new Thread(() -> {
-                VizClient vc = new VizClient(humanReadable, settings, true);
-                try {
-                    vc.run();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }, "VizClient");
+                new DebuggerWindow(humanReadable, settings);
+            }, "VizDebugger");
             thread.setDaemon(false);
             thread.start();
 

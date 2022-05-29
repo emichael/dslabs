@@ -57,8 +57,9 @@ public abstract class VizConfig {
         //
         // <# servers> <# clients> <client 1 workload> ... <client n workload>
         if (args.length != 3 && args.length != 2 + numClients) {
-            throw new IllegalArgumentException("Please provide either a single workload for all " +
-                                               "clients or a separate workload for each client.");
+            throw new IllegalArgumentException(
+                    "Please provide either a single workload for all " +
+                            "clients or a separate workload for each client.");
         }
         List<List<String>> commands = new LinkedList<>();
         if (args.length == 3) {

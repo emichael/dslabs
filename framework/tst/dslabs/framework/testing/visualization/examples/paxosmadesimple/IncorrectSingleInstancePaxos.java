@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz.examples.paxosmadesimple;
+package dslabs.framework.testing.visualization.examples.paxosmadesimple;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.junit.Lab;

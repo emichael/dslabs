@@ -51,7 +51,6 @@ public class SavedTraceViz {
             settings.addInvariant(invariant);
         }
 
-        VizClient client = new VizClient(endState, settings, true);
-        client.run();
+        new DebuggerWindow(endState, settings);
     }
 }

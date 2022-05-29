@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz;
+package dslabs.framework.testing.visualization;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;

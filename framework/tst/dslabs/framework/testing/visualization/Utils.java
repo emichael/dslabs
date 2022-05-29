@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz;
+package dslabs.framework.testing.visualization;
 
 import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.FlatIntelliJLaf;
@@ -40,7 +40,8 @@ import lombok.NonNull;
 abstract class Utils {
     static {
         IconFontSwing.register(FontAwesome.getIconFont());
-        FlatLaf.registerCustomDefaultsSource("dslabs.framework.testing.newviz");
+        FlatLaf.registerCustomDefaultsSource(
+                "dslabs.framework.testing.visualization");
     }
 
     private static final int ICON_SIZE = 18;

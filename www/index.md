@@ -14,8 +14,7 @@ implementations of real distributed systems. DSLabs incorporates automated
 with example traces when bugs are found.
 
 The labs are written in Java and come packaged all necessary dependencies. They
-also include a **visual debugger** called
-[Oddity](https://github.com/uwplse/oddity), which allows students to explore the
+also include a **visual debugger**, which allows students to explore the
 reachable states of their systems and visualize bugs reported by the model
 checker.
 

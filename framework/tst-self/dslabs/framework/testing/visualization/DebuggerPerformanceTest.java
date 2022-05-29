@@ -23,7 +23,6 @@
 package dslabs.framework.testing.visualization;
 
 import dslabs.framework.testing.junit.Lab;
-import dslabs.framework.testing.newviz.DebuggerWindow;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.utils.ClassSearch;
 import java.awt.AWTException;
@@ -149,6 +148,6 @@ public class DebuggerPerformanceTest {
         for (int i = 0; i < NUM_RUNS; i++) {
             totalSecs += singleTestTimeSecs();
         }
-        System.out.println("Average time: " + totalSecs/NUM_RUNS);
+        System.out.println("Average time: " + totalSecs / NUM_RUNS);
     }
 }

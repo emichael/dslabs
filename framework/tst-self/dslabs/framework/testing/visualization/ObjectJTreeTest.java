@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz;
+package dslabs.framework.testing.visualization;
 
 
 import dslabs.framework.Address;
@@ -170,10 +170,10 @@ class Foo extends Node {
         }
     };
 
-    Integer[] v08 = new Integer[] {0, 5, 3};
+    Integer[] v08 = new Integer[]{0, 5, 3};
     Integer[] v09 = null;
 
-    Object[] v10 = new Object[] {"foo", 4, new int[] {1, 2, 3}};
+    Object[] v10 = new Object[]{"foo", 4, new int[]{1, 2, 3}};
 
     Map<String, Integer> v11 = new HashMap<>();
 

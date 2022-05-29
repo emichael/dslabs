@@ -24,7 +24,7 @@ package dslabs.framework.testing;
 
 import dslabs.framework.Address;
 import dslabs.framework.Timer;
-import dslabs.framework.testing.newviz.VizIgnore;
+import dslabs.framework.VizIgnore;
 import java.io.Serializable;
 import java.util.Random;
 import lombok.Data;

@@ -1,8 +1,6 @@
 .PHONY: all test dependencies serve clean clean-all
 .FORCE:
 
-ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.39a/oddity.jar
-
 FRAMEWORK_FILES = $(shell find framework -type f | sed 's/ /\\ /g')
 LAB_FILES = $(shell find labs -type f | sed 's/ /\\ /g')
 HANDOUT_FILES = $(shell find handout-files -type f | sed 's/ /\\ /g')
@@ -32,7 +30,7 @@ endif
 
 all: build/handout/
 
-dependencies: deps/oddity.jar
+dependencies:
 	./gradlew copyDependencies
 
 build/libs/: $(FRAMEWORK_FILES)
@@ -43,15 +41,11 @@ build/doc/: $(FRAMEWORK_FILES)
 	./gradlew javadoc
 	touch $@
 
-deps/oddity.jar:
-	mkdir -p deps
-	wget -O $@ $(ODDITY_URL)
-
-build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/ deps/oddity.jar
+build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/
 	rm -rf $@
 	mkdir $@ build/handout/jars
 	$(CP) -r labs handout-files/. $(OTHER_FILES) $@
-	$(CP) $(JAR_FILES) deps/oddity.jar build/handout/jars
+	$(CP) $(JAR_FILES) build/handout/jars
 
 build/handout.tar.gz: build/handout/
 	$(TAR) -czf $@ --transform "s/^build\/handout/dslabs/" $^

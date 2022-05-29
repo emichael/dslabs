@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz.examples.paxosmadesimple;
+package dslabs.framework.testing.visualization.examples.paxosmadesimple;
 
 
 import com.google.common.collect.Streams;
@@ -28,11 +28,11 @@ import dslabs.framework.Address;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.Timer;
+import dslabs.framework.VizIgnore;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.junit.Lab;
-import dslabs.framework.testing.newviz.VizIgnore;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.visualization.VizConfig;

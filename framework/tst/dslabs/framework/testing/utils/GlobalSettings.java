@@ -47,12 +47,7 @@ public abstract class GlobalSettings {
     startVisualization =
             Boolean.parseBoolean(lookupWithDefault("startViz", "false")),
 
-    startVizServer =
-            !Boolean.parseBoolean(lookupWithDefault("noVizServer", "false")),
-
-    doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false")),
-
-    newViz = Boolean.parseBoolean(lookupWithDefault("newViz", "false"));
+    doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
 
     @Getter @Setter private static boolean saveTraces =
             Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));

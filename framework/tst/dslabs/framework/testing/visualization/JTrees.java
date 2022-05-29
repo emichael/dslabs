@@ -20,14 +20,14 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz;
+package dslabs.framework.testing.visualization;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.Timer;
+import dslabs.framework.VizIgnore;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
@@ -66,7 +66,7 @@ import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.ClassUtils;
 
-import static dslabs.framework.testing.newviz.Utils.makeIcon;
+import static dslabs.framework.testing.visualization.Utils.makeIcon;
 
 
 enum JTreeDisplayType {
@@ -296,7 +296,7 @@ class ObjectJTree extends BaseJTree {
                     "Couldn't create node for object: " + value);
         }
 
-        static protected interface ChildKey {
+        protected interface ChildKey {
             Object key();
 
             String renderKey();
@@ -438,7 +438,8 @@ class ObjectJTree extends BaseJTree {
             }
 
             diffTarget.expandInternal();
-            Map<KeyInstance, ObjectTreeNode> diffChildren = diffTarget.childMap();
+            Map<KeyInstance, ObjectTreeNode> diffChildren =
+                    diffTarget.childMap();
             for (ObjectTreeNode n : iterableChildren()) {
                 n.setDiffObject(diffChildren.getOrDefault(n.keyInstance, null),
                         treeModel);
@@ -659,9 +660,8 @@ class ObjectJTree extends BaseJTree {
                     if (Modifier.isTransient(modifiers)) {
                         continue;
                     }
-                    // TODO: add annotation for viz to ignore field
-                    if (f.getAnnotation(JsonIgnore.class) != null ||
-                            f.getAnnotation(VizIgnore.class) != null) {
+
+                    if (f.getAnnotation(VizIgnore.class) != null) {
                         continue;
                     }
                     // XXX: is canAccess instead of isAccessible correct?

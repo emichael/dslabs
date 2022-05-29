@@ -8,8 +8,8 @@
  * copies of the Software, and to permit persons to whom the Software is
  * furnished to do so, subject to the following conditions:
  *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
+ * The above copyright notice and this permission notice shall be included in
+ * all copies or substantial portions of the Software.
  *
  * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -20,15 +20,19 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz;
+package dslabs.framework;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-// TODO: this class should be in the main framework directory (so that it can be used in Node) but should be ignored by JavaDoc
-
-@JsonIgnore // TODO: check to make sure this works...
+/**
+ * Instructs the visualizer to ignore a field and not display it.
+ *
+ * @hidden
+ */
 @Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.FIELD)
 public @interface VizIgnore {
 }

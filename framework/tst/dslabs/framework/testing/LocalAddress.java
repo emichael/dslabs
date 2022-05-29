@@ -22,20 +22,15 @@
 
 package dslabs.framework.testing;
 
-import com.fasterxml.jackson.core.JsonGenerator;
-import com.fasterxml.jackson.databind.JsonSerializable;
-import com.fasterxml.jackson.databind.SerializerProvider;
-import com.fasterxml.jackson.databind.jsontype.TypeSerializer;
 import com.rits.cloning.Immutable;
 import dslabs.framework.Address;
-import java.io.IOException;
 import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 
 @EqualsAndHashCode
 @AllArgsConstructor
 @Immutable
-public class LocalAddress implements Address, JsonSerializable {
+public class LocalAddress implements Address {
     private final String address;
 
     @Override
@@ -45,18 +40,6 @@ public class LocalAddress implements Address, JsonSerializable {
         }
 
         return address.compareTo(((LocalAddress) o).address);
-    }
-
-    @Override
-    public void serialize(JsonGenerator gen, SerializerProvider ser)
-            throws IOException {
-        gen.writeString(address);
-    }
-
-    @Override
-    public void serializeWithType(JsonGenerator gen, SerializerProvider ser,
-                                  TypeSerializer typ) throws IOException {
-        serialize(gen, ser);
     }
 
     @Override

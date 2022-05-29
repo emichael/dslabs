@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package dslabs.framework.testing.newviz;
+package dslabs.framework.testing.visualization;
 
 import com.google.common.collect.Lists;
 import dslabs.framework.Address;

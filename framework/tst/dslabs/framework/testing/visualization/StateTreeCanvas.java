@@ -1,4 +1,4 @@
-package dslabs.framework.testing.newviz;
+package dslabs.framework.testing.visualization;
 
 import java.awt.BasicStroke;
 import java.awt.Color;

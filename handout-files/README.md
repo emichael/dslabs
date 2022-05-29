@@ -16,7 +16,6 @@ THIS REPOSITORY WITH SOLUTION CODE PRIVATE.**
     2. [Search Tests](#search-tests)
 6. [Debugging and Logging](#debugging-and-logging)
 7. [Visualization](#visualization)
-    1. [JSON Issues](#json-issues)
 8. [Common Issues](#common-issues)
 9. [Important Notes](#important-notes)
 
@@ -340,84 +339,51 @@ send (e.g., `PUT:foo:bar,APPEND:foo:baz,GET:foo`). If only one workload is
 provided, all clients will send the same workload; if `NUM_CLIENTS` workloads
 are provided, then client `i` will send `WORKLOAD_i`. You can even write custom
 parsers for the arguments to `--debug` by overriding `getInitialState(String[]
-args)` in the relevant subclass of `VizConfig`. The visualization tool will
-startup Google Chrome, which is the only supported browser at this time. If it
-cannot open a Chrome window, you should open a Chrome tab manually and navigate
-to `localhost:3000`. Once your list of servers appears in the top-right, click
-on "Debug!".
+args)` in the relevant subclass of `VizConfig`.
 
-![Debug Startup](img/debug-startup.png)
+Your nodes should now appear in the main window. Each server has a "queue" of
+timers and messages waiting to be delivered to it. Clicking on the button next
+to any message or timer will deliver it to that server. Double-clicking on a
+message or timer will show more information about its state.
 
-Your servers should now appear in the main window. Each server has a "queue" of
-timers and messages waiting to be delivered to it. Clicking on any message or
-timer will deliver it to that server. Right-clicking on a message, timer, or
-server will show more information about its state.
+All nodes will be visible by default. You can hide individual nodes using the
+panel in the left sidebar.
 
-The servers are positioned in a circle by default. With more than 3 or 4
-servers, this view can be cluttered. Servers can be repositioned by clicking and
-dragging the black dot below each server.
-
-![Debug Servers](img/debug-servers.png)
-
-The bottom window shows a history of the "events" that have occurred; each
+The bottom window shows a tree of the events that have been explored; each
 message or timer delivered corresponds to an event. Clicking on states in this
 history allows you to "time travel" by going back to previous states of your
 system. If you choose a different event than was executed before--for instance,
 delivering a timer instead of a message--the history will branch. This enables
-exploration of multiple possible system traces.
-
-![Debug Servers](img/debug-branch.png)
+exploration of multiple possible system traces. The left sidebar contains a more
+detailed list of events in your current tree branch. The event most recently
+delivered is highlighted. Clicking the button next to an event will take you to
+the state after that event was delivered. You can expand the message and timer
+events in the left sidebar by double-clicking, just as you can in message queues
+and timer queues.
 
 The debugger has a couple of keyboard shortcuts for navigating the history: "n"
 will go the next event, and "p" will go to the previous event.
 
-
 The second way you can run the visualization tool is using it to visualize
 invariant-violating traces in search tests. You can have the test runner start
 the visualization when it hits an invariant violation by attaching the
-`--start-viz` flag (e.g., `./run-tests.py --lab 1 --start-viz`). Once the
-browser window is opened as before and the list of servers is displaying, click
-"Debug trace".
-
-![Trace Startup](img/trace-startup.png)
-
-Now, the visualization tool will be pre-populated with the invariant-violating
-trace, the last state of which actually violates one of the invariants being
-tested for. You can explore this trace by using the history navigation tools
-described above. You can also click on messages or timers to explore alternate
-traces branching off the one that violated the invariant.
-
-![Trace](img/trace-servers.png)
+`--start-viz` flag (e.g., `./run-tests.py --lab 1 --start-viz`). Now, the
+visualization tool will be pre-populated with the invariant-violating trace, the
+last state of which actually violates one of the invariants being tested for.
+You can explore this trace by using the history navigation tools described
+above. You can also click on messages or timers to explore alternate traces
+branching off the one that violated the invariant. The invariant that was
+violated will be displayed in the left sidebar; as you explore states, the icon
+next to the invariant will show whether or not the invariant was violated in the
+current state. Hovering over the invariant will show a detailed message
+describing why the invariant was violated, if available.
 
 Adding the `--start-viz` flag to `./run-tests.py` will also start the
 visualization tool if the search is unable to find a particular state it is
 looking for. In this case, the tool will be pre-populated with a trace that ends
 in the state the search started from. This allows you to manually explore
-possible executions to check if a matching state actually exists.
-
-
-### Run-until
-You can save some time by asking the visualization tool to find a state matching
-a particular predicate. Click "Run Until" and then "Predicate":
-
-![Run until](img/debug-rununtil.png)
-
-Enter a predicate in the window that pops up. Predicates have the form
-`<server-name>.<path> = <value>`, for instance, `server1.proposer.ballot = 4` or
-`server2.leader = true`. If the visualization tool cannot find such a state
-after 10 seconds, it will time out.
-
-
-### JSON Issues
-If your `Node`s, `Message`s, or `Timer`s contain circular references, you may
-run into issues using the visualization tool. In this case, you will have to
-remove the circular references or define custom JSON serializers for the
-offending classes. The testing framework uses the
-[Jackson](https://github.com/FasterXML/jackson) library for JSON serialization.
-To define a custom serializer for class `Foo`, first create a class which
-extends `StdSerializer<Foo>` (e.g., `FooSerializer`). Then, add the
-`@JsonSerialize(using = YourFooSerializerClass.class)` annotation to the `Foo`
-class.
+possible executions to check if a matching state actually exists. The goal that
+was being sought will be displayed in the left sidebar.
 
 
 ---

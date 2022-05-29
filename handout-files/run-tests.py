@@ -56,8 +56,7 @@ def make():
 
 def run_tests(lab, part=None, no_run=False, no_search=False,
               timers_disabled=False, log_level=None, single_threaded=False,
-              start_viz=False, no_viz_server=False, do_checks=False,
-              test_num=None, assertions=False, new_viz=False,
+              start_viz=False, do_checks=False, test_num=None, assertions=False,
               save_traces=False):
     """Run the specified tests."""
     make()
@@ -79,14 +78,8 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if start_viz:
         command.append('-DstartViz=true')
 
-    if no_viz_server:
-        command.append('-DnoVizServer=true')
-
     if do_checks:
         command.append('-DdoChecks=true')
-
-    if new_viz:
-        command.append('-DnewViz=true')
 
     if save_traces:
         command.append('-DsaveTraces=true')
@@ -115,8 +108,8 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     sys.exit(returncode)
 
 
-def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False,
-                     assertions=False):
+
+def run_viz_debugger(lab, args, assertions=False):
     """Start the visual debugger."""
     make()
 
@@ -124,12 +117,6 @@ def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False,
 
     if assertions:
         command.append('-ea')
-
-    if no_viz_server:
-        command.append('-DnoVizServer=true')
-
-    if new_viz:
-        command.append('-DnewViz=true')
 
     command += [
         '-cp',
@@ -144,8 +131,8 @@ def run_viz_debugger(lab, args, no_viz_server=False, new_viz=False,
     sys.exit(returncode)
 
 
-def visualize_trace(trace_name, no_viz_server=False, new_viz=False,
-                    assertions=False):
+
+def visualize_trace(trace_name, assertions=False):
     """Visualize a trace."""
     make()
 
@@ -153,12 +140,6 @@ def visualize_trace(trace_name, no_viz_server=False, new_viz=False,
 
     if assertions:
         command.append('-ea')
-
-    if no_viz_server:
-        command.append('-DnoVizServer=true')
-
-    if new_viz:
-        command.append('-DnewViz=true')
 
     command += [
         '-cp',
@@ -172,8 +153,7 @@ def visualize_trace(trace_name, no_viz_server=False, new_viz=False,
 
 
 def replay_traces(trace_names=None, lab=None, part=None, log_level=None,
-                  start_viz=False, no_viz_server=False, do_checks=False,
-                  assertions=False, new_viz=False):
+                  start_viz=False, do_checks=False, assertions=False):
     """Replay traces."""
     make()
 
@@ -187,12 +167,6 @@ def replay_traces(trace_names=None, lab=None, part=None, log_level=None,
 
     if start_viz:
         command.append('-DstartViz=true')
-
-    if no_viz_server:
-        command.append('-DnoVizServer=true')
-
-    if new_viz:
-        command.append('-DnewViz=true')
 
     if do_checks:
         command.append('-DdoChecks=true')
@@ -252,8 +226,6 @@ def main():
                         help="start the visualization on invariant violation "
                              "or when the search is unable to find a "
                              "particular state")
-    parser.add_argument('--new-viz', action='store_true',
-                        help="use the new visualization tool")
 
     group.add_argument('-d', '--debugger', nargs='*', metavar="ARG",
                        help="Don't run any tests, instead start the visual "
@@ -268,11 +240,6 @@ def main():
                        "WORKLOAD_NUM_CLIENTS where each WORLOAD_i is a "
                        "comma-separated list of commands and a workload is "
                        "provided for each client.")
-
-    parser.add_argument('--no-viz-server', action='store_true',
-                        help="do not automatically start the visualization "
-                        "server; instead, the user starts the server  and "
-                        "opens the browser manually")
 
     group.add_argument('--replay-traces', nargs='*', default=None,
                        metavar="TRACE_NAME",
@@ -302,8 +269,7 @@ def main():
             ('-p/--part', '--checks', '-n/--test-num', '--no-run',
              '--no-search', '--no-timeouts', '-g/--log-level',
              '--single-threaded', '-s/--save-traces', '-z/--start-viz'))
-        run_viz_debugger(args.lab, args.debugger, args.no_viz_server,
-                         new_viz=args.new_viz, assertions=args.assertions)
+        run_viz_debugger(args.lab, args.debugger, assertions=args.assertions)
 
     elif args.replay_traces is not None:
         if args.part is not None and args.lab is None:
@@ -318,18 +284,15 @@ def main():
                       part=args.part,
                       log_level=args.log_level,
                       start_viz=args.start_viz,
-                      no_viz_server=args.no_viz_server,
                       do_checks=args.checks,
-                      assertions=args.assertions,
-                      new_viz=args.new_viz)
+                      assertions=args.assertions)
 
     elif args.visualize_trace is not None:
         disallow_arguments('--visualize-trace',
             ('-l/--lab', '-p/--part', '--checks', '-n/--test-num', '--no-run',
              '--no-search', '--no-timeouts', '-g/--log-level',
              '--single-threaded', '-s/--save-traces', '-z/--start-viz'))
-        visualize_trace(args.visualize_trace, no_viz_server=args.no_viz_server,
-                        new_viz=args.new_viz, assertions=args.assertions)
+        visualize_trace(args.visualize_trace, assertions=args.assertions)
 
     else:
         if args.lab is None:
@@ -342,11 +305,9 @@ def main():
                   log_level=args.log_level,
                   single_threaded=args.single_threaded,
                   start_viz=args.start_viz,
-                  no_viz_server=args.no_viz_server,
                   do_checks=args.checks,
                   test_num=args.test_num,
                   assertions=args.assertions,
-                  new_viz=args.new_viz,
                   save_traces=args.save_traces)
 
 

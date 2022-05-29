@@ -22,7 +22,6 @@
 
 package dslabs.framework.testing;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Command;
@@ -30,6 +29,7 @@ import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.Timer;
+import dslabs.framework.VizIgnore;
 import dslabs.framework.testing.utils.Cloning;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,27 +59,27 @@ public final class ClientWorker extends Node {
 
     // Configuration
     private final Client client;
-    @Getter @JsonIgnore private final Workload workload;
+    @Getter @VizIgnore private final Workload workload;
 
     // Properties
     // TODO: move this to Workload
-    @JsonIgnore @Getter private final boolean recordCommandsAndResults;
+    @VizIgnore @Getter private final boolean recordCommandsAndResults;
 
     // Mutable state
-    @JsonIgnore private boolean initialized = false;
-    @JsonIgnore private boolean waitingOnResult = false;
-    @JsonIgnore private boolean waitingToSend = false;
-    @JsonIgnore private Command lastCommand = null;
-    @JsonIgnore private Result expectedResult = null;
-    @JsonIgnore private long lastSendTimeMillis;
+    @VizIgnore private boolean initialized = false;
+    @VizIgnore private boolean waitingOnResult = false;
+    @VizIgnore private boolean waitingToSend = false;
+    @VizIgnore private Command lastCommand = null;
+    @VizIgnore private Result expectedResult = null;
+    @VizIgnore private long lastSendTimeMillis;
 
     // Resulting state
-    @Getter @JsonIgnore private final List<Command> sentCommands =
+    @Getter @VizIgnore private final List<Command> sentCommands =
             new ArrayList<>();
     @Getter private final List<Result> results = new ArrayList<>();
-    @Getter @JsonIgnore private boolean resultsOk = true;
-    @Getter @JsonIgnore private Pair<Result, Result> expectedAndReceived = null;
-    @JsonIgnore private long maxWaitTimeMillis = 0;
+    @Getter @VizIgnore private boolean resultsOk = true;
+    @Getter @VizIgnore private Pair<Result, Result> expectedAndReceived = null;
+    @VizIgnore private long maxWaitTimeMillis = 0;
 
 
     public <C extends Node & Client> ClientWorker(@NonNull C client,

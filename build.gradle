@@ -86,10 +86,6 @@ dependencies {
   sources        group: 'com.google.guava', name: 'guava', version: '31.1-jre', classifier: 'sources'
   implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
   sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.10', classifier: 'sources'
-  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.0'
-  sources        group: 'com.fasterxml.jackson.core', name: 'jackson-core', version: '2.11.0', classifier: 'sources'
-  implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0'
-  sources        group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.11.0', classifier: 'sources'
 
   graderImplementation group: 'junit', name: 'junit', version: '4.13.2'
   graderSources        group: 'junit', name: 'junit', version: '4.13.2', classifier: 'sources'
@@ -98,13 +94,6 @@ dependencies {
 
   graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
   graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.5.0', classifier: 'sources'
-
-  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.11.0'
-  graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-guava', version: '2.11.0', classifier: 'sources'
-  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.11.0'
-  graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.11.0', classifier: 'sources'
-  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0'
-  graderSources        group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.11.0', classifier: 'sources'
 
   // Swing stuff
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1'

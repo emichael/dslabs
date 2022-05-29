@@ -22,11 +22,6 @@ jobs:
           java-version: ${{ matrix.java }}
           cache: 'gradle'
 
-      - uses: actions/cache@v2
-        with:
-          path: deps/oddity.jar
-          key: ${{ runner.os }}-oddity-${{ hashFiles('Makefile') }}
-
       - run: make dependencies
       - run: make all
       - run: make test
@@ -45,11 +40,6 @@ jobs:
           distribution: 'adopt'
           java-version: '17'
           cache: 'gradle'
-
-      - uses: actions/cache@v2
-        with:
-          path: deps/oddity.jar
-          key: ${{ runner.os }}-oddity-${{ hashFiles('Makefile') }}
 
       - run: make build/handout/
 

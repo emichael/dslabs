@@ -22,7 +22,6 @@
 
 package dslabs.framework;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -119,7 +118,7 @@ public abstract class Node implements Serializable {
     /**
      * This Node's address.
      */
-    @JsonIgnore @NonNull private final Address address;
+    @VizIgnore @NonNull private final Address address;
 
     transient private Consumer<Triple<Address, Address, Message>> messageAdder;
     transient private Consumer<Triple<Address, Address[], Message>>
@@ -133,7 +132,7 @@ public abstract class Node implements Serializable {
      * The Node's parent (or null if this Node is the root Node in the
      * hierarchy).
      */
-    @JsonIgnore private Node parentNode;
+    @VizIgnore private Node parentNode;
 
     /**
      * This Node's sub-Nodes, indexed by their ID. Sub-Nodes must have a
