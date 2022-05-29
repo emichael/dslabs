@@ -116,6 +116,9 @@ public abstract class Node implements Serializable {
     private static final Map<Class<? extends Node>, Map<String, Optional<Method>>>
             methods = new ConcurrentHashMap<>();
 
+    /**
+     * This Node's address.
+     */
     @JsonIgnore @NonNull private final Address address;
 
     transient private Consumer<Triple<Address, Address, Message>> messageAdder;
@@ -126,10 +129,24 @@ public abstract class Node implements Serializable {
     transient private Consumer<Throwable> throwableCatcher;
     transient private Boolean logExceptions = true;
 
+    /**
+     * The Node's parent (or null if this Node is the root Node in the
+     * hierarchy).
+     */
     @JsonIgnore private Node parentNode;
 
+    /**
+     * This Node's sub-Nodes, indexed by their ID. Sub-Nodes must have a
+     * {@link SubAddress} composed of this Node's address and their ID.
+     */
     private final Map<String, Node> subNodes = new HashMap<>();
 
+    /**
+     * Constructor for a Node which all subclasses must call.
+     *
+     * @param address
+     *         the address of the Node
+     */
     protected Node(@NonNull Address address) {
         this.address = address;
     }
@@ -407,10 +424,18 @@ public abstract class Node implements Serializable {
      * <p>Can be used to send messages between two nodes within the same root
      * node (e.g., between parent Node and sub-Node). The message is handled
      * <i>immediately</i>. If the handler is successfully executed and returns
-     * a value, that value is returned. Otherwise, this method returns null. The
-     * message and the return value are not cloned or modified in any way; note
-     * that this behavior differs from {@link #send(Message, Address)}, which
-     * clones or serializes messages immediately.
+     * a value, that value is returned. Otherwise, this method returns null.
+     *
+     * <p>The message and the return value are <b>not cloned or modified in any
+     * way</b>; note that this behavior differs from
+     * {@link #send(Message, Address)}, which clones or serializes messages
+     * immediately. If the caller wants to mirror the behavior of
+     * {@link #send(Message, Address)}, the recommended method is to implement
+     * {@link Cloneable} and {@link Object#clone()}, call {@link Object#clone()}
+     * on the message, and pass the cloned result to this method. Alternatively,
+     * {@link org.apache.commons.lang3.SerializationUtils#clone(Serializable)}
+     * can be used to clone objects without implementing {@link Object#clone()},
+     * but it is <i>much slower</i>.
      *
      * @param message
      *         the message to deliver
@@ -427,10 +452,18 @@ public abstract class Node implements Serializable {
      * (rather than sending the message over the network). The message is
      * handled <i>immediately</i>. If the handler is successfully executed and
      * returns a value, that value is returned. Otherwise, this method returns
-     * null. The message and the return value are not cloned or modified in any
-     * way; note that this behavior differs from
+     * null.
+     *
+     * <p>The message and the return value are <b>not cloned or modified in any
+     * way</b>; note that this behavior differs from
      * {@link #send(Message, Address)}, which clones or serializes messages
-     * immediately.
+     * immediately. If the caller wants to mirror the behavior of
+     * {@link #send(Message, Address)}, the recommended method is to implement
+     * {@link Cloneable} and {@link Object#clone()}, call {@link Object#clone()}
+     * on the message, and pass the cloned result to this method. Alternatively,
+     * {@link org.apache.commons.lang3.SerializationUtils#clone(Serializable)}
+     * can be used to clone objects without implementing {@link Object#clone()},
+     * but it is <i>much slower</i>.
      *
      * @param message
      *         the message to deliver
@@ -480,8 +513,9 @@ public abstract class Node implements Serializable {
     /**
      * <p>Can be used to invoke a timer handler on a Node, rather than
      * setting the timer and waiting for it to expire. The timer handler is
-     * handled <i>immediately</i>. The timer is not cloned or modified in any
-     * way.
+     * handled <i>immediately</i>.
+     *
+     * <p>The timer is not cloned or modified in any way.
      *
      * @param timer
      *         the timer to deliver
@@ -576,6 +610,27 @@ public abstract class Node implements Serializable {
      *
      * <p>Configures the node to allow it to send messages and set timers.
      *
+     * <p>At least one of {@code messageAdder}/{@code batchMessageAdder} must
+     * be non-null.
+     *
+     * @param messageAdder
+     *         a function which consumes messages sent by the node, or
+     *         {@code null} to have the node send all messages to the
+     *         {@code batchMessageAdder}
+     * @param batchMessageAdder
+     *         a function which consumes messages sent by the node to multiple
+     *         recipients, or {@code null} to have the node send all messages to
+     *         the {@code messageAdder}
+     * @param timerAdder
+     *         a function which consumes timers set by the node
+     * @param throwableCatcher
+     *         a function which consumes exceptions thrown by the node during
+     *         message and timer handling, or {@code null} to have the node drop
+     *         exceptions
+     * @param logExceptions
+     *         whether to log exceptions thrown by the node during message and
+     *         timer handling, in addition to sending them to the
+     *         {@code throwableCatcher}
      * @hidden
      */
     public void config(Consumer<Triple<Address, Address, Message>> messageAdder,

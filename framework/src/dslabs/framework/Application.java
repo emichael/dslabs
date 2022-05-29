@@ -31,5 +31,17 @@ import java.io.Serializable;
  * the distributed systems you create, they must be deterministic.
  */
 public interface Application extends Serializable {
-    Result execute(Command command);
+    /**
+     * Execute the given command for the application and return the result. If
+     * the application cannot handle the command, it should throw an
+     * {@link IllegalArgumentException}.
+     *
+     * @param command
+     *         the command to execute
+     * @return the result
+     *
+     * @throws IllegalArgumentException
+     *         if the application cannot handle the command type
+     */
+    Result execute(Command command) throws IllegalArgumentException;
 }
