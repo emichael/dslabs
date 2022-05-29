@@ -1,4 +1,5 @@
-.PHONY: all test dependencies clean clean-all
+.PHONY: all test dependencies serve clean clean-all
+.FORCE:
 
 ODDITY_URL = https://github.com/uwplse/oddity/releases/download/v0.39a/oddity.jar
 
@@ -58,8 +59,19 @@ build/handout.tar.gz: build/handout/
 test:
 	./gradlew test
 
+www/javadoc/: build/doc/
+	rsync -a --delete $< $@
+
+build/www/: www/javadoc/ .FORCE
+	mkdir -p $@
+	cd ./www;	bundle exec jekyll build -d ../$@
+	touch $@
+
+serve: www/javadoc/
+	cd www; watchy -w _config.yml -- bundle exec jekyll serve --watch -d ../build/www/
+
 clean:
-	rm -rf build
+	rm -rf build www/javadoc www/.jekyll-cache
 
 clean-all: clean
 	rm -rf deps .gradle traces

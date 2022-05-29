@@ -43,7 +43,7 @@ jobs:
       - uses: actions/setup-java@v2
         with:
           distribution: 'adopt'
-          java-version: '14'
+          java-version: '17'
           cache: 'gradle'
 
       - uses: actions/cache@v2

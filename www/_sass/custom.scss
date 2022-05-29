@@ -1,0 +1,104 @@
+// MDI necessary CSS
+.mdi::before {
+    font-size: 24px;
+    line-height: 14px;
+}
+.btn .mdi::before {
+    position: relative;
+    top: 4px;
+}
+.btn-xs .mdi::before {
+    font-size: 18px;
+    top: 3px;
+}
+.btn-sm .mdi::before {
+    font-size: 18px;
+    top: 3px;
+}
+.dropdown-menu .mdi {
+    width: 18px;
+}
+.dropdown-menu .mdi::before {
+    position: relative;
+    top: 4px;
+    left: -8px;
+}
+.nav .mdi::before {
+    position: relative;
+    top: 4px;
+}
+.navbar .navbar-toggle .mdi::before {
+    position: relative;
+    top: 4px;
+    color: #FFF;
+}
+.breadcrumb .mdi::before {
+    position: relative;
+    top: 4px;
+}
+.breadcrumb a:hover {
+    text-decoration: none;
+}
+.breadcrumb a:hover span {
+    text-decoration: underline;
+}
+.alert .mdi::before {
+    position: relative;
+    top: 4px;
+    margin-right: 2px;
+}
+.input-group-addon .mdi::before {
+    position: relative;
+    top: 3px;
+}
+.navbar-brand .mdi::before {
+    position: relative;
+    top: 2px;
+    margin-right: 2px;
+}
+.list-group-item .mdi::before {
+    position: relative;
+    top: 3px;
+    left: -3px
+}
+
+
+header {
+  nav {
+    background: none;
+    border-width: 2px 0px;
+    > ul {
+      text-align: center;
+      > li {
+        float: none;
+        display: inline-block;
+        margin-left: 20px;
+        margin-right: 20px;
+        > a {
+          color: #FFFFFF;
+          font-size: 20px;
+          font-weight: 300;
+          background: none;
+          text-shadow: #111 0px 0px 10px;
+          > .mdi {
+            font-size: 30px;
+          }
+        }
+      }
+    }
+  }
+}
+
+#header_wrap {
+  background: #260052;
+  background: -moz-linear-gradient(top, #260052, #34006f);
+  background: -webkit-linear-gradient(top, #260052, #34006f);
+  background: -ms-linear-gradient(top, #260052, #34006f);
+  background: -o-linear-gradient(top, #260052, #34006f);
+  background: linear-gradient(to top, #260052, #34006f);
+}
+
+
+#footer_wrap {
+  background: #260052;
+}

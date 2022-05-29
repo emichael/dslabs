@@ -153,6 +153,7 @@ at the University of Washington.
   handout, including the main `README` and `run-tests.py`.
 - `grading` contains scripts created by previous TAs for the course to batch
   grade submissions.
+- `www` contains the DSLabs website which is built with Jekyll.
 
 The `master` branch of this repository is not setup to be distributed to
 students as-is. The `Makefile` has targets to build the `handout` directory and
