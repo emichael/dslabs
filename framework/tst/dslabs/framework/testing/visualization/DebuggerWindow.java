@@ -38,6 +38,8 @@ import java.awt.event.ComponentListener;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowStateListener;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -75,6 +77,7 @@ import net.miginfocom.layout.AC;
 import net.miginfocom.layout.LC;
 import net.miginfocom.layout.PlatformDefaults;
 import net.miginfocom.swing.MigLayout;
+import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.jdesktop.swingx.JXMultiSplitPane;
 import org.jdesktop.swingx.JXMultiSplitPane.DividerPainter;
@@ -141,6 +144,8 @@ public class DebuggerWindow extends JFrame {
             new ArrayList<>();
     private final List<Pair<StatePredicate, JLabel>> prunes = new ArrayList<>();
     private final List<Pair<StatePredicate, JLabel>> goals = new ArrayList<>();
+
+    private final Pair<JXTaskPane, JLabel> exceptionPanel;
 
     private final JXMultiSplitPane splitPane;
 
@@ -310,6 +315,16 @@ public class DebuggerWindow extends JFrame {
                         searchSettings.goals(), this.goals);
                 updatePredicatePanes();
             }
+
+            JXTaskPane exceptionPane = new JXTaskPane("Thrown Exception");
+            JLabel exceptionLabel = new JLabel();
+            exceptionLabel.setIcon(
+                    Utils.makeIcon(FontAwesome.EXCLAMATION_TRIANGLE,
+                            UIManager.getColor("warningColor")));
+            exceptionPanel = new ImmutablePair<>(exceptionPane, exceptionLabel);
+            exceptionPane.add(exceptionLabel);
+            sideBar.add(exceptionPane);
+            updateExceptionPane();
 
             sideBar.setMinimumSize(new Dimension(20, 0));
             // Don't let sidebar be too large on startup
@@ -529,6 +544,22 @@ public class DebuggerWindow extends JFrame {
         }
     }
 
+    private void updateExceptionPane() {
+        final JXTaskPane p = exceptionPanel.getLeft();
+        final JLabel l = exceptionPanel.getRight();
+        final Throwable t = currentState.thrownException();
+        if (t == null) {
+            p.setVisible(false);
+        } else {
+            p.setVisible(true);
+            p.setCollapsed(false);
+            l.setText(String.format(LINE_WRAPPING_FORMAT, t.toString()));
+            StringWriter sw = new StringWriter();
+            t.printStackTrace(new PrintWriter(sw));
+            l.setToolTipText(sw.toString());
+        }
+    }
+
     private void layoutNodes() {
         /*
          * We must reset the JXMultiSplitPane every time. Unfortunately, hiding
@@ -622,5 +653,6 @@ public class DebuggerWindow extends JFrame {
         }
         eventsPanel.update(currentState);
         updatePredicatePanes();
+        updateExceptionPane();
     }
 }

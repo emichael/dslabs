@@ -53,6 +53,8 @@ class EventTreeState implements Serializable {
 
         boolean canStepTimer(TimerEnvelope timer);
 
+        Throwable thrownException();
+
         // int depth();
     }
 

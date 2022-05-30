@@ -164,7 +164,8 @@ class SingleNodePanel extends JPanel {
                 continue;
             }
             addMessage(message, pruned,
-                    settings != null && !settings.shouldDeliver(message));
+                    settings != null && !settings.shouldDeliver(message),
+                    s.thrownException() != null);
             repaintMessageBox = true;
         }
         for (MessageEnvelope message : new HashSet<>(messages.keySet())) {
@@ -175,7 +176,7 @@ class SingleNodePanel extends JPanel {
             } else {
                 setDeliverability(messages.get(message).getLeft(), pruned,
                         settings != null && !settings.shouldDeliver(message),
-                        "message");
+                        s.thrownException() != null, "message");
             }
         }
         if (repaintMessageBox) {
@@ -255,7 +256,13 @@ class SingleNodePanel extends JPanel {
             if (c != null && Objects.equals(t, c.getLeft())) {
                 JButton deliveryButton =
                         (JButton) c.getMiddle().getComponent(0);
-                deliveryButton.setVisible(tIsDeliverable.get());
+                final boolean deliverable = tIsDeliverable.get();
+                deliveryButton.setVisible(deliverable);
+                if (deliverable) {
+                    setDeliverability(deliveryButton, pruned,
+                            settings != null && !settings.deliverTimers(t.to()),
+                            s.thrownException() != null, "timer");
+                }
                 if (tIsNew) {
                     c.getRight().setTreeDisplayType(JTreeDisplayType.NEW);
                 } else {
@@ -285,7 +292,7 @@ class SingleNodePanel extends JPanel {
                 // When there are more timers, insert t
                 var r = timerPanel(t, tIsDeliverable.get(), pruned,
                         settings != null && !settings.deliverTimers(t.to()),
-                        parent);
+                        s.thrownException() != null, parent);
                 timers.add(i, Triple.of(t, r.getLeft(), r.getRight()));
                 timerBox.add(r.getLeft(), "pad 0 0", i);
                 repaintTimerBox = true;
@@ -311,7 +318,7 @@ class SingleNodePanel extends JPanel {
     }
 
     private void addMessage(final MessageEnvelope message, boolean pruned,
-                            boolean prohibited) {
+                            boolean prohibited, boolean exception) {
         final JPanel mbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
 
@@ -322,7 +329,8 @@ class SingleNodePanel extends JPanel {
         deliveryButton.addActionListener(
                 e -> parent.deliverEvent(new Event(message)));
 
-        setDeliverability(deliveryButton, pruned, prohibited, "message");
+        setDeliverability(deliveryButton, pruned, prohibited, exception,
+                "message");
         ObjectJTree tree = new ObjectJTree(message);
         tree.stripMessageDestination(true);
         tree.collapseRow(0);
@@ -334,7 +342,7 @@ class SingleNodePanel extends JPanel {
 
     private static Pair<JPanel, ObjectJTree> timerPanel(
             final TimerEnvelope timer, final boolean deliverable,
-            final boolean pruned, final boolean prohibited,
+            final boolean pruned, final boolean prohibited, boolean exception,
             final DebuggerWindow parent) {
         final JPanel tbox =
                 new JPanel(new MigLayout(null, null, new AC().align("top")));
@@ -350,7 +358,8 @@ class SingleNodePanel extends JPanel {
             deliveryButton.setVisible(false);
         }
 
-        setDeliverability(deliveryButton, pruned, prohibited, "timer");
+        setDeliverability(deliveryButton, pruned, prohibited, exception,
+                "timer");
 
         ObjectJTree tree = new ObjectJTree(timer.timer());
         tree.collapseRow(0);
@@ -361,10 +370,14 @@ class SingleNodePanel extends JPanel {
 
     private static void setDeliverability(JButton deliveryButton,
                                           boolean pruned, boolean prohibited,
-                                          String name) {
-        deliveryButton.setEnabled(!pruned && !prohibited);
+                                          boolean exception, String name) {
+
+        deliveryButton.setEnabled(!pruned && !prohibited && !exception);
         String tooltip;
-        if (pruned) {
+        if (exception) {
+            tooltip = "This " + name +
+                    " cannot be delivered because an exception was thrown";
+        } else if (pruned) {
             tooltip = "This " + name +
                     " cannot be delivered because the current state is pruned by the search";
         } else if (prohibited) {
