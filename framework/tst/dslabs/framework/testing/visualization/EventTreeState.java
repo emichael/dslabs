@@ -185,4 +185,24 @@ class EventTreeState implements Serializable {
             return e2;
         });
     }
+
+    /**
+     * Whether the trace leading to this state requires already delivered
+     * messages to be re-delivered.
+     *
+     * @return whether duplicates are necessary
+     */
+    boolean sendsDeliveredMessages() {
+        for (EventTreeState state : pathFromInitial()) {
+            if (state.isInitialState()) {
+                continue;
+            }
+            Event e = state.previousEvent();
+            if (e.isMessage() && !state.parent().undeliveredMessages()
+                                       .contains(e.message())) {
+                return true;
+            }
+        }
+        return false;
+    }
 }

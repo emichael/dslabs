@@ -76,7 +76,8 @@ class SingleNodePanel extends JPanel {
             new ArrayList<>();
 
     SingleNodePanel(final EventTreeState s, final SearchSettings settings,
-                    final Address a, final DebuggerWindow parent) {
+                    final Address a, final DebuggerWindow parent,
+                    boolean viewDeliveredMessages) {
         this.parent = parent;
         address = a;
 
@@ -110,7 +111,7 @@ class SingleNodePanel extends JPanel {
         // XXX: why does this need w 100%, h 100%? Shouldn't grow handle it?
         add(mainSplitPane, "grow, h 100%");
 
-        updateState(s, settings, false);
+        updateState(s, settings, viewDeliveredMessages);
 
         add(new JLabel(a.toString()), "center");
     }

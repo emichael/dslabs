@@ -194,8 +194,12 @@ public class DebuggerWindow extends JFrame {
             final JMenu settingsMenu = new JMenu("Settings");
             menuBar.add(settingsMenu);
 
+            // If the initial state needs delivered messages to be shown, show
+            // them by default
+            viewDeliveredMessages = currentState.sendsDeliveredMessages();
             JCheckBoxMenuItem viewDeliveredMessagesMenuItem =
-                    new JCheckBoxMenuItem("Show delivered messages", false);
+                    new JCheckBoxMenuItem("Show delivered messages",
+                            viewDeliveredMessages);
             settingsMenu.add(viewDeliveredMessagesMenuItem);
             viewDeliveredMessagesMenuItem.addActionListener(e -> {
                 boolean old = viewDeliveredMessages;
@@ -306,7 +310,8 @@ public class DebuggerWindow extends JFrame {
            -------------------------------------------------------------------*/
         for (Address a : addresses) {
             SingleNodePanel panel =
-                    new SingleNodePanel(currentState, searchSettings, a, this);
+                    new SingleNodePanel(currentState, searchSettings, a, this,
+                            viewDeliveredMessages);
             statePanels.put(a, panel);
         }
 
