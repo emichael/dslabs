@@ -196,9 +196,16 @@ class ObjectJTree extends BaseJTree {
 
     private final ObjectTreeNode root;
 
+    /**
+     * If true, message sender information and the message wrapper isn't
+     * displayed.
+     */
+    @Setter(AccessLevel.PACKAGE) private boolean stripMessageDestination =
+            false;
+
     ObjectJTree(Object obj) {
         super();
-        root = ObjectTreeNode.createNode(obj);
+        root = ObjectTreeNode.createNode(obj, this);
         DefaultTreeModel treeModel = new DefaultTreeModel(root);
         setModel(treeModel);
         setCellRenderer(new ObjectJTreeCellRenderer());
@@ -213,10 +220,11 @@ class ObjectJTree extends BaseJTree {
      */
     void update(Object newObject) {
         final Object oldRoot = root.valueObj();
-        final ObjectTreeNode newRoot = ObjectTreeNode.createNode(newObject);
+        final ObjectTreeNode newRoot =
+                ObjectTreeNode.createNode(newObject, this);
         root.update(newRoot, (DefaultTreeModel) treeModel);
         // TODO: ultra hacky
-        root.setDiffObject(ObjectTreeNode.createNode(oldRoot),
+        root.setDiffObject(ObjectTreeNode.createNode(oldRoot, this),
                 (DefaultTreeModel) treeModel);
     }
 
@@ -230,9 +238,9 @@ class ObjectJTree extends BaseJTree {
      *         the object to diff with the new root object
      */
     void update(Object newObject, Object diffTarget) {
-        root.update(ObjectTreeNode.createNode(newObject),
+        root.update(ObjectTreeNode.createNode(newObject, this),
                 (DefaultTreeModel) treeModel);
-        root.setDiffObject(ObjectTreeNode.createNode(diffTarget),
+        root.setDiffObject(ObjectTreeNode.createNode(diffTarget, this),
                 (DefaultTreeModel) treeModel);
     }
 
@@ -242,7 +250,6 @@ class ObjectJTree extends BaseJTree {
     void clearDiffObject() {
         root.clearDiffObject((DefaultTreeModel) treeModel);
     }
-
 
     /*--------------------------------------------------------------------------
      * Base ObjectTreeNode
@@ -271,29 +278,42 @@ class ObjectJTree extends BaseJTree {
                         DefaultObjectNode.class};
 
         @SneakyThrows
-        static protected ObjectTreeNode createNode(Object value) {
+        static protected ObjectTreeNode createNode(Object value,
+                                                   ObjectJTree tree) {
             if (value == null) {
-                return new DefaultObjectNode(null);
+                return new DefaultObjectNode(null, tree);
             }
-            return createNode(value.getClass(), value);
+            return createNode(value.getClass(), value, tree);
         }
 
         @SneakyThrows
-        static protected ObjectTreeNode createNode(Class<?> clz, Object value) {
+        static protected ObjectTreeNode createNode(Class<?> clz, Object value,
+                                                   ObjectJTree tree) {
             // Non-default tree nodes don't handle null values
             if (value == null) {
-                return new DefaultObjectNode(null);
+                return new DefaultObjectNode(null, tree);
             }
 
             for (Class<?> c : NODE_TYPES_IN_PRIORITY_ORDER) {
                 if ((Boolean) c.getDeclaredMethod("canHandle", Class.class)
                                .invoke(null, clz)) {
                     return (ObjectTreeNode) c.getDeclaredConstructor(
-                            Object.class).newInstance(value);
+                                                     Object.class, ObjectJTree.class)
+                                             .newInstance(value, tree);
                 }
             }
             throw new RuntimeException(
                     "Couldn't create node for object: " + value);
+        }
+
+        @SneakyThrows
+        protected ObjectTreeNode createNode(Object value) {
+            return createNode(value, this.tree);
+        }
+
+        @SneakyThrows
+        protected ObjectTreeNode createNode(Class<?> clz, Object value) {
+            return createNode(clz, value, this.tree);
         }
 
         protected interface ChildKey {
@@ -332,8 +352,16 @@ class ObjectJTree extends BaseJTree {
         private boolean isDiffed = false;
         private boolean hasExpanded = false;
 
-        protected ObjectTreeNode(Object value) {
+        /**
+         * A reference to the parent tree. Useful for grabbing custom settings
+         * from the enclosing ObjectJTree.
+         */
+        @Getter(AccessLevel.PROTECTED)
+        private final ObjectJTree tree;
+
+        protected ObjectTreeNode(Object value, ObjectJTree tree) {
             valueObj = value;
+            this.tree = tree;
         }
 
         protected String renderKey() {
@@ -532,22 +560,42 @@ class ObjectJTree extends BaseJTree {
         }
 
         protected String treeCellTextInternal() {
-            if (renderKey() == null && valueObj() != null &&
-                    (valueObj() instanceof ClientWorker ||
-                            valueObj() instanceof MessageEnvelope ||
-                            valueObj() instanceof TimerEnvelope)) {
-                return valueObj().toString();
+            final Object vo = valueObj();
+
+            if (isRoot() && (vo instanceof ClientWorker ||
+                    vo instanceof MessageEnvelope ||
+                    vo instanceof TimerEnvelope || vo instanceof Timer)) {
+
+                if (vo instanceof MessageEnvelope &&
+                        tree.stripMessageDestination) {
+                    return String.format("%s ⇨ %s",
+                            ((MessageEnvelope) vo).from(),
+                            ((MessageEnvelope) vo).message());
+                }
+
+                if (vo instanceof MessageEnvelope) {
+                    return String.format("%s ⇨ %s | %s",
+                            ((MessageEnvelope) vo).from(),
+                            ((MessageEnvelope) vo).to(),
+                            ((MessageEnvelope) vo).message());
+                }
+
+                if (vo instanceof TimerEnvelope) {
+                    return String.format("⇨ %s | %s", ((TimerEnvelope) vo).to(),
+                            ((TimerEnvelope) vo).timer());
+                }
+
+                return vo.toString();
             }
 
             StringBuilder sb = new StringBuilder();
             if (renderKey() != null) {
                 sb.append(renderKey());
             }
-            if (valueObj() != null) {
+            if (vo != null) {
                 sb.append(String.format("<font color='%s'>(%s)</font>",
-                        secondaryColor(),
-                        valueObj().getClass().getSimpleName()));
-                sb.append(valueObj());
+                        secondaryColor(), vo.getClass().getSimpleName()));
+                sb.append(vo);
             } else {
                 sb.append(String.format("<font color='%s'>null</font>",
                         secondaryColor()));
@@ -637,8 +685,8 @@ class ObjectJTree extends BaseJTree {
             return true;
         }
 
-        DefaultObjectNode(Object value) {
-            super(value);
+        DefaultObjectNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @SneakyThrows
@@ -691,21 +739,21 @@ class ObjectJTree extends BaseJTree {
             return Map.class.isAssignableFrom(clz);
         }
 
-        MapNode(Object value) {
-            super(value);
+        MapNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override
         protected void expand(BiConsumer<ChildKey, ObjectTreeNode> childAdder) {
             for (Entry<?, ?> entry : ((Map<?, ?>) valueObj()).entrySet()) {
                 childAdder.accept(new DefaultChildKey(entry.getKey()),
-                        new MapEntryNode(entry.getValue()));
+                        new MapEntryNode(entry.getValue(), tree()));
             }
         }
 
         private static class MapEntryNode extends ObjectTreeNode {
-            protected MapEntryNode(Object value) {
-                super(value);
+            protected MapEntryNode(Object value, ObjectJTree tree) {
+                super(value, tree);
             }
 
             @Override
@@ -756,8 +804,8 @@ class ObjectJTree extends BaseJTree {
             }
         }
 
-        ListNode(Object value) {
-            super(value);
+        ListNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override
@@ -826,8 +874,8 @@ class ObjectJTree extends BaseJTree {
             return sb.toString();
         }
 
-        ArrayNode(Object value) {
-            super(value);
+        ArrayNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override
@@ -897,8 +945,8 @@ class ObjectJTree extends BaseJTree {
             return Set.class.isAssignableFrom(clz);
         }
 
-        SetNode(Object value) {
-            super(value);
+        SetNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Data
@@ -932,8 +980,8 @@ class ObjectJTree extends BaseJTree {
                     clz.isAssignableFrom(Character.class);
         }
 
-        BoxedPrimitiveNode(Object value) {
-            super(value);
+        BoxedPrimitiveNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override
@@ -947,8 +995,8 @@ class ObjectJTree extends BaseJTree {
             return clz.isPrimitive();
         }
 
-        PrimitiveNode(Object value) {
-            super(value);
+        PrimitiveNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override
@@ -978,8 +1026,8 @@ class ObjectJTree extends BaseJTree {
             return clz.isAssignableFrom(String.class);
         }
 
-        StringNode(Object value) {
-            super(value);
+        StringNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override
@@ -993,8 +1041,8 @@ class ObjectJTree extends BaseJTree {
             return clz.isAssignableFrom(Address.class);
         }
 
-        AddressNode(Object value) {
-            super(value);
+        AddressNode(Object value, ObjectJTree tree) {
+            super(value, tree);
         }
 
         @Override

@@ -102,6 +102,7 @@ class SingleNodePanel extends JPanel {
         mainSplitPane = new JSplitPane(VERTICAL_SPLIT);
         mainSplitPane.add(eventPane);
         nodeState = new ObjectJTree(s.node(a));
+        // TODO: expand the "client" element of the tree if node is a ClientWorker
         scrollPane = Utils.scrollPane(nodeState);
         mainSplitPane.add(scrollPane);
         mainSplitPane.setResizeWeight(EVENTS_PANEL_SIZE);
@@ -322,6 +323,7 @@ class SingleNodePanel extends JPanel {
 
         setDeliverability(deliveryButton, pruned, prohibited, "message");
         ObjectJTree tree = new ObjectJTree(message);
+        tree.stripMessageDestination(true);
         tree.collapseRow(0);
         mbox.add(tree, "pad 0 0");
 
