@@ -38,6 +38,9 @@ import jiconfont.swing.IconFontSwing;
 import lombok.NonNull;
 
 abstract class Utils {
+    static final Preferences PREFERENCES =
+            Preferences.userNodeForPackage(Utils.class);
+
     static {
         IconFontSwing.register(FontAwesome.getIconFont());
         FlatLaf.registerCustomDefaultsSource(
@@ -76,8 +79,8 @@ abstract class Utils {
     }
 
     static boolean setupThemeOnStartup() {
-        final Preferences prefs = Preferences.userNodeForPackage(Utils.class);
-        final boolean darkModeEnabled = prefs.getBoolean(PREF_DARK_MODE, false);
+        final boolean darkModeEnabled =
+                PREFERENCES.getBoolean(PREF_DARK_MODE, false);
 
         if (darkModeEnabled) {
             setupDarkTheme(false);
@@ -107,8 +110,7 @@ abstract class Utils {
     }
 
     private static void saveThemePreference(boolean darkMode) {
-        final Preferences prefs = Preferences.userNodeForPackage(Utils.class);
-        prefs.putBoolean(PREF_DARK_MODE, darkMode);
+        PREFERENCES.putBoolean(PREF_DARK_MODE, darkMode);
     }
 
     /**

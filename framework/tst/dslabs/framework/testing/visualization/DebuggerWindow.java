@@ -30,17 +30,27 @@ import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentEvent;
+import java.awt.event.ComponentListener;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowStateListener;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.prefs.BackingStoreException;
+import java.util.stream.Collectors;
 import javax.swing.AbstractAction;
 import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
@@ -115,6 +125,10 @@ public class DebuggerWindow extends JFrame {
     }
 
     static final String WINDOW_TITLE = "DSLabs Visual Debugger";
+    private static final String PREF_WINDOW_WIDTH = "window_width",
+            PREF_WINDOW_HEIGHT = "window_height", PREFS_WINDOW_X =
+            "window_location_x", PREFS_WINDOW_Y = "window_location_y",
+            PREFS_WINDOW_EXTENDED_STATE = "window_extended_state";
     static final int WINDOW_DEFAULT_WIDTH = 1440, WINDOW_DEFAULT_HEIGHT = 810;
     static final String LINE_WRAPPING_FORMAT = "<html>%1s";
 
@@ -371,11 +385,75 @@ public class DebuggerWindow extends JFrame {
         stateTreeCanvas.showEvent(currentState);
         add(stateTreeCanvas, "dock south");
 
+        /* ---------------------------------------------------------------------
+            SET WINDOW SIZE AND LOCATION
+           -------------------------------------------------------------------*/
+        addComponentListener(new ComponentListener() {
+            @Override
+            public void componentResized(ComponentEvent e) {
+                final int state = getExtendedState();
+                if ((state & MAXIMIZED_HORIZ) == 0) {
+                    Utils.PREFERENCES.putInt(PREF_WINDOW_WIDTH, getWidth());
+                }
+                if ((state & MAXIMIZED_VERT) == 0) {
+                    Utils.PREFERENCES.putInt(PREF_WINDOW_HEIGHT, getHeight());
+                }
+            }
+
+            @Override
+            public void componentMoved(ComponentEvent e) {
+                final Point p = getLocation();
+                Utils.PREFERENCES.putInt(PREFS_WINDOW_X, p.x);
+                Utils.PREFERENCES.putInt(PREFS_WINDOW_Y, p.y);
+            }
+
+            @Override
+            public void componentShown(ComponentEvent e) {
+            }
+
+            @Override
+            public void componentHidden(ComponentEvent e) {
+            }
+        });
+
+        addWindowStateListener(new WindowStateListener() {
+            @Override
+            public void windowStateChanged(WindowEvent e) {
+                Utils.PREFERENCES.putInt(PREFS_WINDOW_EXTENDED_STATE,
+                        e.getNewState());
+            }
+        });
+
+        Set<String> preferenceKeys;
+        try {
+            preferenceKeys = Arrays.stream(Utils.PREFERENCES.keys())
+                                   .collect(Collectors.toUnmodifiableSet());
+        } catch (BackingStoreException e) {
+            preferenceKeys = Collections.emptySet();
+        }
+
+        if (preferenceKeys.contains(PREFS_WINDOW_EXTENDED_STATE)) {
+            // Only restore maximized state, don't start minimized
+            setExtendedState(
+                    Utils.PREFERENCES.getInt(PREFS_WINDOW_EXTENDED_STATE,
+                            NORMAL) & MAXIMIZED_BOTH);
+        }
+
         pack();
 
-        // TODO: don't exceed size of screen
-        setSize(new Dimension(WINDOW_DEFAULT_WIDTH, WINDOW_DEFAULT_HEIGHT));
-        setLocationRelativeTo(null);
+        // TODO: don't exceed size of screen by default?
+        setSize(new Dimension(Utils.PREFERENCES.getInt(PREF_WINDOW_WIDTH,
+                WINDOW_DEFAULT_WIDTH),
+                Utils.PREFERENCES.getInt(PREF_WINDOW_HEIGHT,
+                        WINDOW_DEFAULT_HEIGHT)));
+
+        if (preferenceKeys.contains(PREFS_WINDOW_X) &&
+                preferenceKeys.contains(PREFS_WINDOW_Y)) {
+            setLocation(Utils.PREFERENCES.getInt(PREFS_WINDOW_X, 0),
+                    Utils.PREFERENCES.getInt(PREFS_WINDOW_Y, 0));
+        } else {
+            setLocationRelativeTo(null);
+        }
 
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setVisible(true);
