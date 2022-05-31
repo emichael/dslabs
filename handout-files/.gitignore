@@ -21,6 +21,3 @@ traces/
 Thumbs.db
 ehthumbs.db
 Desktop.ini
-
-# analytics
-.usage-database.db
