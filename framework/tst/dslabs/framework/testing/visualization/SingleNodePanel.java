@@ -59,8 +59,8 @@ import static javax.swing.JSplitPane.VERTICAL_SPLIT;
 
 class SingleNodePanel extends JPanel {
     // Relative sizes of events panels (combined) to node and messages to timers
-    private static final float EVENTS_PANEL_SIZE = 0.4f, MESSAGE_BOX_SIZE =
-            0.5f;
+    private static final float EVENTS_PANEL_SIZE = 0.6f, MESSAGE_BOX_SIZE =
+            0.6f;
 
     private final Address address;
 
