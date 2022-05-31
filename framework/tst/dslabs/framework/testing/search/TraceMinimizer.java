@@ -24,14 +24,14 @@ package dslabs.framework.testing.search;
 
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.StatePredicate.PredicateResult;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 
 abstract class TraceMinimizer {
     static SearchState minimizeTrace(SearchState state,
-                                     final StatePredicate predicate,
-                                     boolean expectedResult) {
+                                     final PredicateResult expectedResult) {
         // TODO: maintain set of "bad" states so we don't have to unwind every time
         boolean shortenedEventsList;
         do {
@@ -40,15 +40,27 @@ abstract class TraceMinimizer {
             for (SearchState s = state; s.previous() != null;
                  s = s.previous()) {
                 SearchState test = applyEvents(s.previous(), events);
-                if (test == null || predicate.test(test) != expectedResult) {
-                    events.addFirst(s.previousEvent());
-                } else {
+                if (stateMatches(test, expectedResult)) {
                     shortenedEventsList = true;
                     state = test;
+                } else {
+                    events.addFirst(s.previousEvent());
                 }
             }
         } while (shortenedEventsList);
         return state;
+    }
+
+    private static boolean stateMatches(final SearchState s,
+                                        final PredicateResult r) {
+        if (s == null) {
+            return false;
+        }
+        if (r.exceptionThrown()) {
+            return r.predicate().test(s).exceptionThrown();
+        }
+        final PredicateResult r2 = r.predicate().test(s, !r.value());
+        return r2 != null && !r2.exceptionThrown();
     }
 
     /**
@@ -63,18 +75,24 @@ abstract class TraceMinimizer {
         final Throwable exception = state.thrownException();
         assert exception != null;
 
-        return minimizeTrace(state, StatePredicate.statePredicate(null, s -> {
-            if (!(s instanceof SearchState)) {
-                return false;
-            }
+        StatePredicate exceptionWasThrown =
+                StatePredicate.statePredicate(null, s -> {
+                    if (!(s instanceof SearchState)) {
+                        return false;
+                    }
 
-            Throwable e = ((SearchState) s).thrownException();
-            if (e == null) {
-                return false;
-            }
+                    Throwable e = ((SearchState) s).thrownException();
+                    if (e == null) {
+                        return false;
+                    }
 
-            return Objects.equals(e.getClass(), exception.getClass());
-        }), true);
+                    return Objects.equals(e.getClass(), exception.getClass());
+                });
+
+        PredicateResult r = exceptionWasThrown.test(state);
+        assert r.value();
+
+        return minimizeTrace(state, r);
     }
 
     private static SearchState applyEvents(SearchState initialState,

@@ -29,6 +29,7 @@ import dslabs.framework.Result;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.StatePredicate.PredicateResult;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.Search;
@@ -193,17 +194,11 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     /* Run test helper methods */
 
     protected final void assertRunInvariantsHold() {
-        if (runSettings.invariantsHold(runState)) {
+        PredicateResult r = runSettings.invariantViolated(runState);
+        if (r == null) {
             return;
         }
-
-        StatePredicate invariant = runSettings.whichInvariantViolated(runState);
-        if (invariant == null) {
-            // TODO: log the error
-            fail("Invariant violated.");
-        } else {
-            fail(invariant.errorMessage(runState));
-        }
+        fail(r.errorMessage());
     }
 
     protected final void startThread(Runnable runnable) {
@@ -282,15 +277,15 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         }
 
         final SearchState terminal;
-        final StatePredicate invariant;
+        final PredicateResult invariantViolated;
         final Throwable exception;
         if (ec == INVARIANT_VIOLATED) {
             terminal = searchResults.invariantViolatingState();
-            invariant = searchResults.invariantViolated();
+            invariantViolated = searchResults.invariantViolated();
             exception = null;
         } else {
             terminal = searchResults.exceptionalState();
-            invariant = null;
+            invariantViolated = null;
             exception = searchResults.exceptionalState().thrownException();
         }
 
@@ -299,8 +294,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         humanReadable.printTrace();
 
         if (ec == INVARIANT_VIOLATED) {
-            System.err.println(
-                    "\n" + invariant.errorMessage(humanReadable) + "\n");
+            System.err.println("\n" + invariantViolated.errorMessage() + "\n");
         } else {
             System.err.println();
         }

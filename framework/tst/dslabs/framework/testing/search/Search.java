@@ -23,7 +23,7 @@
 package dslabs.framework.testing.search;
 
 import dslabs.framework.testing.Event;
-import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.StatePredicate.PredicateResult;
 import dslabs.framework.testing.search.SearchState.SearchEquivalenceWrappedSearchState;
 import dslabs.framework.testing.utils.CheckLogger;
 import dslabs.framework.testing.utils.GlobalSettings;
@@ -57,8 +57,9 @@ import static dslabs.framework.testing.search.SearchResults.EndCondition.TIME_EX
  * settings, either executes the search strategy in single-threaded or
  * multi-threaded mode.
  *
- * This search class represents a single instance of a search. {@link
- * #run(SearchState)} should not be called more than once on the same object.
+ * This search class represents a single instance of a search.
+ * {@link #run(SearchState)} should not be called more than once on the same
+ * object.
  *
  * Ordinarily, tests should only use the static convenience methods on this
  * class.
@@ -127,8 +128,8 @@ public abstract class Search {
      * Get an executable for the worker thread (or the main thread in
      * single-threaded mode) to run, or {@code null} if there are no workers
      * waiting to run. If {@link #spaceExhausted()} returns {@code false} (and
-     * there are no workers started in the interim), should not return {@code
-     * null}. Need not be thread-safe.
+     * there are no workers started in the interim), should not return
+     * {@code null}. Need not be thread-safe.
      *
      * @return the next worker
      */
@@ -184,29 +185,29 @@ public abstract class Search {
             return StateStatus.TERMINAL;
         }
 
-        if (settings.invariantViolated(s)) {
-            StatePredicate inv = settings.whichInvariantViolated(s);
+        PredicateResult r = settings.invariantViolated(s);
+        if (r != null) {
             if (shouldMinimize) {
                 // Log the violation to shut the other threads down
-                results.invariantViolated(null, inv);
+                results.invariantViolated(null, r);
 
                 // Minimize the trace and log the actual invariant-violating state
-                s = TraceMinimizer.minimizeTrace(s, inv, false);
+                s = TraceMinimizer.minimizeTrace(s, r);
             }
-            results.invariantViolated(s, inv);
+            results.invariantViolated(s, r);
             return StateStatus.TERMINAL;
         }
 
-        if (settings.goalMatched(s)) {
-            StatePredicate goal = settings.whichGoalMatched(s);
+        r = settings.goalMatched(s);
+        if (r != null) {
             if (shouldMinimize) {
                 // Log the goal to shut the other threads down
-                results.goalFound(null, goal);
+                results.goalFound(null, r);
 
                 // Minimize the trace and log the actual goal-matching state
-                s = TraceMinimizer.minimizeTrace(s, goal, true);
+                s = TraceMinimizer.minimizeTrace(s, r);
             }
-            results.goalFound(s, goal);
+            results.goalFound(s, r);
             return StateStatus.TERMINAL;
         }
 
@@ -245,8 +246,7 @@ public abstract class Search {
         initSearch(initialState);
 
         if (settings.shouldOutputStatus()) {
-            System.out.println(
-                    String.format("Starting %s search...", searchType()));
+            System.out.printf("Starting %s search...%n", searchType());
         }
 
         if (settings.multiThreaded()) {
@@ -535,14 +535,13 @@ class RandomDFS extends Search {
     protected String status(double elapsedSecs) {
         long explored = states.get();
         if (settings.depthLimited()) {
-            return String
-                    .format("Explored: %s, Num Probes: %s (%.2fs, %.2fK explored/s)",
-                            explored, probes.get(), elapsedSecs,
-                            explored / elapsedSecs / 1000.0);
+            return String.format(
+                    "Explored: %s, Num Probes: %s (%.2fs, %.2fK explored/s)",
+                    explored, probes.get(), elapsedSecs,
+                    explored / elapsedSecs / 1000.0);
         } else {
-            return String
-                    .format("Explored: %s (%.2fs, %.2fK explored/s)", explored,
-                            elapsedSecs, explored / elapsedSecs / 1000.0);
+            return String.format("Explored: %s (%.2fs, %.2fK explored/s)",
+                    explored, elapsedSecs, explored / elapsedSecs / 1000.0);
         }
     }
 

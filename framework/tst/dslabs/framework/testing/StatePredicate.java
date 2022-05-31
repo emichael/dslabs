@@ -28,11 +28,12 @@ import dslabs.framework.Message;
 import dslabs.framework.Result;
 import dslabs.framework.testing.utils.SerializableFunction;
 import dslabs.framework.testing.utils.SerializablePredicate;
+import java.io.PrintWriter;
 import java.io.Serializable;
+import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 import lombok.Getter;
@@ -43,7 +44,7 @@ import org.apache.commons.lang3.tuple.Pair;
 
 
 @RequiredArgsConstructor
-public class StatePredicate implements Predicate<AbstractState>, Serializable {
+public class StatePredicate implements Serializable {
     public static final Pair<Boolean, String> TRUE_NO_MESSAGE =
             new ImmutablePair<>(true, null);
     public static final Pair<Boolean, String> FALSE_NO_MESSAGE =
@@ -260,35 +261,147 @@ public class StatePredicate implements Predicate<AbstractState>, Serializable {
                 addNullMessage(name, predicate));
     }
 
-    public boolean test(AbstractState state) {
-        return predicate.apply(state).getLeft();
-    }
+    /**
+     * A class representing the result of evaluating a StatePredicate on a
+     * state. Because StatePredicates can call user code, they can throw
+     * exceptions.
+     *
+     * Invariant: this.exceptionThrown() == (this.value() == null)
+     */
+    public static class PredicateResult {
+        @Getter private final StatePredicate predicate;
+        private final Throwable throwable;
+        private final Boolean value;
+        /**
+         * The detail string returned by the predicate.
+         */
+        @Getter private final String detail;
 
-    public String detail(AbstractState state) {
-        return predicate.apply(state).getRight();
-    }
-
-    public String errorMessage(AbstractState state) {
-        // TODO: insert check to make sure state actually violates invariant
-
-        StringBuilder sb = new StringBuilder("State violates ").append("\"");
-        if (name.length() > 100) {
-            sb.append(name, 0, 100);
-            sb.append("...");
-        } else {
-            sb.append(name);
+        PredicateResult(@NonNull StatePredicate predicate,
+                        @NonNull Throwable throwable) {
+            this.predicate = predicate;
+            this.throwable = throwable;
+            value = null;
+            detail = null;
         }
-        sb.append("\"");
 
-        Pair<Boolean, String> info = predicate.apply(state);
-        if (info != null && info.getRight() != null) {
-            sb.append("\nError info: ").append(info.getRight());
+        PredicateResult(@NonNull StatePredicate predicate, boolean value,
+                        String detail) {
+            this.predicate = predicate;
+            this.value = value;
+            this.detail = detail;
+            throwable = null;
         }
 
-        return sb.toString();
+        /**
+         * Whether an exception (or error) was thrown during predicate
+         * evaluation.
+         *
+         * @return whether an exception was thrown
+         */
+        public boolean exceptionThrown() {
+            return throwable != null;
+        }
+
+        /**
+         * The value returned by the predicate, or {@code null} if an exception
+         * was thrown during predicate evaluation
+         *
+         * @return the value or {@code null{}}
+         */
+        public Boolean value() {
+            return value;
+        }
+
+        /**
+         * A full error message explaining this result.
+         *
+         * @return the message
+         */
+        public String errorMessage() {
+            final StringBuilder sb = new StringBuilder();
+            if (throwable != null) {
+                sb.append("Exception thrown while evaluating \"");
+                if (predicate.name.length() > 100) {
+                    sb.append(predicate.name, 0, 100);
+                    sb.append("...");
+                } else {
+                    sb.append(predicate.name);
+                }
+                sb.append("\"");
+                sb.append("\n");
+                final StringWriter sw = new StringWriter();
+                throwable.printStackTrace(new PrintWriter(sw));
+                sb.append(sw);
+            } else {
+                assert value != null;
+
+                if (value) {
+                    sb.append("State matches \"");
+                } else {
+                    sb.append("State violates \"");
+                }
+                if (predicate.name.length() > 100) {
+                    sb.append(predicate.name, 0, 100);
+                    sb.append("...");
+                } else {
+                    sb.append(predicate.name);
+                }
+                sb.append("\"");
+
+                if (detail != null) {
+                    sb.append("\nError info: ").append(detail);
+                }
+            }
+            return sb.toString();
+        }
     }
 
-    @Override
+    /**
+     * Evaluate the predicate on a state and return the result.
+     *
+     * @param state
+     *         the state to evaluate the predicate on
+     * @return the PredicateResult
+     */
+    public final PredicateResult test(AbstractState state) {
+        Pair<Boolean, String> res;
+        try {
+            res = predicate.apply(state);
+        } catch (Throwable t) {
+            return new PredicateResult(this, t);
+        }
+        return new PredicateResult(this, res.getLeft(), res.getRight());
+    }
+
+    /**
+     * Evaluate the predicate on a state and return the result only if the value
+     * returned by the predicate <b>is not</b> {@code normalValue}; if the value
+     * is {@code normalValue}, this method does not allocate a
+     * {@link PredicateResult} and instead returns {@code null}. If an exception
+     * is thrown during predicate evaluation, a result is always returned.
+     *
+     * @param state
+     *         the state to evaluate the predicate on
+     * @param normalValue
+     *         the normal value of the predicate
+     * @return the PredicateResult or {@code null}
+     */
+    public final PredicateResult test(AbstractState state,
+                                      boolean normalValue) {
+        Pair<Boolean, String> res;
+        try {
+            res = predicate.apply(state);
+        } catch (Throwable t) {
+            return new PredicateResult(this, t);
+        }
+        boolean value = res.getLeft();
+        if (value != normalValue) {
+            return new PredicateResult(this, value, res.getRight());
+        }
+        return null;
+    }
+
     public StatePredicate negate() {
         String newName;
         if (name.startsWith("¬(") && name.endsWith(")")) {

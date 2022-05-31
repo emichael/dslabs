@@ -37,6 +37,7 @@ import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.StatePredicate.PredicateResult;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SerializableTrace;
@@ -381,8 +382,12 @@ public class CloningTest {
                                                }
                                            }).build());
         s.addClientWorker(new LocalAddress("foo"));
-        assertEquals(s1.test(s), s2.test(s));
-        assertEquals(s1.errorMessage(s), s2.errorMessage(s));
+        PredicateResult r1 = s1.test(s);
+        PredicateResult r2 = s2.test(s);
+        assertEquals(r1.exceptionThrown(), r2.exceptionThrown());
+        assertEquals(r1.value(), r2.value());
+        assertEquals(r1.detail(), r2.detail());
+        assertEquals(r1.errorMessage(), r2.errorMessage());
     }
 
     @Test

@@ -23,8 +23,10 @@
 package dslabs.framework.testing.search;
 
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.StatePredicate.PredicateResult;
 import java.util.Collection;
 import java.util.concurrent.atomic.AtomicReference;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -43,15 +45,15 @@ public class SearchResults {
     // Set by worker threads
     private final AtomicReference<SearchState> invariantViolatingState =
             new AtomicReference<>();
-    private volatile StatePredicate invariantViolated;
+    private volatile PredicateResult invariantViolated;
 
     private final AtomicReference<SearchState> goalMatchingState =
             new AtomicReference<>();
-    private volatile StatePredicate goalMatched;
+    private volatile PredicateResult goalMatched;
 
     private final AtomicReference<SearchState> exceptionalState =
             new AtomicReference<>();
-    private volatile boolean exceptionThrown;
+    @Getter(AccessLevel.PACKAGE) private volatile boolean exceptionThrown;
 
     public SearchState invariantViolatingState() {
         return invariantViolatingState.get();
@@ -65,15 +67,16 @@ public class SearchResults {
         return goalMatchingState.get();
     }
 
-    void invariantViolated(SearchState state, StatePredicate invariant) {
+    void invariantViolated(SearchState state,
+                           PredicateResult invariantViolated) {
         if (invariantViolatingState.compareAndSet(null, state)) {
-            invariantViolated = invariant;
+            this.invariantViolated = invariantViolated;
         }
     }
 
-    void goalFound(SearchState state, StatePredicate goal) {
+    void goalFound(SearchState state, PredicateResult goalMatched) {
         if (goalMatchingState.compareAndSet(null, state)) {
-            goalMatched = goal;
+            this.goalMatched = goalMatched;
         }
     }
 

@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.StatePredicate;
+import dslabs.framework.testing.StatePredicate.PredicateResult;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import java.awt.Dimension;
@@ -500,13 +501,18 @@ public class DebuggerWindow extends JFrame {
             StatePredicate invariant = e.getKey();
             JLabel label = e.getValue();
 
-            if (invariant.test(currentState.state())) {
+            PredicateResult r = invariant.test(currentState.state());
+            if (r.exceptionThrown()) {
+                label.setIcon(Utils.makeIcon(FontAwesome.QUESTION_CIRCLE,
+                        UIManager.getColor("warningColor")));
+                label.setToolTipText(r.errorMessage());
+            } else if (r.value()) {
                 label.setIcon(Utils.makeIcon(FontAwesome.CHECK_SQUARE));
                 label.setToolTipText(null);
             } else {
                 label.setIcon(Utils.makeIcon(FontAwesome.EXCLAMATION_TRIANGLE,
                         UIManager.getColor("warningColor")));
-                label.setToolTipText(invariant.detail(currentState.state()));
+                label.setToolTipText(r.detail());
             }
         }
 
@@ -514,11 +520,16 @@ public class DebuggerWindow extends JFrame {
             StatePredicate prune = e.getKey();
             JLabel label = e.getValue();
 
-            if (prune.test(currentState.state())) {
+            PredicateResult r = prune.test(currentState.state());
+            if (r.exceptionThrown()) {
+                label.setIcon(Utils.makeIcon(FontAwesome.QUESTION_CIRCLE,
+                        UIManager.getColor("warningColor")));
+                label.setToolTipText(r.errorMessage());
+            } else if (r.value()) {
                 label.setIcon(Utils.makeIcon(FontAwesome.EYE_SLASH,
                         Utils.desaturate(UIManager.getColor("warningColor"),
                                 0.5)));
-                label.setToolTipText(prune.detail(currentState.state()));
+                label.setToolTipText(r.detail());
             } else {
                 // TODO: find better icons, the eye staring at you is creepy
                 label.setIcon(Utils.makeIcon(FontAwesome.EYE));
@@ -530,7 +541,12 @@ public class DebuggerWindow extends JFrame {
             StatePredicate goal = e.getKey();
             JLabel label = e.getValue();
 
-            if (goal.test(currentState.state())) {
+            PredicateResult r = goal.test(currentState.state());
+            if (r.exceptionThrown()) {
+                label.setIcon(Utils.makeIcon(FontAwesome.QUESTION_CIRCLE,
+                        UIManager.getColor("warningColor")));
+                label.setToolTipText(r.errorMessage());
+            } else if (r.value()) {
                 label.setIcon(Utils.makeIcon(FontAwesome.CHECK_CIRCLE,
                         UIManager.getColor("successColor")));
                 label.setToolTipText(null);
@@ -539,7 +555,7 @@ public class DebuggerWindow extends JFrame {
                 // this isn't an error. FontAwesome apparently doesn't have a TIMES_SQUARE,
                 // so using a circle for both icons.
                 label.setIcon(Utils.makeIcon(FontAwesome.TIMES_CIRCLE));
-                label.setToolTipText(goal.detail(currentState.state()));
+                label.setToolTipText(r.detail());
             }
         }
     }
