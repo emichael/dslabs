@@ -54,11 +54,9 @@ public abstract class CheckLogger {
             notIdempotentMethods = new ConcurrentHashMap<>();
 
     static {
-        if (GlobalSettings.doChecks()) {
-            Runtime.getRuntime().addShutdownHook(
-                    new Thread(CheckLogger::printCheckResults,
-                            "Check results printer"));
-        }
+        Runtime.getRuntime().addShutdownHook(
+                new Thread(CheckLogger::printCheckResults,
+                        "Check results printer"));
     }
 
     private static String methodName(Event event, SearchState state) {
@@ -143,8 +141,8 @@ public abstract class CheckLogger {
 
         System.err.println();
         System.err.println(StringUtils.repeat("*", 50));
-        System.err
-                .println("* Check results" + StringUtils.repeat(" ", 34) + "*");
+        System.err.println(
+                "* Check results" + StringUtils.repeat(" ", 34) + "*");
         System.err.println(StringUtils.repeat("*", 50));
         System.err.println();
 
@@ -186,8 +184,8 @@ public abstract class CheckLogger {
     }
 
     private static void printClasses(Map<Class, Object> m) {
-        m.forEach((key, value) -> System.err
-                .println(String.format("- %s | %s", key, value)));
+        m.forEach((key, value) -> System.err.println(
+                String.format("- %s | %s", key, value)));
         System.err.println();
     }
 }

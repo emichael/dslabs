@@ -211,7 +211,7 @@ public abstract class Search {
             return StateStatus.TERMINAL;
         }
 
-        if (GlobalSettings.doChecks()) {
+        if (GlobalSettings.doErrorChecks()) {
             SearchState previous = s.previous();
             Event e = s.previousEvent();
 
@@ -222,10 +222,13 @@ public abstract class Search {
                     CheckLogger.notDeterministic(e, previous);
                 }
 
-                // Check if event is idempotent
-                if (e.isMessage() &&
-                        !Objects.equals(s, s.stepEvent(e, settings, true))) {
-                    CheckLogger.notIdempotent(e, previous);
+                // Non-idempotence isn't necessarily an error
+                if (GlobalSettings.doAllChecks()) {
+                    // Check if event is idempotent
+                    if (e.isMessage() && !Objects.equals(s,
+                            s.stepEvent(e, settings, true))) {
+                        CheckLogger.notIdempotent(e, previous);
+                    }
                 }
             }
         }

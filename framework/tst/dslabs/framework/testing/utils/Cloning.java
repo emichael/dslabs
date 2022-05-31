@@ -121,7 +121,7 @@ public abstract class Cloning {
             try {
                 ret = jdclClone(object);
             } catch (Throwable ignored) {
-                if (GlobalSettings.doChecks()) {
+                if (GlobalSettings.doErrorChecks()) {
                     CheckLogger.notFastCloned(object);
                 }
                 cannotClone.add(object.getClass());
@@ -129,7 +129,7 @@ public abstract class Cloning {
             }
         }
 
-        if (GlobalSettings.doChecks()) {
+        if (GlobalSettings.doErrorChecks()) {
             // Check equals and hashCode
             if (!Objects.deepEquals(ret, object) ||
                     !Objects.deepEquals(object, ret)) {

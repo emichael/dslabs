@@ -110,7 +110,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     protected void cleanupTest() {
     }
 
-    @Rule public TestRule rule = new TestRule() {
+    @Rule public final TestRule rule = new TestRule() {
         @Override
         public Statement apply(final Statement base,
                                final Description description) {

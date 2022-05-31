@@ -45,12 +45,15 @@ public abstract class GlobalSettings {
             Boolean.parseBoolean(lookupWithDefault("singleThreaded", "false")),
 
     startVisualization =
-            Boolean.parseBoolean(lookupWithDefault("startViz", "false")),
-
-    doChecks = Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
+            Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
 
     @Getter @Setter private static boolean saveTraces =
             Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
+
+    private static final boolean doChecks =
+            Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
+
+    @Setter private static boolean errorChecksTemporarilyEnabled = false;
 
     private static final boolean timeoutsDisabled = Boolean.parseBoolean(
             lookupWithDefault("testTimeoutsDisabled", "false"));
@@ -106,5 +109,13 @@ public abstract class GlobalSettings {
             return props.getProperty(keyName);
         }
         return defaultValue;
+    }
+
+    public static boolean doAllChecks() {
+        return doChecks;
+    }
+
+    public static boolean doErrorChecks() {
+        return doChecks || errorChecksTemporarilyEnabled;
     }
 }
