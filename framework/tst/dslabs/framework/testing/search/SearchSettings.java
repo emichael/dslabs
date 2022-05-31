@@ -40,7 +40,8 @@ import lombok.extern.java.Log;
 @Getter
 @Setter
 @Log
-public class SearchSettings extends TestSettings<SearchSettings> {
+public class SearchSettings extends TestSettings<SearchSettings>
+        implements Cloneable {
     private volatile int maxDepth = -1;
     private volatile int numThreads = defaultNumThreads();
     private volatile int outputFreqSecs = GlobalSettings.verbose() ? 5 : -1;
@@ -191,5 +192,22 @@ public class SearchSettings extends TestSettings<SearchSettings> {
         outputFreqSecs(5);
         numThreads(defaultNumThreads());
         return this;
+    }
+
+    public SearchSettings() {
+    }
+
+    private SearchSettings(SearchSettings s) {
+        super(s);
+        goals.addAll(s.goals);
+        prunes.addAll(s.prunes);
+        maxDepth = s.maxDepth;
+        numThreads = s.numThreads;
+        outputFreqSecs = s.outputFreqSecs;
+    }
+
+    @Override
+    public SearchSettings clone() {
+        return new SearchSettings(this);
     }
 }

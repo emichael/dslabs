@@ -260,4 +260,19 @@ public abstract class TestSettings<T extends TestSettings<T>> {
         resetNetwork();
         return self();
     }
+
+    public TestSettings() {
+    }
+
+    protected TestSettings(TestSettings<T> s) {
+        deliverTimers = s.deliverTimers;
+        invariants.addAll(s.invariants);
+        linkActive.putAll(s.linkActive);
+        maxTimeSecs = s.maxTimeSecs;
+        networkActive = s.networkActive;
+        receiverActive.putAll(s.receiverActive);
+        senderActive.putAll(s.senderActive);
+        singleThreaded = s.singleThreaded;
+        timersActive.putAll(s.timersActive);
+    }
 }

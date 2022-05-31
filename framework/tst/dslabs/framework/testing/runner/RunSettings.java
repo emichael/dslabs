@@ -86,9 +86,9 @@ public class RunSettings extends TestSettings<RunSettings> {
             throw new IllegalArgumentException();
         }
 
-        this.linkDeliverRate
-                .put(new ImmutablePair<>(from.rootAddress(), to.rootAddress()),
-                        linkDeliverRate);
+        this.linkDeliverRate.put(
+                new ImmutablePair<>(from.rootAddress(), to.rootAddress()),
+                linkDeliverRate);
         return this;
     }
 

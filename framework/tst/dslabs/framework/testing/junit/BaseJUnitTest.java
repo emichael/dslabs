@@ -240,7 +240,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
                              SearchSettings searchSettings) {
         assert searchState != null;
         bfsStartState = searchState;
-        lastSearchSettings = searchSettings;
+        lastSearchSettings = searchSettings.clone();
         searchResults = Search.bfs(searchState, searchSettings);
         assertEndConditionValid();
     }
@@ -252,7 +252,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     protected final void dfs(SearchState searchState,
                              SearchSettings searchSettings) {
         assert searchState != null;
-        lastSearchSettings = searchSettings;
+        lastSearchSettings = searchSettings.clone();
         searchResults = Search.dfs(searchState, searchSettings);
         assertEndConditionValid();
     }
@@ -263,7 +263,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
 
     final void traceReplay(SearchState searchState, List<Event> trace) {
         assert searchState != null;
-        lastSearchSettings = searchSettings;
+        lastSearchSettings = searchSettings.clone();
         searchResults =
                 new TraceReplaySearch(searchSettings, trace).run(searchState);
         assertEndConditionValid();
