@@ -20,8 +20,8 @@ jobs:
 
       - uses: actions/cache@v2
         with:
-          path: vendor/bundle
-          key: ${{ runner.os }}-gems-${{ hashFiles('www/Gemfile.lock') }}
+          path: ./www/vendor/bundle
+          key: ${{ runner.os }}-gems-${{ hashFiles('./www/Gemfile.lock') }}
           restore-keys: |
             ${{ runner.os }}-gems-
 
