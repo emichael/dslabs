@@ -106,7 +106,7 @@ Several grading scripts are included in the DSLabs repository, and the
 to your particular infrastructure. Please note that the grading scripts are not
 perfect. Bounded model checking is not guaranteed to find all bugs. Also, it is
 entirely possible to circumvent the spirit of the DSLabs framework (e.g., by
-using `static` for intra-Node communication) or **circumvent the tests
+using `static` for inter-Node communication) or **circumvent the tests
 entirely** (e.g., by using reflection to overwrite the testing infrastructure
 and always report success). You should always check to ensure submitted code is
 not pathological or malicious.
