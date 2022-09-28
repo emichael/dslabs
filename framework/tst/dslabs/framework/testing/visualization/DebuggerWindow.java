@@ -94,13 +94,6 @@ import org.jdesktop.swingx.VerticalLayout;
 public class DebuggerWindow extends JFrame {
     static {
         /*
-         * MigLayout thinks it's so smart and wants to use different spacing on
-         * different platforms. We just want consistent behaviour. Therefore, we
-         * standardize on Gnome.
-         */
-        PlatformDefaults.setPlatform(PlatformDefaults.GNOME);
-
-        /*
          * Try to enable GPU acceleration (doesn't seem to work very well) and
          * disable UI scaling.
          *
@@ -109,10 +102,18 @@ public class DebuggerWindow extends JFrame {
         if (!runningInWSL()) {
             System.setProperty("sun.java2d.opengl", "true");
         }
-        System.setProperty("sun.java2d.nodraw", "true");
+        // Disable this for now since it doesn't seem to be useful
+        // System.setProperty("sun.java2d.noddraw", "true");
         System.setProperty("sun.java2d.uiScale.enabled", "false");
         System.setProperty("sun.java2d.win.uiScaleX", "1.0");
         System.setProperty("sun.java2d.win.uiScaleX", "1.0");
+
+        /*
+         * MigLayout thinks it's so smart and wants to use different spacing on
+         * different platforms. We just want consistent behaviour. Therefore, we
+         * standardize on Gnome.
+         */
+        PlatformDefaults.setPlatform(PlatformDefaults.GNOME);
     }
 
     /**
