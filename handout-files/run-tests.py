@@ -57,7 +57,7 @@ def make():
 def run_tests(lab, part=None, no_run=False, no_search=False,
               timers_disabled=False, log_level=None, single_threaded=False,
               start_viz=False, do_checks=False, test_num=None, assertions=False,
-              save_traces=False):
+              save_traces=False, simulated=False, seed=None):
     """Run the specified tests."""
     make()
 
@@ -83,6 +83,12 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
     if save_traces:
         command.append('-DsaveTraces=true')
+
+    if simulated:
+        command.append('-Dsimulated=true')
+        command.append('-DsingleThreaded=true')
+        if seed is not None:
+          command.append('-Dseed=' + str(seed))
 
     command += [
         '-cp',
@@ -208,7 +214,7 @@ def main():
     parser.add_argument('--no-run', action='store_true',
                         help="do not execute run tests")
     parser.add_argument('--no-search', action='store_true',
-                        help="do not execure search tests")
+                        help="do not execute search tests")
     parser.add_argument('--checks', action='store_true',
                         help="run checks on equals, hashCode, idempotence of "
                         "handlers, etc. when running tests")
@@ -220,6 +226,10 @@ def main():
                         help="enable Java assertions")
     parser.add_argument('--single-threaded', action='store_true',
                         help="run the tests using only a single thread")
+    parser.add_argument('--simulated', action='store_true',
+                        help="execute run tests by simulating")
+    parser.add_argument('--seed', type=int,
+                        help="random seed of simulation")
     parser.add_argument('-s', '--save-traces', action='store_true',
                         help="save traces after search test failure")
     parser.add_argument('-z', '--start-viz', action='store_true',
@@ -304,6 +314,8 @@ def main():
                   timers_disabled=args.no_timeouts,
                   log_level=args.log_level,
                   single_threaded=args.single_threaded,
+                  simulated=args.simulated,
+                  seed=args.seed,
                   start_viz=args.start_viz,
                   do_checks=args.checks,
                   test_num=args.test_num,

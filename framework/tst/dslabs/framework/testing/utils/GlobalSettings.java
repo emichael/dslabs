@@ -41,11 +41,16 @@ public abstract class GlobalSettings {
     @Getter private static final boolean verbose =
             Boolean.parseBoolean(lookupWithDefault("verbose", "true")),
 
+    simulated = Boolean.parseBoolean(lookupWithDefault("simulated", "false")),
+
     singleThreaded =
             Boolean.parseBoolean(lookupWithDefault("singleThreaded", "false")),
 
     startVisualization =
             Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
+
+    @Getter private static final long seed =
+            Long.parseLong(lookupWithDefault("seed", "2568"));
 
     @Getter @Setter private static boolean saveTraces =
             Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
