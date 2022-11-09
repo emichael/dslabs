@@ -208,7 +208,7 @@ def main():
     parser.add_argument('--no-run', action='store_true',
                         help="do not execute run tests")
     parser.add_argument('--no-search', action='store_true',
-                        help="do not execure search tests")
+                        help="do not execute search tests")
     parser.add_argument('--checks', action='store_true',
                         help="run checks on equals, hashCode, idempotence of "
                         "handlers, etc. when running tests")
