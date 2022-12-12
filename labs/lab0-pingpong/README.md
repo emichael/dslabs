@@ -628,7 +628,7 @@ Here are some questions you can use to test your understanding of search tests:
   assertSpaceExhausted();
   ```
   
-* This will run the BFS as described earlier, checking that the results match
+  This will run the BFS as described earlier, checking that the results match
   the expected results, but this test does not have a goal. When the search
   reaches a state where the client is done, the test will not end; instead, it
   will continue examining any remaining states where the client is not done.
