@@ -282,6 +282,10 @@ public class RunState extends AbstractState {
     }
 
     public void start(RunSettings settings) {
+        if (simulated) {
+            simulatedImpl.start(settings);
+            return;
+        }
         startInternal(settings);
     }
 
@@ -342,6 +346,11 @@ public class RunState extends AbstractState {
      * is interrupted, does not ensure a full shutdown, only initiates one.
      */
     public synchronized void stop() throws InterruptedException {
+        if (simulated) {
+            simulatedImpl.stop();
+            return;
+        }
+
         // Don't allow simultaneous stops
         while (shuttingDown) {
             wait();

@@ -25,13 +25,15 @@ public class SimulatedImpl {
     long nowNanos = 0l;
     Random rand = new Random(GlobalSettings.seed());
 
+    Thread simulateThread;
+
     SimulatedImpl(RunState state) {
         this.state = state;
     }
 
     void setupNode(Node node) {
         node.config(me_ -> {
-            var timeNanos = nowNanos + 40 * 1000 + (long) (10 * 1000 * rand.nextGaussian());
+            var timeNanos = nowNanos + 7500 * 1000 + (long) (2000 * 1000 * rand.nextGaussian());
             if (timeNanos <= nowNanos) {
                 timeNanos = nowNanos + 1;
             }
@@ -56,41 +58,65 @@ public class SimulatedImpl {
     void run(RunSettings settings) throws InterruptedException {
         var clientWorkersDone = false;
         while (!Thread.interrupted() && !clientWorkersDone) {
-            var virtualEvent = events.poll();
-            assert virtualEvent != null; //
-            nowNanos = virtualEvent.getLeft();
-            if (settings.timeLimited() && nowNanos >= settings.maxTimeSecs() * 1000 * 1000 * 1000) {
+            if (!dispatchNextEvent(settings)) {
                 break;
             }
-            var event = virtualEvent.getRight();
-
-            var logLine = String.format("%.6f ms in simulation (noninteractive)", (float) nowNanos / 1000 / 1000);
-            if (event instanceof MessageEnvelope) {
-                var me = (MessageEnvelope) event;
-                if (settings.shouldDeliver(me, rand)) {
-                    LOG.finer(logLine);
-                    state.node(me.to()).handleMessage(me.message(), me.from(), me.to());
-                }
-            } else if (event instanceof TimerEnvelope) {
-                var te = (TimerEnvelope) event;
-                if (settings.deliverTimers()) {
-                    LOG.finer(logLine);
-                    state.node(te.to()).onTimer(te.timer(), te.to());
-                }
-            } else {
-                throw new RuntimeException("unreachable");
-            }
-
             clientWorkersDone = settings.waitForClients() && Iterables.size(state.clientWorkers()) > 0
                     && state.clientWorkersDone();
         }
     }
 
+    boolean dispatchNextEvent(RunSettings settings) {
+        var virtualEvent = events.poll();
+        assert virtualEvent != null; //
+        nowNanos = virtualEvent.getLeft();
+        if (settings.timeLimited() && nowNanos >= (long) settings.maxTimeSecs() * 1000 * 1000 * 1000) {
+            return false;
+        }
+        var event = virtualEvent.getRight();
+
+        var logLine = String.format("%.6f ms in simulation (noninteractive)", (float) nowNanos / 1000 / 1000);
+        if (event instanceof MessageEnvelope) {
+            var me = (MessageEnvelope) event;
+            if (settings.shouldDeliver(me, rand)) {
+                LOG.finer(logLine);
+                state.node(me.to()).handleMessage(me.message(), me.from(), me.to());
+            }
+        } else if (event instanceof TimerEnvelope) {
+            var te = (TimerEnvelope) event;
+            if (settings.deliverTimers()) {
+                LOG.finer(logLine);
+                state.node(te.to()).onTimer(te.timer(), te.to());
+            }
+        } else {
+            throw new RuntimeException("unreachable");
+        }
+        return true;
+    }
+
     void start(RunSettings settings) {
-        //
+        assert simulateThread == null;
+        var interactiveThread = Thread.currentThread();
+        simulateThread = new Thread(() -> {
+            while (!Thread.interrupted()) {
+                // assert interactive thread's valid state?
+                if (interactiveThread.getState() != Thread.State.WAITING) {
+                    Thread.onSpinWait();
+                    continue;
+                }
+                var dispatched = dispatchNextEvent(settings);
+                // `start` should never be used with a time-limited settings right?
+                assert dispatched;
+            }
+        });
+        simulateThread.start();
     }
 
     void stop() throws InterruptedException {
-        //
+        if (simulateThread != null) {
+            simulateThread.interrupt();
+            simulateThread.join();
+            simulateThread = null;
+        }
     }
 }
