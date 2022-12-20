@@ -36,6 +36,8 @@ import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
+import dslabs.framework.testing.utils.GlobalSettings;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -69,13 +71,19 @@ public class RunState extends AbstractState {
 
     // TODO: break up synchronization a bit
 
+    SimulatedImpl simulatedImpl;
+    boolean simulated = GlobalSettings.simulated();
+
     public RunState(Set<Address> servers, Set<Address> clientWorkers,
-                    Set<Address> clients, StateGenerator stateGenerator) {
+            Set<Address> clients, StateGenerator stateGenerator) {
         super(servers, clientWorkers, clients, stateGenerator);
+        if (simulated) {
+            simulatedImpl = new SimulatedImpl(this);
+        }
     }
 
     public RunState(Set<Address> servers, Set<Address> clientWorkers,
-                    StateGenerator stateGenerator) {
+            StateGenerator stateGenerator) {
         this(servers, clientWorkers, Collections.emptySet(), stateGenerator);
     }
 
@@ -87,6 +95,11 @@ public class RunState extends AbstractState {
     @Override
     protected synchronized void setupNode(Address address) {
         final Node node = node(address);
+        if (simulated) {
+            simulatedImpl.setupNode(node);
+            return;
+        }
+
         final Inbox inbox = network.inbox(address);
 
         node.config(me -> {
@@ -216,6 +229,11 @@ public class RunState extends AbstractState {
     public void run(RunSettings settings) throws InterruptedException {
         if (settings == null) {
             settings = new RunSettings();
+        }
+
+        if (simulated) {
+            simulatedImpl.run(settings);
+            return;
         }
 
         if (settings.multiThreaded()) {
@@ -351,7 +369,6 @@ public class RunState extends AbstractState {
 
         running = false;
     }
-
 
     @Override
     public Iterable<TimerEnvelope> timers(Address address) {

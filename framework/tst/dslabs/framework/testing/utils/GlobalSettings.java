@@ -50,7 +50,7 @@ public abstract class GlobalSettings {
             Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
 
     @Getter private static final long seed =
-            Long.parseLong(lookupWithDefault("seed", "2568"));
+            Long.parseLong(lookupWithDefault("seed", "117418"));
 
     @Getter @Setter private static boolean saveTraces =
             Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
