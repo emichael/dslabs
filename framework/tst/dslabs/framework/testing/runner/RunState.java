@@ -36,11 +36,9 @@ import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
-import dslabs.framework.testing.utils.GlobalSettings;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 import java.util.Set;
 import lombok.Getter;
 import lombok.ToString;
@@ -50,7 +48,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Log
 @ToString(callSuper = true)
 public class RunState extends AbstractState {
-    @Getter private final Network network;
+    @Getter private final Network network = new Network();
 
     private volatile RunSettings settings;
 
@@ -74,13 +72,6 @@ public class RunState extends AbstractState {
     public RunState(Set<Address> servers, Set<Address> clientWorkers,
                     Set<Address> clients, StateGenerator stateGenerator) {
         super(servers, clientWorkers, clients, stateGenerator);
-        if (GlobalSettings.simulated()) {
-            network = new SimulatedNetwork();
-            ((SimulatedNetwork) network).rand =
-                    new Random(GlobalSettings.seed());
-        } else {
-            network = new Network();
-        }
     }
 
     public RunState(Set<Address> servers, Set<Address> clientWorkers,
@@ -170,21 +161,11 @@ public class RunState extends AbstractState {
 
             MessageEnvelope me = inbox.pollMessage();
             if (me != null && settings.shouldDeliver(me)) {
-                if (GlobalSettings.simulated()) {
-                    LOG.finer("Virtual time " +
-                            (double) ((SimulatedNetwork) network).virtualTimeNanos /
-                                    1000 / 1000 + "ms");
-                }
                 node.handleMessage(me.message(), me.from(), me.to());
             }
 
             TimerEnvelope te = inbox.pollTimer();
             if (te != null && settings.deliverTimers()) {
-                if (GlobalSettings.simulated()) {
-                    LOG.finer("Virtual time " +
-                            (double) ((SimulatedNetwork) network).virtualTimeNanos /
-                                    1000 / 1000 + "ms");
-                }
                 node.onTimer(te.timer(), te.to());
             }
         }
@@ -255,10 +236,6 @@ public class RunState extends AbstractState {
                 this.settings = settings;
                 this.startTimeMillis = System.currentTimeMillis();
                 this.mainThread = Thread.currentThread();
-
-                if (GlobalSettings.simulated()) {
-                    ((SimulatedNetwork) network).autoAdvance = true;
-                }
             }
 
             boolean done = false;
@@ -268,21 +245,10 @@ public class RunState extends AbstractState {
                 synchronized (this) {
                     takeSingleThreadedStep();
 
-                    boolean timeUp;
-                    if (GlobalSettings.simulated()) {
-                        timeUp = settings.timeLimited() &&
-                                ((SimulatedNetwork) network).virtualTimeNanos >=
-                                        (long) settings.maxTimeSecs() * 1000 *
-                                                1000 * 1000;
-                    } else {
-                        timeUp = settings.timeUp(startTimeMillis);
-                    }
-
-                    done = Thread.interrupted() || //
-                            (settings.waitForClients() &&
-                                    Iterables.size(clientWorkers()) > 0 &&
-                                    clientWorkersDone()) || //
-                            timeUp;
+                    done = Thread.interrupted() || (settings.waitForClients() &&
+                            Iterables.size(clientWorkers()) > 0 &&
+                            clientWorkersDone()) ||
+                            settings.timeUp(startTimeMillis);
                 }
             }
 
@@ -298,9 +264,6 @@ public class RunState extends AbstractState {
     }
 
     public void start(RunSettings settings) {
-        if (GlobalSettings.simulated()) {
-            ((SimulatedNetwork) network).autoAdvance = false;
-        }
         startInternal(settings);
     }
 
