@@ -31,7 +31,10 @@ public class SimulatedImpl {
 
     void setupNode(Node node) {
         node.config(me_ -> {
-            var timeNanos = nowNanos + 40 * 1000 + (long) (20 * 1000 * rand.nextGaussian());
+            var timeNanos = nowNanos + 40 * 1000 + (long) (10 * 1000 * rand.nextGaussian());
+            if (timeNanos <= nowNanos) {
+                timeNanos = nowNanos + 1;
+            }
             var me = new MessageEnvelope(me_.getLeft(), me_.getMiddle(), Cloning.clone(me_.getRight()));
             events.add(Pair.of(timeNanos, me));
         }, null, te_ -> {
@@ -61,13 +64,19 @@ public class SimulatedImpl {
             }
             var event = virtualEvent.getRight();
 
-            LOG.finer(String.format("%.6f ms in simulation (noninteractive)", (float) nowNanos / 1000 / 1000));
+            var logLine = String.format("%.6f ms in simulation (noninteractive)", (float) nowNanos / 1000 / 1000);
             if (event instanceof MessageEnvelope) {
                 var me = (MessageEnvelope) event;
-                state.node(me.to()).handleMessage(me.message(), me.from(), me.to());
+                if (settings.shouldDeliver(me, rand)) {
+                    LOG.finer(logLine);
+                    state.node(me.to()).handleMessage(me.message(), me.from(), me.to());
+                }
             } else if (event instanceof TimerEnvelope) {
                 var te = (TimerEnvelope) event;
-                state.node(te.to()).onTimer(te.timer(), te.to());
+                if (settings.deliverTimers()) {
+                    LOG.finer(logLine);
+                    state.node(te.to()).onTimer(te.timer(), te.to());
+                }
             } else {
                 throw new RuntimeException("unreachable");
             }

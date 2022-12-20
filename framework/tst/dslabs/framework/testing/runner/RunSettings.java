@@ -179,8 +179,7 @@ public class RunSettings extends TestSettings<RunSettings> {
      *         the candidate messageEnvelope
      * @return whether the messageEnvelope should be delivered
      */
-    @Override
-    public boolean shouldDeliver(MessageEnvelope messageEnvelope) {
+    public boolean shouldDeliver(MessageEnvelope messageEnvelope, Random rand) {
         Address from = messageEnvelope.from().rootAddress();
         Address to = messageEnvelope.to().rootAddress();
 
@@ -207,6 +206,11 @@ public class RunSettings extends TestSettings<RunSettings> {
 
         return deliverRate == null || deliverRate > 1.0 ||
                 rand.nextDouble() < deliverRate;
+    }
+
+    @Override
+    public boolean shouldDeliver(MessageEnvelope messageEnvelope) {
+        return shouldDeliver(messageEnvelope, rand);
     }
 
     @Override
