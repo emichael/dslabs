@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Random;
+import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
@@ -46,12 +47,21 @@ public class SimulatedImpl {
         this.state = state;
     }
 
-    long messageTimeNanos() {
-        var timeNanos = nowNanos + 300 * 1000 + (long) (60 * 1000 * rand.nextGaussian());
-        if (timeNanos <= nowNanos) {
-            timeNanos = nowNanos + 1;
-        }
-        return timeNanos;
+    long messageLatencyNanos() {
+        var timeNanos = 300 * 1000 + (long) (60 * 1000 * rand.nextGaussian());
+        return Long.max(timeNanos, 1);
+    }
+
+    //
+    long processTimeNanos() {
+        var nanos = (System.nanoTime() - systemNanos);
+        // if (nanos < 50 * 1000 * 1000) {
+        //     return 0;
+        // }
+        // LOG.warning(() -> String.format(
+        //         "Long process time (%.6fms) is taken into account which causes non-deterministic simulation",
+        //         (float) nanos / 1000 / 1000));
+        return nanos;
     }
 
     void setupNode(Node node) {
@@ -61,19 +71,29 @@ public class SimulatedImpl {
         }
         node.config(me_ -> {
             var me = new MessageEnvelope(me_.getLeft(), me_.getMiddle(), Cloning.clone(me_.getRight()));
-            //
-            // assert System.nanoTime() - systemNanos <= 10 * 1000 * 1000;
-            events.add(Pair.of(messageTimeNanos(), me));
+            var processTimeNanos = processTimeNanos();
+            var latency = messageLatencyNanos();
+            var timeNanos = nowNanos + processTimeNanos + latency;
+            LOG.finest(() -> String.format(
+                    " ... will happen at %.6fms = %.6fms (now) + %.6fms (processed) + %.6fms (message latency)",
+                    (float) timeNanos / 1000 / 1000, (float) nowNanos / 1000 / 1000,
+                    (float) processTimeNanos / 1000 / 1000, (float) latency / 1000 / 1000));
+            events.add(Pair.of(timeNanos, me));
         }, null, te_ -> {
             var te = new TimerEnvelope(te_.getLeft(), Cloning.clone(te_.getMiddle()), te_.getRight().getLeft(),
                     te_.getRight().getRight(), rand);
-            var timeNanos = nowNanos + te.timerLengthMillis() * 1000 * 1000 + (long) (64 * rand.nextGaussian());
-            //
-            // assert System.nanoTime() - systemNanos <= 10 * 1000 * 1000;
+            var lengthNanos = te.timerLengthMillis() * 1000 * 1000 + (long) (64 * rand.nextGaussian());
+            var processTimeNanos = processTimeNanos();
+            var timeNanos = nowNanos + processTimeNanos + lengthNanos;
+            LOG.finest(() -> String.format(
+                    " ... will happen at %.6fms = %.6fms (now) + %.6fms (processed) + %.6fms (timer length)",
+                    (float) timeNanos / 1000 / 1000, (float) nowNanos / 1000 / 1000,
+                    (float) processTimeNanos / 1000 / 1000, (float) lengthNanos / 1000 / 1000));
             events.add(Pair.of(timeNanos, te));
         }, e -> {
             // TODO
         }, true);
+
         systemNanos = System.nanoTime();
         node.init();
     }
@@ -99,9 +119,15 @@ public class SimulatedImpl {
             return false;
         }
         var event = virtualEvent.getValue();
+        Supplier<String> logLine = () -> String.format("%.6f ms in simulation ...", (float) nowNanos / 1000 / 1000);
 
-        var logLine = String.format("%.6f ms in simulation", (float) nowNanos / 1000 / 1000);
+        // set process time baseline for everything will happen before next `dispatchNextEvent`
+        // including node's reaction message/timer during handling message/timer,
+        // interactive threads triggered message/timer (probably on `Client`) if 
+        // they get `notify`ed, then `sendCommand`, or `add*` and trigger `init`
+        // everything mentioned above is possible to be slow
         systemNanos = System.nanoTime();
+
         if (event instanceof MessageEnvelope) {
             var me = (MessageEnvelope) event;
             numMessagesSendTo.put(me.to(), numMessagesSendTo.getOrDefault(me.to(), 0) + 1);
@@ -109,7 +135,7 @@ public class SimulatedImpl {
                 // in lab 2, test server is never `addServer`ed
                 // so we have to check for `take` before checking removal
                 if (checkTake(me.to(), new Event(me))) {
-                    LOG.finer(logLine + " (taken)");
+                    LOG.finer(() -> logLine.get() + " (taken)");
                 } else if (state.hasNode(me.to())) {
                     LOG.finer(logLine);
                     state.node(me.to()).handleMessage(me.message(), me.from(), me.to());
@@ -119,14 +145,14 @@ public class SimulatedImpl {
             var te = (TimerEnvelope) event;
             if (settings.deliverTimers()) {
                 if (checkTake(te.to(), new Event(te))) {
-                    LOG.finer(logLine + " (taken)");
+                    LOG.finer(() -> logLine.get() + " (taken)");
                 } else if (state.hasNode(te.to())) {
                     LOG.finer(logLine);
                     state.node(te.to()).onTimer(te.timer(), te.to());
                 }
             }
         } else {
-            LOG.finer(logLine + " (interactive thread wake up)");
+            LOG.finer(() -> logLine.get() + " (interactive thread wake up)");
             synchronized (event) {
                 event.notify();
             }
@@ -265,7 +291,7 @@ public class SimulatedImpl {
     }
 
     void send(MessageEnvelope messageEnvelope) {
-        events.add(Pair.of(messageTimeNanos(), messageEnvelope));
+        events.add(Pair.of(nowNanos + messageLatencyNanos(), messageEnvelope));
     }
 
     int numMessagesSendTo(Address address) {
