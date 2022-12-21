@@ -201,6 +201,10 @@ public abstract class KVStoreWorkload extends Workload {
 
     private static class DifferentKeysInfiniteWorkload
             extends InfiniteWorkload {
+        // this `rand` is a little bit too far away from `SimulatedImpl` and
+        // there's no easy way to pass single source of randomness to down here
+        // however this `rand` only ensures unique key and value, no effect
+        // on message ordering and reliability, so i guess it's fine
         private final Random rand = new Random();
         private final Map<String, String> data = new HashMap<>();
         private boolean lastWasGet = true;

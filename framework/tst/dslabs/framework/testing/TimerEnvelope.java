@@ -37,8 +37,7 @@ import lombok.EqualsAndHashCode;
  * Note: this class has a natural ordering that is inconsistent with equals.
  */
 @Data
-@EqualsAndHashCode(
-        of = {"to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis"})
+@EqualsAndHashCode(of = { "to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis" })
 public final class TimerEnvelope
         implements Serializable, Comparable<TimerEnvelope> {
     private static final Random rand = new Random();
@@ -52,7 +51,7 @@ public final class TimerEnvelope
     @VizIgnore private final long startTimeNanos;
 
     public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis,
-                         int maxTimerLengthMillis) {
+            int maxTimerLengthMillis, Random rand) {
         this.to = to;
         this.timer = timer;
         this.minTimerLengthMillis = minTimerLengthMillis;
@@ -71,6 +70,10 @@ public final class TimerEnvelope
         }
 
         this.startTimeNanos = System.nanoTime();
+    }
+
+    public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis, int maxTimerLengthMillis) {
+        this(to, timer, minTimerLengthMillis, maxTimerLengthMillis, rand);
     }
 
     public long endTimeNanos() {

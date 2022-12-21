@@ -18,6 +18,7 @@ import com.google.common.collect.Iterables;
 
 import dslabs.framework.Address;
 import dslabs.framework.Node;
+import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
@@ -54,6 +55,10 @@ public class SimulatedImpl {
     }
 
     void setupNode(Node node) {
+        // hacky but not too hacky
+        if (node instanceof ClientWorker) {
+            ((ClientWorker) node).currentTimeMillis(() -> nowNanos / 1000 / 1000);
+        }
         node.config(me_ -> {
             var me = new MessageEnvelope(me_.getLeft(), me_.getMiddle(), Cloning.clone(me_.getRight()));
             //
@@ -61,7 +66,7 @@ public class SimulatedImpl {
             events.add(Pair.of(messageTimeNanos(), me));
         }, null, te_ -> {
             var te = new TimerEnvelope(te_.getLeft(), Cloning.clone(te_.getMiddle()), te_.getRight().getLeft(),
-                    te_.getRight().getRight());
+                    te_.getRight().getRight(), rand);
             var timeNanos = nowNanos + te.timerLengthMillis() * 1000 * 1000 + (long) (64 * rand.nextGaussian());
             //
             // assert System.nanoTime() - systemNanos <= 10 * 1000 * 1000;
@@ -89,11 +94,11 @@ public class SimulatedImpl {
     boolean dispatchNextEvent(RunSettings settings) {
         var virtualEvent = events.poll();
         assert virtualEvent != null; //
-        nowNanos = virtualEvent.getLeft();
+        nowNanos = virtualEvent.getKey();
         if (settings.timeLimited() && nowNanos >= (long) settings.maxTimeSecs() * 1000 * 1000 * 1000) {
             return false;
         }
-        var event = virtualEvent.getRight();
+        var event = virtualEvent.getValue();
 
         var logLine = String.format("%.6f ms in simulation", (float) nowNanos / 1000 / 1000);
         systemNanos = System.nanoTime();
@@ -145,10 +150,13 @@ public class SimulatedImpl {
         assert !running;
         running = true;
         assert simulateThread == null;
-        interactiveThreads.add(Thread.currentThread());
+        synchronized (interactiveThreads) {
+            interactiveThreads.add(Thread.currentThread());
+        }
         simulateThread = new Thread(() -> {
             while (!Thread.interrupted()) {
                 if (interactiveThreadRunning()) {
+                    // i hope there's a better way to wait until every other thread `WAITING`
                     Thread.onSpinWait();
                     continue;
                 }
@@ -171,9 +179,9 @@ public class SimulatedImpl {
             for (var thread : interactiveThreads) {
                 var state = thread.getState();
                 if (state == Thread.State.TERMINATED) {
-                    // this is either because the thread called `start` exit without
-                    // calling `stop`, or any interactive thread throw exception /
-                    // got shutdown explicitly
+                    // this is either because the thread called `start` exit 
+                    // without calling `stop`, or any interactive thread throw 
+                    // exception
                     // in either case simulation should not progress any more
                     //
                     // need more think on this
@@ -201,7 +209,7 @@ public class SimulatedImpl {
             simulateThread = null;
         }
         synchronized (interactiveThreads) {
-            interactiveThreads.clear();
+            interactiveThreads.remove(Thread.currentThread());
         }
         running = false;
         // LOG.info("Stop done");
@@ -233,6 +241,10 @@ public class SimulatedImpl {
                 }
                 thread.interrupt();
                 thread.join();
+            }
+            interactiveThreads.clear();
+            if (running) {
+                interactiveThreads.add(Thread.currentThread()); // careful
             }
         }
     }

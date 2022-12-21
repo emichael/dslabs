@@ -35,10 +35,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import java.util.function.LongSupplier;
+
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.ToString;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
@@ -46,8 +49,8 @@ import org.apache.commons.lang3.tuple.Triple;
 
 import static org.apache.commons.lang3.math.NumberUtils.max;
 
-@EqualsAndHashCode(of = {"client", "results"}, callSuper = false)
-@ToString(of = {"client", "results"})
+@EqualsAndHashCode(of = { "client", "results" }, callSuper = false)
+@ToString(of = { "client", "results" })
 public final class ClientWorker extends Node {
 
     @Data
@@ -64,6 +67,7 @@ public final class ClientWorker extends Node {
     // Properties
     // TODO: move this to Workload
     @VizIgnore @Getter private final boolean recordCommandsAndResults;
+    @Setter private LongSupplier currentTimeMillis = () -> System.currentTimeMillis();
 
     // Mutable state
     @VizIgnore private boolean initialized = false;
@@ -74,17 +78,15 @@ public final class ClientWorker extends Node {
     @VizIgnore private long lastSendTimeMillis;
 
     // Resulting state
-    @Getter @VizIgnore private final List<Command> sentCommands =
-            new ArrayList<>();
+    @Getter @VizIgnore private final List<Command> sentCommands = new ArrayList<>();
     @Getter private final List<Result> results = new ArrayList<>();
     @Getter @VizIgnore private boolean resultsOk = true;
     @Getter @VizIgnore private Pair<Result, Result> expectedAndReceived = null;
     @VizIgnore private long maxWaitTimeMillis = 0;
 
-
     public <C extends Node & Client> ClientWorker(@NonNull C client,
-                                                  @NonNull Workload workload,
-                                                  boolean recordCommandsAndResults) {
+            @NonNull Workload workload,
+            boolean recordCommandsAndResults) {
         super(client.address());
         this.client = client;
         this.recordCommandsAndResults = recordCommandsAndResults;
@@ -121,7 +123,7 @@ public final class ClientWorker extends Node {
     public synchronized long maxWaitTimeMilis() {
         if (waitingOnResult) {
             return max(maxWaitTimeMillis,
-                    System.currentTimeMillis() - lastSendTimeMillis);
+                    currentTimeMillis.getAsLong() - lastSendTimeMillis);
         }
         return maxWaitTimeMillis;
     }
@@ -149,14 +151,13 @@ public final class ClientWorker extends Node {
                 }
 
                 maxWaitTimeMillis = max(maxWaitTimeMillis,
-                        System.currentTimeMillis() - lastSendTimeMillis);
+                        currentTimeMillis.getAsLong() - lastSendTimeMillis);
 
                 if (workload.hasResults() &&
                         !Objects.equals(expectedResult, result)) {
                     resultsOk = false;
                     if (expectedAndReceived == null) {
-                        expectedAndReceived =
-                                new ImmutablePair<>(expectedResult, result);
+                        expectedAndReceived = new ImmutablePair<>(expectedResult, result);
                     }
                 }
 
@@ -193,8 +194,7 @@ public final class ClientWorker extends Node {
 
     private void sendNextCommand() {
         if (workload.hasResults()) {
-            Pair<Command, Result> commandAndResult =
-                    workload.nextCommandAndResult(clientNode().address());
+            Pair<Command, Result> commandAndResult = workload.nextCommandAndResult(clientNode().address());
             lastCommand = commandAndResult.getLeft();
             expectedResult = commandAndResult.getRight();
             client.sendCommand(lastCommand);
@@ -205,7 +205,7 @@ public final class ClientWorker extends Node {
 
         waitingToSend = false;
         waitingOnResult = true;
-        lastSendTimeMillis = System.currentTimeMillis();
+        lastSendTimeMillis = currentTimeMillis.getAsLong();
     }
 
     public synchronized boolean done() {
@@ -220,11 +220,10 @@ public final class ClientWorker extends Node {
 
     public synchronized void waitUntilDone(long timeoutMillis)
             throws InterruptedException {
-        long startTime = System.currentTimeMillis();
+        long startTime = currentTimeMillis.getAsLong();
 
         while (!done()) {
-            long timeLeft =
-                    timeoutMillis - (System.currentTimeMillis() - startTime);
+            long timeLeft = timeoutMillis - (currentTimeMillis.getAsLong() - startTime);
             if (timeLeft > 0) {
                 wait(timeLeft);
             } else {
@@ -246,8 +245,8 @@ public final class ClientWorker extends Node {
 
     @Override
     public final synchronized void handleMessage(Message message,
-                                                 Address sender,
-                                                 Address destination) {
+            Address sender,
+            Address destination) {
         clientNode().handleMessage(message, sender, destination);
         sendNextCommandWhilePossible();
     }
