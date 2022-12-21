@@ -50,7 +50,20 @@ import org.apache.commons.lang3.tuple.Pair;
 @Log
 @ToString(callSuper = true)
 public class RunState extends AbstractState {
-    @Getter private final Network network = new Network();
+    // although `SimulatedImpl` can also work with `Network`, by inserting 
+    // messages and already-due timers into `Network` then immediately `poll`
+    // them out, but that is unnecessarily stupid and poorly performant
+    // luckily `network` is only minimal made use by lab 2 and lab 3, which 
+    // makes it fairly easy to proxy the use caes
+    // @Getter
+    private final Network network = new Network();
+
+    public Network network() {
+        if (simulated) {
+            return new SimulatedNetwork(simulatedImpl);
+        }
+        return network;
+    }
 
     private volatile RunSettings settings;
 
@@ -377,6 +390,32 @@ public class RunState extends AbstractState {
         }
 
         running = false;
+    }
+
+    public void sleep(long millis) throws InterruptedException {
+        if (simulated) {
+            simulatedImpl.sleep(millis);
+        } else {
+            Thread.sleep(millis);
+        }
+    }
+
+    public long currentTimeMillis() {
+        if (simulated) {
+            return simulatedImpl.currentTimeMillis();
+        } else {
+            return System.currentTimeMillis();
+        }
+    }
+
+    public void startThread(Runnable runnable) {
+        assert simulated;
+        simulatedImpl.startThread(runnable);
+    }
+
+    public void shutdownStartedThreads() throws InterruptedException {
+        assert simulated;
+        simulatedImpl.shutdownStartedThreads();
     }
 
     @Override

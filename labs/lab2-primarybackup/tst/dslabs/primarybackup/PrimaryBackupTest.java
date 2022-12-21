@@ -245,7 +245,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
                     Objects.equals(backup, v.backup())) {
                 return;
             }
-            Thread.sleep(PING_CHECK_MILLIS);
+            runState.sleep(PING_CHECK_MILLIS);
         }
 
         View v = getView();
@@ -276,7 +276,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             waitForView(primary, backup);
         }
         // Sleep to make sure the view has started and been ack'd
-        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.sleep(PING_CHECK_MILLIS * 4);
         runState.stop();
     }
 
@@ -343,14 +343,14 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         runState.start(runSettings);
 
-        long t1 = System.currentTimeMillis();
+        long t1 = runState.currentTimeMillis();
         for (int i = 0; i < 500; i++) {
             sendCommandAndCheck(client, put("xk" + i, i), putOk());
             sendCommandAndCheck(client, get("xk" + i), getResult(i));
-            Thread.sleep(PING_MILLIS / 10);
+            runState.sleep(PING_MILLIS / 10);
         }
 
-        long t2 = System.currentTimeMillis();
+        long t2 = runState.currentTimeMillis();
         int received = runState.network().numMessagesSentTo(VSA);
 
         double allowed =
@@ -376,7 +376,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         runState.addServer(server(2));
         waitForView(server(1), server(2));
-        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.sleep(PING_CHECK_MILLIS * 4);
 
         sendCommandAndCheck(client, put("foo2", "bar2"), putOk());
 
@@ -411,7 +411,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         // Try to send an operation, shouldn't return
         client.sendCommand(get("foo"));
 
-        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.sleep(PING_CHECK_MILLIS * 4);
 
         assertFalse(client.hasResult());
     }
@@ -456,7 +456,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         sendCommandAndCheck(client, put("a", "aaa"), putOk());
         sendCommandAndCheck(client, get("a"), getResult("aaa"));
         waitForView(server(1), server(3));
-        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.sleep(PING_CHECK_MILLIS * 4);
         sendCommandAndCheck(client, get("a"), getResult("aaa"));
 
         // Kill the primary
@@ -502,7 +502,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         // Let system fully heal
         runState.start(runSettings);
-        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.sleep(PING_CHECK_MILLIS * 4);
         runState.stop();
 
         // Read from the primary
@@ -557,7 +557,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         // Let system fully heal
         runState.start(runSettings);
-        Thread.sleep(PING_CHECK_MILLIS * 4);
+        runState.sleep(PING_CHECK_MILLIS * 4);
         runState.stop();
 
         // Read from the primary
@@ -625,10 +625,10 @@ public class PrimaryBackupTest extends BaseJUnitTest {
             int totalServers = nServers;
 
             try {
-                Thread.sleep(PING_CHECK_MILLIS * 10);
+                runState.sleep(PING_CHECK_MILLIS * 10);
 
                 while (!Thread.interrupted()) {
-                    Thread.sleep(PING_CHECK_MILLIS * 10);
+                    runState.sleep(PING_CHECK_MILLIS * 10);
 
                     Address toKill = servers.get(rand.nextInt(servers.size()));
 
@@ -651,7 +651,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         }
 
         // Let the clients run
-        Thread.sleep(testLengthSecs * 1000);
+        runState.sleep(testLengthSecs * 1000);
 
         // Shut the clients down
         shutdownStartedThreads();
