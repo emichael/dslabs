@@ -10,6 +10,7 @@ import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SearchState;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.kvstore.KVStoreWorkload;
 import dslabs.paxos.PaxosClient;
 import dslabs.paxos.PaxosServer;
@@ -184,7 +185,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
 
     Runnable moveShards(int numGroups, int numShards) {
         return () -> {
-            Random rand = new Random();
+            Random rand = new Random(GlobalSettings.rand().nextLong());
 
             try {
                 while (!Thread.interrupted()) {

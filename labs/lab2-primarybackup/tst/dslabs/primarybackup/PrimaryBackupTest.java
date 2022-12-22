@@ -26,6 +26,7 @@ import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.kvstore.KVStore;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.Arrays;
@@ -480,7 +481,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
         setupRunView(server(1), server(2));
 
         // Setup the clients and run the concurrent PUTs
-        Random rand = new Random();
+        Random rand = new Random(GlobalSettings.rand().nextLong());
         for (int i = 1; i <= nClients; i++) {
             List<Command> workload = new LinkedList<>();
             for (int j = 0; j < nPuts; j++) {
@@ -621,7 +622,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         // Randomly crash and restart servers
         startThread(() -> {
-            Random rand = new Random();
+            Random rand = new Random(GlobalSettings.rand().nextLong());
             int totalServers = nServers;
 
             try {

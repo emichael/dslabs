@@ -8,6 +8,7 @@ import dslabs.framework.Result;
 import dslabs.framework.testing.InfiniteWorkload;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.SerializableFunction;
 import dslabs.kvstore.KVStore.KVStoreResult;
 import dslabs.kvstore.TransactionalKVStore.MultiGet;
@@ -199,7 +200,7 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
 
     private static class DifferentKeysInfiniteWorkload
             extends InfiniteWorkload {
-        private final Random rand = new Random();
+        private final Random rand = new Random(GlobalSettings.rand().nextLong());
         private final int numShards;
         private final List<Integer> shardNums;
 
@@ -217,7 +218,7 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
                 Address clientAddress) {
             // Randomly choose the key set
             Set<String> keys = new HashSet<>();
-            Collections.shuffle(shardNums);
+            Collections.shuffle(shardNums, rand);
             int numKeys = rand.nextInt(numShards) + 1;
             for (int i = 0; i < numKeys; i++) {
                 keys.add(String.format("key-%s-%s", clientAddress,

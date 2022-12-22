@@ -13,6 +13,7 @@ import dslabs.framework.testing.junit.SearchTests;
 import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.kvstore.KVStoreWorkload;
 import dslabs.shardmaster.ShardMaster.Join;
 import dslabs.shardmaster.ShardMaster.Leave;
@@ -24,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -316,6 +318,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         // Re-partition -> 2s -> unpartition -> 2s
         startThread(() -> {
+            Random rand = new Random(GlobalSettings.rand().nextLong());
             try {
                 while (!Thread.interrupted()) {
                     runSettings.reconnect();
@@ -328,7 +331,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                                 IntStream.rangeClosed(1, numServersPerGroup)
                                          .mapToObj(j -> server(groupNum, j))
                                          .collect(Collectors.toList());
-                        Collections.shuffle(servers);
+                        Collections.shuffle(servers, rand);
 
                         for (int j = 0; (j + 1) * 2 < numServersPerGroup; j++) {
                             runSettings.nodeActive(servers.get(j), false);

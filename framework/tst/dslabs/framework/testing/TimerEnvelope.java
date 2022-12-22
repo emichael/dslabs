@@ -25,6 +25,8 @@ package dslabs.framework.testing;
 import dslabs.framework.Address;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
+import dslabs.framework.testing.utils.GlobalSettings;
+
 import java.io.Serializable;
 import java.util.Random;
 import lombok.Data;
@@ -40,7 +42,7 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(of = { "to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis" })
 public final class TimerEnvelope
         implements Serializable, Comparable<TimerEnvelope> {
-    private static final Random rand = new Random();
+    private static final Random rand = new Random(GlobalSettings.rand().nextLong());
 
     private final Address to;
     private final Timer timer;
@@ -51,7 +53,7 @@ public final class TimerEnvelope
     @VizIgnore private final long startTimeNanos;
 
     public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis,
-            int maxTimerLengthMillis, Random rand) {
+            int maxTimerLengthMillis) {
         this.to = to;
         this.timer = timer;
         this.minTimerLengthMillis = minTimerLengthMillis;
@@ -70,10 +72,6 @@ public final class TimerEnvelope
         }
 
         this.startTimeNanos = System.nanoTime();
-    }
-
-    public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis, int maxTimerLengthMillis) {
-        this(to, timer, minTimerLengthMillis, maxTimerLengthMillis, rand);
     }
 
     public long endTimeNanos() {

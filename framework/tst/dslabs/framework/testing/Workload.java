@@ -26,6 +26,7 @@ import com.google.common.collect.Lists;
 import dslabs.framework.Address;
 import dslabs.framework.Command;
 import dslabs.framework.Result;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.SerializableFunction;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -146,7 +147,7 @@ public abstract class Workload implements Serializable {
             randomness = new HashMap<>();
         }
 
-        Random rand = new Random();
+        Random rand = new Random(GlobalSettings.rand().nextLong());
 
         Pattern token = Pattern.compile("%(?:r(\\d*)|n(\\d*)|i(?:-1|\\+1)?|a)");
 

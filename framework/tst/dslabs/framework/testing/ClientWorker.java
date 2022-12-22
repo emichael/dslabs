@@ -30,13 +30,14 @@ import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
+import dslabs.framework.testing.runner.RunState;
+import dslabs.framework.testing.runner.SimulatedImpl;
 import dslabs.framework.testing.utils.Cloning;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
-import java.util.function.LongSupplier;
-
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -67,7 +68,17 @@ public final class ClientWorker extends Node {
     // Properties
     // TODO: move this to Workload
     @VizIgnore @Getter private final boolean recordCommandsAndResults;
-    @Setter private LongSupplier currentTimeMillis = () -> System.currentTimeMillis();
+    // lambda cannot be fast-cloned
+    // @Setter private LongSupplier currentTimeMillis = (LongSupplier & Serializable) () -> System.currentTimeMillis();
+    @Setter private SimulatedImpl simulatedImpl;
+
+    long currentTimeMillis() {
+        if (simulatedImpl != null) {
+            return simulatedImpl.currentTimeMillis();
+        } else {
+            return System.currentTimeMillis();
+        }
+    }
 
     // Mutable state
     @VizIgnore private boolean initialized = false;
@@ -123,7 +134,7 @@ public final class ClientWorker extends Node {
     public synchronized long maxWaitTimeMilis() {
         if (waitingOnResult) {
             return max(maxWaitTimeMillis,
-                    currentTimeMillis.getAsLong() - lastSendTimeMillis);
+                    currentTimeMillis() - lastSendTimeMillis);
         }
         return maxWaitTimeMillis;
     }
@@ -151,7 +162,7 @@ public final class ClientWorker extends Node {
                 }
 
                 maxWaitTimeMillis = max(maxWaitTimeMillis,
-                        currentTimeMillis.getAsLong() - lastSendTimeMillis);
+                        currentTimeMillis() - lastSendTimeMillis);
 
                 if (workload.hasResults() &&
                         !Objects.equals(expectedResult, result)) {
@@ -205,7 +216,7 @@ public final class ClientWorker extends Node {
 
         waitingToSend = false;
         waitingOnResult = true;
-        lastSendTimeMillis = currentTimeMillis.getAsLong();
+        lastSendTimeMillis = currentTimeMillis();
     }
 
     public synchronized boolean done() {
@@ -220,10 +231,10 @@ public final class ClientWorker extends Node {
 
     public synchronized void waitUntilDone(long timeoutMillis)
             throws InterruptedException {
-        long startTime = currentTimeMillis.getAsLong();
+        long startTime = currentTimeMillis();
 
         while (!done()) {
-            long timeLeft = timeoutMillis - (currentTimeMillis.getAsLong() - startTime);
+            long timeLeft = timeoutMillis - (currentTimeMillis() - startTime);
             if (timeLeft > 0) {
                 wait(timeLeft);
             } else {

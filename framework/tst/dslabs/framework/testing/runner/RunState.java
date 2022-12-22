@@ -209,6 +209,11 @@ public class RunState extends AbstractState {
      *         if interrupted while waiting
      */
     public void waitFor() throws InterruptedException {
+        if (simulated) {
+            simulatedImpl.waitFor();
+            return;
+        }
+
         if (settings.timeLimited() && settings.waitForClients() &&
                 Iterables.size(clientWorkers()) > 0) {
             for (ClientWorker c : clientWorkers()) {

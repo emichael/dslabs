@@ -25,6 +25,7 @@ package dslabs.framework.testing.utils;
 import java.lang.management.ManagementFactory;
 import java.util.List;
 import java.util.Properties;
+import java.util.Random;
 import java.util.logging.ConsoleHandler;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -51,6 +52,10 @@ public abstract class GlobalSettings {
 
     @Getter private static final long seed =
             Long.parseLong(lookupWithDefault("seed", "117418"));
+    // the "single source of randomness", all other `Random` instances all seeded from this
+    // not sharing this `rand` for performance, and not seeded directly from 
+    // `seed` to avoid two identically-used `Random` generating identical sequences
+    @Getter private static final Random rand = new Random(seed);
 
     @Getter @Setter private static boolean saveTraces =
             Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));

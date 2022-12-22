@@ -25,6 +25,8 @@ package dslabs.framework.testing.runner;
 import dslabs.framework.Address;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TestSettings;
+import dslabs.framework.testing.utils.GlobalSettings;
+
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +42,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * Safe for concurrent access.
  */
 public class RunSettings extends TestSettings<RunSettings> {
-    private final static Random rand = new Random();
+    private final static Random rand = new Random(GlobalSettings.rand().nextLong());
 
     /* Defaults */
     private static final double DEFAULT_UNRELIABLE_FRACTION_DELIVERED = 0.5;
@@ -179,7 +181,8 @@ public class RunSettings extends TestSettings<RunSettings> {
      *         the candidate messageEnvelope
      * @return whether the messageEnvelope should be delivered
      */
-    public boolean shouldDeliver(MessageEnvelope messageEnvelope, Random rand) {
+    @Override
+    public boolean shouldDeliver(MessageEnvelope messageEnvelope) {
         Address from = messageEnvelope.from().rootAddress();
         Address to = messageEnvelope.to().rootAddress();
 
@@ -206,11 +209,6 @@ public class RunSettings extends TestSettings<RunSettings> {
 
         return deliverRate == null || deliverRate > 1.0 ||
                 rand.nextDouble() < deliverRate;
-    }
-
-    @Override
-    public boolean shouldDeliver(MessageEnvelope messageEnvelope) {
-        return shouldDeliver(messageEnvelope, rand);
     }
 
     @Override

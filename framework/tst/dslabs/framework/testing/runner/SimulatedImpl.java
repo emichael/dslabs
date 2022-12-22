@@ -36,12 +36,13 @@ public class SimulatedImpl {
         return Long.compare(ve1.getKey(), ve2.getKey());
     });
     long nowNanos = 0l, systemNanos = System.nanoTime();
-    Random rand = new Random(GlobalSettings.seed());
+    Random rand = new Random(GlobalSettings.rand().nextLong());
     Thread simulateThread;
     List<Thread> interactiveThreads = new ArrayList<>();
     final MutablePair<Address, Event> pendingTake = MutablePair.of(null, null);
     Map<Address, Integer> numMessagesSendTo = new HashMap<>();
     boolean running = false;
+    final Object waitForMonitor = new Object();
 
     SimulatedImpl(RunState state) {
         this.state = state;
@@ -67,7 +68,7 @@ public class SimulatedImpl {
     void setupNode(Node node) {
         // hacky but not too hacky
         if (node instanceof ClientWorker) {
-            ((ClientWorker) node).currentTimeMillis(() -> nowNanos / 1000 / 1000);
+            ((ClientWorker) node).simulatedImpl(this);
         }
         node.config(me_ -> {
             var me = new MessageEnvelope(me_.getLeft(), me_.getMiddle(), Cloning.clone(me_.getRight()));
@@ -81,7 +82,7 @@ public class SimulatedImpl {
             events.add(Pair.of(timeNanos, me));
         }, null, te_ -> {
             var te = new TimerEnvelope(te_.getLeft(), Cloning.clone(te_.getMiddle()), te_.getRight().getLeft(),
-                    te_.getRight().getRight(), rand);
+                    te_.getRight().getRight());
             var lengthNanos = te.timerLengthMillis() * 1000 * 1000 + (long) (64 * rand.nextGaussian());
             var processTimeNanos = processTimeNanos();
             var timeNanos = nowNanos + processTimeNanos + lengthNanos;
@@ -100,26 +101,28 @@ public class SimulatedImpl {
 
     void run(RunSettings settings) {
         running = true;
-        var clientWorkersDone = false;
-        while (!Thread.interrupted() && !clientWorkersDone) {
-            if (!dispatchNextEvent(settings)) {
-                break;
-            }
-            clientWorkersDone = settings.waitForClients() && Iterables.size(state.clientWorkers()) > 0
-                    && state.clientWorkersDone();
+        while (!Thread.interrupted() && !isDone(settings)) {
+            dispatchNextEvent(settings);
         }
         running = false;
     }
 
-    boolean dispatchNextEvent(RunSettings settings) {
+    boolean isDone(RunSettings settings) {
+        if (settings.timeLimited() && events.peek().getKey() >= (long) settings.maxTimeSecs() * 1000 * 1000 * 1000) {
+            return true;
+        }
+        if (settings.waitForClients() && Iterables.size(state.clientWorkers()) > 0 && state.clientWorkersDone()) {
+            return true;
+        }
+        return false;
+    }
+
+    void dispatchNextEvent(RunSettings settings) {
         var virtualEvent = events.poll();
         assert virtualEvent != null; //
         nowNanos = virtualEvent.getKey();
-        if (settings.timeLimited() && nowNanos >= (long) settings.maxTimeSecs() * 1000 * 1000 * 1000) {
-            return false;
-        }
-        var event = virtualEvent.getValue();
         Supplier<String> logLine = () -> String.format("%.6f ms in simulation ...", (float) nowNanos / 1000 / 1000);
+        var event = virtualEvent.getValue();
 
         // set process time baseline for everything will happen before next `dispatchNextEvent`
         // including node's reaction message/timer during handling message/timer,
@@ -131,7 +134,7 @@ public class SimulatedImpl {
         if (event instanceof MessageEnvelope) {
             var me = (MessageEnvelope) event;
             numMessagesSendTo.put(me.to(), numMessagesSendTo.getOrDefault(me.to(), 0) + 1);
-            if (settings.shouldDeliver(me, rand)) {
+            if (settings.shouldDeliver(me)) {
                 // in lab 2, test server is never `addServer`ed
                 // so we have to check for `take` before checking removal
                 if (checkTake(me.to(), new Event(me))) {
@@ -157,7 +160,6 @@ public class SimulatedImpl {
                 event.notify();
             }
         }
-        return true;
     }
 
     boolean checkTake(Address to, Event event) {
@@ -191,9 +193,20 @@ public class SimulatedImpl {
                 if (Thread.interrupted()) {
                     break;
                 }
-                var dispatched = dispatchNextEvent(settings);
-                // `start` should never be used with a time-limited settings right?
-                assert dispatched;
+
+                // lab 2 part 2 test 10 concurrent put
+                // during "kill the primary", "client-readprimary" is already 
+                // done and cause `isDone` returns true
+                // so i guess this assertion does not need to hold as long as
+                // no interactive thread call `waitFor`
+                // consider assert it when there is `waitFor` calling
+                // assert !isDone(settings);
+                dispatchNextEvent(settings);
+                if (isDone(settings)) {
+                    synchronized (waitForMonitor) {
+                        waitForMonitor.notifyAll();
+                    }
+                }
             }
         });
         simulateThread.start();
@@ -275,8 +288,15 @@ public class SimulatedImpl {
         }
     }
 
-    long currentTimeMillis() {
+    public long currentTimeMillis() {
         return nowNanos / 1000 / 1000;
+    }
+
+    void waitFor() throws InterruptedException {
+        assert running;
+        synchronized (waitForMonitor) {
+            waitForMonitor.wait();
+        }
     }
 
     Event take(Address address) throws InterruptedException {
