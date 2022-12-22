@@ -49,19 +49,23 @@ public class SimulatedImpl {
     }
 
     long messageLatencyNanos() {
-        var timeNanos = 300 * 1000 + (long) (60 * 1000 * rand.nextGaussian());
+        var timeNanos = 50 * 1000 + (long) (15 * 1000 * rand.nextGaussian());
         return Long.max(timeNanos, 1);
     }
 
-    //
+    // in my implementation a 30ms threshold covers all processing except GC tests
+    // if necessary, deterministic modeling of longer processing time can be introduced
     long processTimeNanos() {
         var nanos = (System.nanoTime() - systemNanos);
-        // if (nanos < 50 * 1000 * 1000) {
-        //     return 0;
-        // }
-        // LOG.warning(() -> String.format(
-        //         "Long process time (%.6fms) is taken into account which causes non-deterministic simulation",
-        //         (float) nanos / 1000 / 1000));
+        // intentionally simulated processing times have a mean much less than
+        // 30ms / 2, to make realistic throughput performance
+        // use a Gamma distribution if applicable
+        if (nanos < 30 * 1000 * 1000) {
+            return rand.nextLong(0, 1200 * 1000);
+        }
+        LOG.warning(() -> String.format(
+                "Long process time (%.6fms) is taken into account which causes non-deterministic simulation",
+                (float) nanos / 1000 / 1000));
         return nanos;
     }
 
