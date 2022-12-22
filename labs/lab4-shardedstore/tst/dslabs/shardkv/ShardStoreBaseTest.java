@@ -189,7 +189,7 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
 
             try {
                 while (!Thread.interrupted()) {
-                    Thread.sleep(4000);
+                    runState.sleep(4000);
                     int groupNum = rand.nextInt(numGroups) + 1;
                     int shardNum = rand.nextInt(numShards) + 1;
                     configController.sendCommand(new Move(groupNum, shardNum));
