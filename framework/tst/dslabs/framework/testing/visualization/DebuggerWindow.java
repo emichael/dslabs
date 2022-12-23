@@ -104,7 +104,12 @@ public class DebuggerWindow extends JFrame {
         }
         // Disable this for now since it doesn't seem to be useful
         // System.setProperty("sun.java2d.noddraw", "true");
-        System.setProperty("sun.java2d.uiScale.enabled", "false");
+
+        /*
+         * Disabling this because it seems to cause problems on MacOS and causes
+         * text to appear blurry
+         */
+        // System.setProperty("sun.java2d.uiScale.enabled", "false");
         System.setProperty("sun.java2d.win.uiScaleX", "1.0");
         System.setProperty("sun.java2d.win.uiScaleX", "1.0");
 
