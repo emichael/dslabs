@@ -57,9 +57,11 @@ public class SimulatedImpl {
     // if necessary, deterministic modeling of longer processing time can be introduced
     long processTimeNanos() {
         var nanos = (System.nanoTime() - systemNanos);
-        // intentionally simulated processing times have a mean much less than
-        // 30ms / 2, to make realistic throughput performance
-        // use a Gamma distribution if applicable
+        // intentionally, simulated processing times is scaled down to [0, 1.2ms)
+        // from [0, 30ms), to model unevenly-distributed realistic processing
+        // latency
+        // use a Poission distribution to properly model the long-tailing
+        // behavior if applicable
         if (nanos < 30 * 1000 * 1000) {
             return rand.nextLong(0, 1200 * 1000);
         }
@@ -137,25 +139,27 @@ public class SimulatedImpl {
 
         if (event instanceof MessageEnvelope) {
             var me = (MessageEnvelope) event;
-            numMessagesSendTo.put(me.to(), numMessagesSendTo.getOrDefault(me.to(), 0) + 1);
+            var address = me.to().rootAddress();
+            numMessagesSendTo.put(address, numMessagesSendTo.getOrDefault(address, 0) + 1);
             if (settings.shouldDeliver(me)) {
                 // in lab 2, test server is never `addServer`ed
                 // so we have to check for `take` before checking removal
-                if (checkTake(me.to(), new Event(me))) {
+                if (checkTake(address, new Event(me))) {
                     LOG.finer(() -> logLine.get() + " (taken)");
-                } else if (state.hasNode(me.to())) {
+                } else if (state.hasNode(address)) {
                     LOG.finer(logLine);
-                    state.node(me.to()).handleMessage(me.message(), me.from(), me.to());
+                    state.node(address).handleMessage(me.message(), me.from(), me.to());
                 }
             }
         } else if (event instanceof TimerEnvelope) {
             var te = (TimerEnvelope) event;
+            var address = te.to().rootAddress();
             if (settings.deliverTimers()) {
-                if (checkTake(te.to(), new Event(te))) {
+                if (checkTake(address, new Event(te))) {
                     LOG.finer(() -> logLine.get() + " (taken)");
-                } else if (state.hasNode(te.to())) {
+                } else if (state.hasNode(address)) {
                     LOG.finer(logLine);
-                    state.node(te.to()).onTimer(te.timer(), te.to());
+                    state.node(address).onTimer(te.timer(), te.to());
                 }
             }
         } else {
