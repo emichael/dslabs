@@ -82,7 +82,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         runState.start(runSettings);
 
-        joinGroup(1, 3);
+        joinGroup(1, numServersPerGroup);
 
         Client client = runState.addClient(client(1));
         Map<String, String> kv = new HashMap<>();
@@ -134,7 +134,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         runState.start(runSettings);
 
-        joinGroup(1, 3);
+        joinGroup(1, numServersPerGroup);
 
         Client client = runState.addClient(client(1));
         Map<String, String> kv = new HashMap<>();
@@ -188,7 +188,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         runState.start(runSettings);
 
-        joinGroup(1, 3);
+        joinGroup(1, numServersPerGroup);
 
         Client client = runState.addClient(client(1));
         Map<String, String> kv = new HashMap<>();
@@ -264,13 +264,13 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
                         if (e.getValue().isEmpty() &&
                                 group2Clients.contains(a)) {
                             return new ImmutablePair<>(false, String.format(
-                                    "%s is a client of group 2 but could not complete operation"));
+                                    "%s is a client of group 2 but could not complete operation", a));
                         }
 
                         if (!e.getValue().isEmpty() &&
                                 group1Clients.contains(a)) {
                             return new ImmutablePair<>(false, String.format(
-                                    "%s is a client of group 1 but could complete operation"));
+                                    "%s is a client of group 1 but could complete operation", a));
                         }
                     }
                     return TRUE_NO_MESSAGE;

@@ -55,6 +55,8 @@ public abstract class GlobalSettings {
     // the "single source of randomness", all other `Random` instances all seeded from this
     // not sharing this `rand` for performance, and not seeded directly from 
     // `seed` to avoid two identically-used `Random` generating identical sequences
+    // however this results in different sequences when running same test from 
+    // different sets of tests, feels ok for this now
     @Getter private static final Random rand = new Random(seed);
 
     @Getter @Setter private static boolean saveTraces =
