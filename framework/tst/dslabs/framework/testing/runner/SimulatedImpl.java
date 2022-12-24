@@ -194,6 +194,19 @@ public class SimulatedImpl {
         }
         simulateThread = new Thread(() -> {
             while (!Thread.interrupted()) {
+                // notes on reasoning about concurrency
+                // `SimulateImpl` only modify states (of itself and of nodes)
+                // inside `dispatchNextEvent` call, and when the call happens,
+                // `simulateThread` is always the only thread that not `wait`
+                // during `dispatchNextEvent`, interactive threads may get
+                // `notify`ed for various reasons. `dispatchNextEvent` does not
+                // modify states any more after any possible wake up
+                // since the execution is temporal mutually execusive, it is not
+                // necessary to set up sync region for any state. all 
+                // `synchronized` in this class is for `wait` and `notify`,
+                // except `interactiveThreads`, which could be concurrently
+                // accessed by interactive threads
+
                 if (interactiveThreadRunning()) {
                     // i hope there's a better way to wait until every other thread `WAITING`
                     Thread.onSpinWait();
@@ -210,7 +223,7 @@ public class SimulatedImpl {
                 // done and cause `isDone` returns true
                 // so i guess this assertion does not need to hold as long as
                 // no interactive thread call `waitFor`
-                // consider assert it when there is `waitFor` calling
+                // consider assert it only when there is `waitFor` calling
                 //
                 // assert !isDone(settings);
                 dispatchNextEvent(settings);
@@ -273,7 +286,7 @@ public class SimulatedImpl {
     }
 
     void sleep(long millis) throws InterruptedException {
-        assert running; // do not use this on interrupted tests
+        assert running; // do not use this in interrupted tests
         var monitor = new Object();
         events.add(Pair.of(nowNanos + millis * 1000 * 1000, monitor));
         synchronized (monitor) {
