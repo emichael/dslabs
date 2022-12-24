@@ -73,6 +73,11 @@ public class RunState extends AbstractState {
      */
     @Getter private volatile boolean exceptionThrown = false;
 
+    // used by `SimulatedImpl`
+    void exceptionThrown(boolean value) {
+        exceptionThrown = value;
+    }
+
     // All accesses to these variables must be protected by synchronized(this)
     private Thread mainThread;
     private final Map<Address, Thread> nodeThreads = new HashMap<>();

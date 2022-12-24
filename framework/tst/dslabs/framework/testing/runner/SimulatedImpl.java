@@ -98,7 +98,7 @@ public class SimulatedImpl {
                     (float) processTimeNanos / 1000 / 1000, (float) lengthNanos / 1000 / 1000));
             events.add(Pair.of(timeNanos, te));
         }, e -> {
-            // TODO
+            state.exceptionThrown(true);
         }, true);
 
         systemNanos = System.nanoTime();
@@ -109,6 +109,9 @@ public class SimulatedImpl {
         running = true;
         while (!Thread.interrupted() && !isDone(settings)) {
             dispatchNextEvent(settings);
+            if (state.exceptionThrown()) {
+                throw new AssertionError("Exception thrown by running nodes.");
+            }
         }
         running = false;
     }
@@ -187,7 +190,7 @@ public class SimulatedImpl {
         running = true;
         assert simulateThread == null;
         synchronized (interactiveThreads) {
-            interactiveThreads.add(Thread.currentThread());
+            interactiveThreads.add(0, Thread.currentThread());
         }
         simulateThread = new Thread(() -> {
             while (!Thread.interrupted()) {
@@ -197,7 +200,7 @@ public class SimulatedImpl {
                     continue;
                 }
                 // interactive thread just called `stop` and `join`ing this thread
-                // consider make the structure more elegant
+                // consider make the code logic more elegant
                 if (Thread.interrupted()) {
                     break;
                 }
@@ -208,8 +211,17 @@ public class SimulatedImpl {
                 // so i guess this assertion does not need to hold as long as
                 // no interactive thread call `waitFor`
                 // consider assert it when there is `waitFor` calling
+                //
                 // assert !isDone(settings);
                 dispatchNextEvent(settings);
+                if (state.exceptionThrown()) {
+                    // if test thread is `wait` inside `SimulatedImpl` it checks
+                    // for interrupting cause correctly
+                    // if it is `wait` outside, e.g. on `getResult`, we need to
+                    // make sure this will always result in clear error message
+                    interactiveThreads.get(0).interrupt();
+                    return;
+                }
                 if (isDone(settings)) {
                     synchronized (waitForMonitor) {
                         waitForMonitor.notifyAll();
@@ -249,7 +261,6 @@ public class SimulatedImpl {
         if (!running) {
             return;
         }
-        // LOG.info("Stop");
         if (simulateThread != null) {
             simulateThread.interrupt();
             simulateThread.join();
@@ -259,19 +270,30 @@ public class SimulatedImpl {
             interactiveThreads.remove(Thread.currentThread());
         }
         running = false;
-        // LOG.info("Stop done");
     }
 
     void sleep(long millis) throws InterruptedException {
+        assert running; // do not use this on interrupted tests
         var monitor = new Object();
         events.add(Pair.of(nowNanos + millis * 1000 * 1000, monitor));
         synchronized (monitor) {
-            monitor.wait();
+            try {
+                monitor.wait();
+            } catch (InterruptedException e) {
+                checkExceptionThrown();
+                throw e;
+            }
+        }
+    }
+
+    void checkExceptionThrown() {
+        if (Thread.currentThread().equals(interactiveThreads.get(0)) && state.exceptionThrown()) {
+            throw new AssertionError("Exception thrown by running nodes.");
         }
     }
 
     void startThread(Runnable runnable) {
-        // every lab's test 1 "Client throws InterruptedException" voilate this
+        // interrupted tests voilate this
         // assert running;
         var thread = new Thread(runnable);
         synchronized (interactiveThreads) {
@@ -303,7 +325,12 @@ public class SimulatedImpl {
     void waitFor() throws InterruptedException {
         assert running;
         synchronized (waitForMonitor) {
-            waitForMonitor.wait();
+            try {
+                waitForMonitor.wait();
+            } catch (InterruptedException e) {
+                checkExceptionThrown();
+                throw e;
+            }
         }
     }
 
@@ -313,7 +340,12 @@ public class SimulatedImpl {
             assert pendingTake.getKey() == null;
             pendingTake.setLeft(address);
             pendingTake.setValue(null);
-            pendingTake.wait();
+            try {
+                pendingTake.wait();
+            } catch (InterruptedException e) {
+                checkExceptionThrown();
+                throw e;
+            }
             return pendingTake.getValue();
         }
     }
