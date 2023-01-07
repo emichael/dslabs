@@ -8,7 +8,7 @@ Before you begin, be sure to check out [Lab 0](../lab0-pingpong/README.md) and
 carefully read the [top-level README](../../README.md). Make sure you understand
 the framework and the way the `Node` interface works before beginning. You may
 ignore the sub-Node feature for now, though; you will not need it until later
-labs. It may also helpful to read the instructions for all three parts before
+labs. It may also be helpful to read the instructions for all three parts before
 starting on part 1.
 
 The provided tests will exercise various aspects of your implementations, but
@@ -53,7 +53,7 @@ at-least-once semantics; at-most-once execution comes in part 3.
 
 In particular, you should think about what happens in the various cases: What if
 the request message is dropped on the way to the server? What if the reply is
-dropped? What if the reply is delayed? What if the the request is delayed so
+dropped? What if the reply is delayed? What if the request is delayed so
 that the retry arrives at the server and then the original request arrives; and
 so forth.
 
