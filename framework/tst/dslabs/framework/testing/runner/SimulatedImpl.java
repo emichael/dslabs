@@ -35,7 +35,7 @@ public class SimulatedImpl {
     PriorityQueue<Pair<Long, Object>> events = new PriorityQueue<>((ve1, ve2) -> {
         return Long.compare(ve1.getKey(), ve2.getKey());
     });
-    long nowNanos = 0l, systemNanos = System.nanoTime();
+    long nowNanos = 0l, processNanos = 0l, systemNanos = System.nanoTime();
     Random rand = new Random(GlobalSettings.rand().nextLong());
     Thread simulateThread;
     List<Thread> interactiveThreads = new ArrayList<>();
@@ -48,27 +48,43 @@ public class SimulatedImpl {
         this.state = state;
     }
 
+    // time model guideline: make sure all below requirements are satisfied
+    // * sufficient large deviation in message latency (which implies sufficient large mean latency)
+    // compare to mean process latency, to make sure later-sent message can arrive earlier
+    // * no false positive "long process time" except in GC tests becase of either too small threshold
+    // or too small message/process latency (which causes too much work)
+    // * in several baseline "benchmark tests" the number of finished requests would be close to the
+    // result by running in real mode, i.e. within a magnitude
+
     long messageLatencyNanos() {
-        var timeNanos = 50 * 1000 + (long) (15 * 1000 * rand.nextGaussian());
+        var timeNanos = 40 * 1000 + (long) (12 * 1000 * rand.nextGaussian());
         return Long.max(timeNanos, 1);
     }
 
-    // in my implementation a 30ms threshold covers all processing except GC tests
-    // if necessary, deterministic modeling of longer processing time can be introduced
-    long processTimeNanos() {
-        var nanos = (System.nanoTime() - systemNanos);
-        // intentionally, simulated processing times is scaled down to [0, 1.2ms)
-        // from [0, 30ms), to model unevenly-distributed realistic processing
-        // latency
-        // use a Poission distribution to properly model the long-tailing
-        // behavior if applicable
-        if (nanos < 30 * 1000 * 1000) {
-            return rand.nextLong(0, 1200 * 1000);
+    long measureProcess() {
+        var nowNanos = System.nanoTime();
+        var nanos = nowNanos - systemNanos;
+        systemNanos = nowNanos;
+
+        var threshold = 30 * 1000 * 1000;
+        if (nanos < threshold) {
+            // an exponential distribution with mean value `lambda` and "capped" at `threshold`
+            // cannot find a material about what to do a upper-bounded exponential distribution properly (and efficiently),
+            // so using reject sampling, effectively should upscale bounding range proportionally
+            var lambda = 1. / (10 * 1000);
+            var processIncreamentNanos = Math.log(1 - rand.nextDouble()) / (-lambda);
+            while (processIncreamentNanos >= threshold) {
+                processIncreamentNanos = Math.log(1 - rand.nextDouble()) / (-lambda);
+            }
+            processNanos += processIncreamentNanos;
+            return processNanos;
         }
+
         LOG.warning(() -> String.format(
                 "Long process time (%.6fms) is taken into account which causes non-deterministic simulation",
                 (float) nanos / 1000 / 1000));
-        return nanos;
+        processNanos += nanos;
+        return processNanos;
     }
 
     void setupNode(Node node) {
@@ -77,31 +93,30 @@ public class SimulatedImpl {
             ((ClientWorker) node).simulatedImpl(this);
         }
         node.config(me_ -> {
+            measureProcess();
             var me = new MessageEnvelope(me_.getLeft(), me_.getMiddle(), Cloning.clone(me_.getRight()));
-            var processTimeNanos = processTimeNanos();
             var latency = messageLatencyNanos();
-            var timeNanos = nowNanos + processTimeNanos + latency;
+            var timeNanos = nowNanos + processNanos + latency;
             LOG.finest(() -> String.format(
                     " ... will happen at %.6fms = %.6fms (now) + %.6fms (processed) + %.6fms (message latency)",
                     (float) timeNanos / 1000 / 1000, (float) nowNanos / 1000 / 1000,
-                    (float) processTimeNanos / 1000 / 1000, (float) latency / 1000 / 1000));
+                    (float) processNanos / 1000 / 1000, (float) latency / 1000 / 1000));
             events.add(Pair.of(timeNanos, me));
         }, null, te_ -> {
+            measureProcess();
             var te = new TimerEnvelope(te_.getLeft(), Cloning.clone(te_.getMiddle()), te_.getRight().getLeft(),
                     te_.getRight().getRight());
-            var lengthNanos = te.timerLengthMillis() * 1000 * 1000 + (long) (64 * rand.nextGaussian());
-            var processTimeNanos = processTimeNanos();
-            var timeNanos = nowNanos + processTimeNanos + lengthNanos;
+            var lengthNanos = te.timerLengthMillis() * 1000 * 1000;
+            var timeNanos = nowNanos + processNanos + lengthNanos;
             LOG.finest(() -> String.format(
                     " ... will happen at %.6fms = %.6fms (now) + %.6fms (processed) + %.6fms (timer length)",
                     (float) timeNanos / 1000 / 1000, (float) nowNanos / 1000 / 1000,
-                    (float) processTimeNanos / 1000 / 1000, (float) lengthNanos / 1000 / 1000));
+                    (float) processNanos / 1000 / 1000, (float) lengthNanos / 1000 / 1000));
             events.add(Pair.of(timeNanos, te));
         }, e -> {
             state.exceptionThrown(true);
         }, true);
 
-        systemNanos = System.nanoTime();
         node.init();
     }
 
@@ -130,15 +145,9 @@ public class SimulatedImpl {
         var virtualEvent = events.poll();
         assert virtualEvent != null; //
         nowNanos = virtualEvent.getKey();
+        processNanos = 0;
         Supplier<String> logLine = () -> String.format("%.6f ms in simulation ...", (float) nowNanos / 1000 / 1000);
         var event = virtualEvent.getValue();
-
-        // set process time baseline for everything will happen before next `dispatchNextEvent`
-        // including node's reaction message/timer during handling message/timer,
-        // interactive threads triggered message/timer (probably on `Client`) if 
-        // they get `notify`ed, then `sendCommand`, or `add*` and trigger `init`
-        // everything mentioned above is possible to be slow
-        systemNanos = System.nanoTime();
 
         if (event instanceof MessageEnvelope) {
             var me = (MessageEnvelope) event;
@@ -148,9 +157,9 @@ public class SimulatedImpl {
                 // in lab 2, test server is never `addServer`ed
                 // so we have to check for `take` before checking removal
                 if (checkTake(address, new Event(me))) {
-                    LOG.finer(() -> logLine.get() + " (taken)");
+                    LOG.finest(() -> logLine.get() + " (taken)");
                 } else if (state.hasNode(address)) {
-                    LOG.finer(logLine);
+                    LOG.finest(logLine);
                     state.node(address).handleMessage(me.message(), me.from(), me.to());
                 }
             }
@@ -159,14 +168,14 @@ public class SimulatedImpl {
             var address = te.to().rootAddress();
             if (settings.deliverTimers()) {
                 if (checkTake(address, new Event(te))) {
-                    LOG.finer(() -> logLine.get() + " (taken)");
+                    LOG.finest(() -> logLine.get() + " (taken)");
                 } else if (state.hasNode(address)) {
-                    LOG.finer(logLine);
+                    LOG.finest(logLine);
                     state.node(address).onTimer(te.timer(), te.to());
                 }
             }
         } else {
-            LOG.finer(() -> logLine.get() + " (interactive thread wake up)");
+            LOG.finest(() -> logLine.get() + " (interactive thread wake up)");
             synchronized (event) {
                 event.notify();
             }
@@ -364,6 +373,7 @@ public class SimulatedImpl {
     }
 
     void send(MessageEnvelope messageEnvelope) {
+        //
         events.add(Pair.of(nowNanos + messageLatencyNanos(), messageEnvelope));
     }
 
