@@ -35,6 +35,7 @@ public class SimulatedImpl {
     PriorityQueue<Pair<Long, Object>> events = new PriorityQueue<>((ve1, ve2) -> {
         return Long.compare(ve1.getKey(), ve2.getKey());
     });
+    Map<Address, Long> nodeNowNanos = new HashMap<>();
     long nowNanos = 0l, processNanos = 0l, systemNanos = System.nanoTime();
     Random rand = new Random(GlobalSettings.rand().nextLong());
     Thread simulateThread;
@@ -68,7 +69,7 @@ public class SimulatedImpl {
         var threshold = 30 * 1000 * 1000;
         if (nanos >= threshold) {
             LOG.warning(() -> String.format(
-                    "Long process time (%.6fms) differs a lot from simulation",
+                    "Long process time (%.6fms) significantly differs from simulation",
                     (float) nanos / 1000 / 1000));
         }
 
@@ -143,7 +144,9 @@ public class SimulatedImpl {
     void dispatchNextEvent(RunSettings settings) {
         var virtualEvent = events.poll();
         assert virtualEvent != null; //
+
         nowNanos = virtualEvent.getKey();
+        var scheduledNanos = nowNanos;
         processNanos = 0;
         Supplier<String> logLine = () -> String.format("%.6f ms in simulation ...", (float) nowNanos / 1000 / 1000);
         var event = virtualEvent.getValue();
@@ -158,9 +161,12 @@ public class SimulatedImpl {
                 if (checkTake(address, new Event(me))) {
                     LOG.finest(() -> logLine.get() + " (taken)");
                 } else if (state.hasNode(address)) {
-                    LOG.finest(logLine);
+                    nowNanos = Long.max(nowNanos, nodeNowNanos.getOrDefault(address, 0l));
+                    LOG.finest(() -> String.format("%.6f ms (scheduled at %.6f ms) in simulation ...", 
+                        (float) nowNanos / 1000 / 1000, (float) scheduledNanos / 1000 / 1000));
                     state.node(address).handleMessage(me.message(), me.from(), me.to());
-                    measureProcess(); // for the side effect to warn long process time
+                    measureProcess(); // after the last side effect made by node
+                    nodeNowNanos.put(address, nowNanos + processNanos);
                 }
             }
         } else if (event instanceof TimerEnvelope) {
@@ -170,9 +176,12 @@ public class SimulatedImpl {
                 if (checkTake(address, new Event(te))) {
                     LOG.finest(() -> logLine.get() + " (taken)");
                 } else if (state.hasNode(address)) {
-                    LOG.finest(logLine);
+                    nowNanos = Long.max(nowNanos, nodeNowNanos.getOrDefault(address, 0l));
+                    LOG.finest(() -> String.format("%.6f ms (scheduled at %.6f ms) in simulation ...", 
+                        (float) nowNanos / 1000 / 1000, (float) scheduledNanos / 1000 / 1000));
                     state.node(address).onTimer(te.timer(), te.to());
                     measureProcess(); // same as above
+                    nodeNowNanos.put(address, nowNanos + processNanos);
                 }
             }
         } else {
