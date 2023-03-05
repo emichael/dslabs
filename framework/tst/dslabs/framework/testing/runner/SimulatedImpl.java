@@ -49,42 +49,41 @@ public class SimulatedImpl {
     }
 
     // time model guideline: make sure all below requirements are satisfied
-    // * sufficient large deviation in message latency (which implies sufficient large mean latency)
-    // compare to mean process latency, to make sure later-sent message can arrive earlier
-    // * no false positive "long process time" except in GC tests becase of either too small threshold
-    // or too small message/process latency (which causes too much work)
-    // * in several baseline "benchmark tests" the number of finished requests would be close to the
-    // result by running in real mode, i.e. within a magnitude
+    // * sufficient variant in message latency, make sure later-sent message can
+    // arrive earlier with a properly-set process time
+    // * in several baseline "benchmark tests" the number of finished requests
+    // would be close to the result by running in real mode, i.e. within a
+    // magnitude
 
     long messageLatencyNanos() {
         var timeNanos = 40 * 1000 + (long) (12 * 1000 * rand.nextGaussian());
         return Long.max(timeNanos, 1);
     }
 
-    long measureProcess() {
+    void measureProcess() {
         var nowNanos = System.nanoTime();
         var nanos = nowNanos - systemNanos;
         systemNanos = nowNanos;
 
         var threshold = 30 * 1000 * 1000;
-        if (nanos < threshold) {
-            // an exponential distribution with mean value `lambda` and "capped" at `threshold`
-            // cannot find a material about what to do a upper-bounded exponential distribution properly (and efficiently),
-            // so using reject sampling, effectively should upscale bounding range proportionally
-            var lambda = 1. / (10 * 1000);
-            var processIncreamentNanos = Math.log(1 - rand.nextDouble()) / (-lambda);
-            while (processIncreamentNanos >= threshold) {
-                processIncreamentNanos = Math.log(1 - rand.nextDouble()) / (-lambda);
-            }
-            processNanos += processIncreamentNanos;
-            return processNanos;
+        if (nanos >= threshold) {
+            LOG.warning(() -> String.format(
+                    "Long process time (%.6fms) differs a lot from simulation",
+                    (float) nanos / 1000 / 1000));
         }
 
-        LOG.warning(() -> String.format(
-                "Long process time (%.6fms) is taken into account which causes non-deterministic simulation",
-                (float) nanos / 1000 / 1000));
-        processNanos += nanos;
-        return processNanos;
+        // an exponential distribution with mean value `lambda` and "capped" at
+        // `threshold`
+        // cannot find a material about what to do a upper-bounded exponential
+        // distribution properly (and efficiently),
+        // so using reject sampling, effectively should upscale bounding range
+        // proportionally
+        var lambda = 1. / (10 * 1000);
+        var processIncreamentNanos = Math.log(1 - rand.nextDouble()) / (-lambda);
+        while (processIncreamentNanos >= threshold) {
+            processIncreamentNanos = Math.log(1 - rand.nextDouble()) / (-lambda);
+        }
+        processNanos += processIncreamentNanos;
     }
 
     void setupNode(Node node) {
@@ -161,6 +160,7 @@ public class SimulatedImpl {
                 } else if (state.hasNode(address)) {
                     LOG.finest(logLine);
                     state.node(address).handleMessage(me.message(), me.from(), me.to());
+                    measureProcess(); // for the side effect to warn long process time
                 }
             }
         } else if (event instanceof TimerEnvelope) {
@@ -172,6 +172,7 @@ public class SimulatedImpl {
                 } else if (state.hasNode(address)) {
                     LOG.finest(logLine);
                     state.node(address).onTimer(te.timer(), te.to());
+                    measureProcess(); // same as above
                 }
             }
         } else {
@@ -211,7 +212,7 @@ public class SimulatedImpl {
                 // `notify`ed for various reasons. `dispatchNextEvent` does not
                 // modify states any more after any possible wake up
                 // since the execution is temporal mutually execusive, it is not
-                // necessary to set up sync region for any state. all 
+                // necessary to set up sync region for any state. all
                 // `synchronized` in this class is for `wait` and `notify`,
                 // except `interactiveThreads`, which could be concurrently
                 // accessed by interactive threads
@@ -228,7 +229,7 @@ public class SimulatedImpl {
                 }
 
                 // lab 2 part 2 test 10 concurrent put
-                // during "kill the primary", "client-readprimary" is already 
+                // during "kill the primary", "client-readprimary" is already
                 // done and cause `isDone` returns true
                 // so i guess this assertion does not need to hold as long as
                 // no interactive thread call `waitFor`
@@ -260,8 +261,8 @@ public class SimulatedImpl {
             for (var thread : interactiveThreads) {
                 var state = thread.getState();
                 if (state == Thread.State.TERMINATED) {
-                    // this is either because the thread called `start` exit 
-                    // without calling `stop`, or any interactive thread throw 
+                    // this is either because the thread called `start` exit
+                    // without calling `stop`, or any interactive thread throw
                     // exception
                     // in either case simulation should not progress any more
                     //

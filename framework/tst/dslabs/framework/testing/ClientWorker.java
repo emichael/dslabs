@@ -30,7 +30,6 @@ import dslabs.framework.Node;
 import dslabs.framework.Result;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
-import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.runner.SimulatedImpl;
 import dslabs.framework.testing.utils.Cloning;
 
