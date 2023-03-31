@@ -6,9 +6,13 @@ import dslabs.framework.Node;
 import java.util.Collections;
 import java.util.LinkedList;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
+@ToString(callSuper = true)
+@EqualsAndHashCode(callSuper = true)
 abstract class ShardStoreNode extends Node {
     @Getter(AccessLevel.PACKAGE) private final Address[] shardMasters;
     private final int numShards;
