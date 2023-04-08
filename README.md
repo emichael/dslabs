@@ -184,6 +184,7 @@ The framework and labs have been improved thanks to valuable contributions from:
 - Alex Saveau
 - Andrew Wei
 - Doug Woos
+- Guangda Sun
 - James Wilcox
 - John Depaszthory
 - Kaelin Laundry
