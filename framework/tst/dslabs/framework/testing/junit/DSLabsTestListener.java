@@ -108,6 +108,8 @@ class DSLabsTestListener extends RunListener {
         out.println("TEST " + fullTestNumber(description) + ": " +
                 testName(description) + " (" + totalPoints(description) +
                 "pts)\n");
+        out.println("starting test at " + wallClockTimeAsString(startMillis));
+
         totalPoints += totalPoints(description);
     }
 
@@ -139,8 +141,9 @@ class DSLabsTestListener extends RunListener {
         } else {
             out.print("...FAIL");
         }
-        out.println(" (" +
-                elapsedTimeAsString(System.currentTimeMillis() - startMillis) +
+        long endMillis = System.currentTimeMillis();
+        out.println(" at " + wallClockTimeAsString(endMillis) + " (" +
+                elapsedTimeAsString(endMillis - startMillis) +
                 "s)");
     }
 
@@ -194,5 +197,9 @@ class DSLabsTestListener extends RunListener {
 
     private String elapsedTimeAsString(long runTime) {
         return NumberFormat.getInstance().format((double) runTime / 1000);
+    }
+
+    private String wallClockTimeAsString(long millis) {
+        return String.format("%1$tF %1$tT", millis);
     }
 }
