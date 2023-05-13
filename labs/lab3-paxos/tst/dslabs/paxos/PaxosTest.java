@@ -728,6 +728,7 @@ public class PaxosTest extends BaseJUnitTest {
         // Heal the partition
         runSettings.reconnect();
         Thread.sleep(5000);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Shut the clients down
         runState.stop();
@@ -789,6 +790,7 @@ public class PaxosTest extends BaseJUnitTest {
         // Let the clients run
         runState.start(runSettings);
         Thread.sleep(testLengthSecs * 1000);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Shut the clients down
         shutdownStartedThreads();

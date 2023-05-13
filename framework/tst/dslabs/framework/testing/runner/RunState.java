@@ -304,9 +304,9 @@ public class RunState extends AbstractState {
     }
 
     /**
-     * Must be synchronized and running in multi-threaded mode when called.
-     *
      * Starts a thread for a given node and adds it to runningThreads.
+     * <p>
+     * Must be synchronized and running in multi-threaded mode when called.
      *
      * @param address
      *         the address of the node to start
@@ -340,6 +340,7 @@ public class RunState extends AbstractState {
         }
 
         // Wait on all threads
+        long prewait = System.currentTimeMillis();
         try {
             while (mainThread != null || !nodeThreads.isEmpty()) {
                 wait();
@@ -347,6 +348,11 @@ public class RunState extends AbstractState {
         } finally {
             shuttingDown = false;
             notifyAll();
+        }
+
+        long timeWaited = System.currentTimeMillis() - prewait;
+        if (timeWaited >= 1000) {
+            LOG.warning(() -> "Took more than one second (" + timeWaited +  "ms) to shutdown threads. This likely indicates a performance bug in your system where a single message/timer takes more than a second to process.");
         }
 
         running = false;

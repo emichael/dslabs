@@ -175,6 +175,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
         // Let the clients run
         runSettings.maxTimeSecs(testLengthSecs);
         runState.run(runSettings);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Check if all the results were right
         runSettings.addInvariant(RESULTS_OK);

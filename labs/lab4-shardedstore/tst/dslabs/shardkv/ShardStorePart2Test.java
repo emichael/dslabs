@@ -193,6 +193,7 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         }
 
         Thread.sleep(testLengthSecs * 1000);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Shut everything down
         shutdownStartedThreads();

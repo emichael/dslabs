@@ -652,6 +652,7 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Shut the clients down
         shutdownStartedThreads();

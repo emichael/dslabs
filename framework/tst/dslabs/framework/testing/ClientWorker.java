@@ -118,11 +118,14 @@ public final class ClientWorker extends Node {
         sendNextCommandWhilePossible();
     }
 
-    public synchronized long maxWaitTimeMilis() {
+    public synchronized void markEndTimeOfOutstandingRequest() {
         if (waitingOnResult) {
-            return max(maxWaitTimeMillis,
+            maxWaitTimeMillis = max(maxWaitTimeMillis,
                     System.currentTimeMillis() - lastSendTimeMillis);
         }
+    }
+
+    public synchronized long maxWaitTimeMillis() {
         return maxWaitTimeMillis;
     }
 

@@ -345,6 +345,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Shut the clients down
         shutdownStartedThreads();
@@ -384,6 +385,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
         // Let the clients run
         Thread.sleep(testLengthSecs * 1000);
+        markEndTimeOfAnyOutstandingRequests();
 
         // Shut the clients down
         shutdownStartedThreads();

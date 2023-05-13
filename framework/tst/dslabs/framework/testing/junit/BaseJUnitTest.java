@@ -215,12 +215,37 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
         assertEquals(expectedResult, result);
     }
 
+    /* Tell clients to compute the waiting time of any outstanding requests as if the request finished now.
+     *
+     * See assertMaxWaitTimeLessThan.
+     */
+    protected final void markEndTimeOfAnyOutstandingRequests() {
+        for (ClientWorker cw : runState.clientWorkers()) {
+            cw.markEndTimeOfOutstandingRequest();
+        }
+    }
+
+    /* Check that all client requests finished in less than the given time.
+     *
+     * Caller must call markEndTimeOfOutstandingRequest first to correctly
+     * measure waiting time for any unfinished requests. These methods are separated
+     * so that the caller can choose an earlier ending point from which to measure
+     * outstanding request time, which supports more accurate accounting of time to
+     * the system versus the framework.
+     *
+     * There is a time-of-check-to-time-of-use issue with separating these methods.
+     * A client may issue additional requests after markEndTimeOfOutstandingRequest
+     * is called, and any outstanding request issued during that time will not be measured.
+     * We consider this issue benign because the purpose of measuring outstanding requests
+     * at the end of an execution is to detect deadlock. If the client is issuing additional
+     * requests, they are not deadlocked.
+     */
     protected final void assertMaxWaitTimeLessThan(long allowedMillis) {
         // TODO: maybe shut the runstate and threads down here
 
         long maxWaitTimeMillis = 0;
         for (ClientWorker cw : runState.clientWorkers()) {
-            long t = cw.maxWaitTimeMilis();
+            long t = cw.maxWaitTimeMillis();
             if (t > allowedMillis) {
                 fail(String.format("%s waited too long, %s ms (%s ms allowed)",
                         cw.address(), t, allowedMillis));
