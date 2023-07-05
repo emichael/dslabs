@@ -4,6 +4,56 @@ against, as well as the testing infrastructure. We'll take a look at a very
 simple distributed system: a server which responds to pings and clients which
 ping that server.
 
+## Setting up your local development environment
+We recommend setting up a local development environment by installing Java 17
+locally and using an IDE such as IntelliJ.
+
+### Set up JDK environment 
+
+You can download JDK from the following link:
+
+[Java 17 downloads](https://www.oracle.com/java/technologies/downloads/#jdk17-linux)
+
+After download and install JDK 17, **you need to set up the `$JAVA_HOME` 
+environment variables**. 
+
+You can use the following command to check that you
+have correctly set your JDK environment:
+
+```shell
+$ java -version
+openjdk version "17.0.7" 2023-04-18 LTS
+OpenJDK Runtime Environment Zulu17.42+19-CA (build 17.0.7+7-LTS)
+OpenJDK 64-Bit Server VM Zulu17.42+19-CA (build 17.0.7+7-LTS, mixed mode, sharing)
+```
+
+### Set up IntelliJ environment
+Before opening dslabs in IntelliJ, you need to do the following things:
+1. Provide all the necessary libraries.
+
+```shell
+make dependencies
+```
+
+2. Set up gradle environment.
+
+```shell
+mkdir -p gradle/wrapper/
+cp .gradle-wrapper/* gradle/wrapper
+```
+
+Then, you can open dslabs by IntelliJ and click the `Load Gradle Project`
+button in the lower right corner of the IDE.
+
+Finally, you need to do the following things in IntelliJ.
+* Set `Gradle JVM` in the `Build, Execution, Deployment`/`Build Tools`/`Gradle`.
+* Set `SDK` in the `Project settings`/`Project`, and set `Language Level` to 14.
+* Set `Project byte version` to 14.
+
+After all this, you can check if you have correctly configured the environment
+using the following two ways:
+1. Run the `PingTest` unit-test in IntelliJ.
+2. Run ./runtest.py script from command line
 
 ## Dramatis Personae
 Let's start with the `PingApplication`. `Application`s in this framework are
