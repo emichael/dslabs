@@ -56,25 +56,48 @@ public abstract class DSLabsJUnitTest {
         return new LocalAddress("server" + i);
     }
 
-    @Rule public final TestRule enableChecks = new TestRule() {
-        @Override
-        public Statement apply(Statement base, Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    if (description.getAnnotation(ChecksEnabled.class) !=
-                            null) {
-                        GlobalSettings.errorChecksTemporarilyEnabled(true);
-                        try {
-                            base.evaluate();
-                        } finally {
-                            GlobalSettings.errorChecksTemporarilyEnabled(false);
-                        }
-                    } else {
-                        base.evaluate();
+    /**
+     * Simple functional interface for a test rule that can throw exceptions.
+     */
+    @FunctionalInterface
+    interface StatementTransformer {
+        void evaluate(Statement base, Description description) throws Throwable;
+    }
+
+    /**
+     * Helper method to create JUnit test rules from lambdas.
+     */
+    static TestRule testRule(StatementTransformer rule) {
+        return new TestRule() {
+            @Override
+            public Statement apply(Statement base, Description description) {
+                return new Statement() {
+                    @Override
+                    public void evaluate() throws Throwable {
+                        rule.evaluate(base, description);
                     }
+                };
+            }
+        };
+    }
+
+    /**
+     * When a test method is marked with {@link ChecksEnabled}, this test rule
+     * ensures that extra checks are enabled during its execution.
+     */
+    @Rule
+    public final TestRule enableChecks() {
+        return testRule((base, description) -> {
+            if (description.getAnnotation(ChecksEnabled.class) != null) {
+                GlobalSettings.errorChecksTemporarilyEnabled(true);
+                try {
+                    base.evaluate();
+                } finally {
+                    GlobalSettings.errorChecksTemporarilyEnabled(false);
                 }
-            };
-        }
-    };
+            } else {
+                base.evaluate();
+            }
+        });
+    }
 }

@@ -49,7 +49,6 @@ import lombok.SneakyThrows;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
-import org.junit.runners.model.Statement;
 
 import static dslabs.framework.testing.search.SearchResults.EndCondition.EXCEPTION_THROWN;
 import static dslabs.framework.testing.search.SearchResults.EndCondition.GOAL_FOUND;
@@ -110,75 +109,89 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     protected void cleanupTest() {
     }
 
-    @Rule public final TestRule rule = new TestRule() {
-        @Override
-        public Statement apply(final Statement base,
-                               final Description description) {
-            return new Statement() {
-                @Override
-                public void evaluate() throws Throwable {
-                    try {
-                        testDescription = description;
-                        startedThreads = new HashSet<>();
-                        failedSearchTest = false;
+    /**
+     * Main test rule which initializes local variables and calls the various
+     * setup methods as appropriate.
+     */
+    @Rule(order = Rule.DEFAULT_ORDER)
+    public final TestRule runTest() {
+        return testRule((base, description) -> {
+            try {
+                testDescription = description;
+                startedThreads = new HashSet<>();
+                failedSearchTest = false;
 
-                        setupTest();
-                        if (isRunTest()) {
-                            runSettings = new RunSettings();
-                            setupRunTest();
-                        }
-                        if (isSearchTest()) {
-                            searchSettings = new SearchSettings();
-                            setupSearchTest();
-                        }
+                setupTest();
+                if (isRunTest()) {
+                    runSettings = new RunSettings();
+                    setupRunTest();
+                }
+                if (isSearchTest()) {
+                    searchSettings = new SearchSettings();
+                    setupSearchTest();
+                }
 
-                        try {
-                            base.evaluate();
-                        } finally {
-                            shutdownTest();
-                            shutdownStartedThreads();
+                try {
+                    base.evaluate();
+                } finally {
+                    shutdownTest();
+                    shutdownStartedThreads();
 
-                            if (runState != null) {
-                                runState.stop();
-                            }
-                        }
-
-                        verifyTest();
-                        if (runState != null) {
-                            if (runState.exceptionThrown()) {
-                                fail("Exception(s) thrown by running nodes.");
-                            }
-
-                            assertRunInvariantsHold();
-                        }
-
-                        if (failedSearchTest) {
-                            fail("Search test failed.");
-                        }
-                    } finally {
-                        cleanupTest();
-                        runSettings = null;
-                        searchSettings = null;
-                        lastSearchSettings = null;
-                        runState = null;
-                        initSearchState = null;
-                        bfsStartState = null;
-                        startedThreads = null;
-                        searchResults = null;
-                        testDescription = null;
-
-                        // Do garbage collection and take a quick nap to limit cross-test interference
-                        System.gc();
-                        try {
-                            Thread.sleep(50);
-                        } catch (InterruptedException e) {
-                            Thread.currentThread().interrupt();
-                        }
+                    if (runState != null) {
+                        runState.stop();
                     }
                 }
-            };
-        }
-    };
+
+                verifyTest();
+                if (runState != null) {
+                    if (runState.exceptionThrown()) {
+                        fail("Exception(s) thrown by running nodes.");
+                    }
+
+                    assertRunInvariantsHold();
+                }
+
+                if (failedSearchTest) {
+                    fail("Search test failed.");
+                }
+            } finally {
+                try {
+                    cleanupTest();
+                } finally {
+                    runSettings = null;
+                    searchSettings = null;
+                    lastSearchSettings = null;
+                    runState = null;
+                    initSearchState = null;
+                    bfsStartState = null;
+                    startedThreads = null;
+                    searchResults = null;
+                    testDescription = null;
+                }
+            }
+        });
+    }
+
+    /**
+     * Test rule that calls {@link System#gc} and briefly sleeps after every
+     * test. Reduces the chance for cross-test interference.
+     */
+    // MIN_VALUE ensures that this is run at the outermost level.
+    @Rule(order = Integer.MIN_VALUE)
+    public final TestRule gcAndSleep() {
+        return testRule((base, description) -> {
+            try {
+                base.evaluate();
+            } finally {
+                System.gc();
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
+        });
+    }
 
     protected void shutdownStartedThreads() throws InterruptedException {
         for (Thread thread : startedThreads) {
@@ -228,9 +241,8 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
             maxWaitTimeMillis = Math.max(maxWaitTimeMillis, t);
         }
 
-        System.out.println(
-                String.format("Maximum client wait time %s ms (%s ms allowed)",
-                        maxWaitTimeMillis, allowedMillis));
+        System.out.printf("Maximum client wait time %s ms (%s ms allowed)%n",
+                maxWaitTimeMillis, allowedMillis);
     }
 
 
