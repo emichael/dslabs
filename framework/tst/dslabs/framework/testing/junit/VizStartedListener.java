@@ -6,7 +6,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 
-import static dslabs.framework.testing.junit.DSLabsTestListener.isInCategory;
+import static dslabs.framework.testing.junit.DSLabsJUnitTest.isInCategory;
 
 /**
  * Run listener which halts remaining tests and prevents the {@link System#exit}

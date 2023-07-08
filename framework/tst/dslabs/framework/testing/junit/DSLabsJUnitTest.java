@@ -25,7 +25,9 @@ package dslabs.framework.testing.junit;
 import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.utils.GlobalSettings;
+import java.util.Arrays;
 import org.junit.Rule;
+import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
@@ -46,14 +48,17 @@ import org.junit.runners.model.Statement;
  */
 @RunWith(DSLabsTestRunner.class)
 public abstract class DSLabsJUnitTest {
-    /* Addresses */
-
     public static Address client(int i) {
         return new LocalAddress("client" + i);
     }
 
     public static Address server(int i) {
         return new LocalAddress("server" + i);
+    }
+
+    static boolean isInCategory(Description description, Class<?> category) {
+        Category cat = description.getAnnotation(Category.class);
+        return cat != null && Arrays.asList(cat.value()).contains(category);
     }
 
     /**

@@ -34,6 +34,7 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
+import static dslabs.framework.testing.junit.DSLabsJUnitTest.isInCategory;
 import static dslabs.framework.testing.junit.VizStartedListener.vizStarted;
 
 class DSLabsTestListener extends RunListener {
@@ -48,11 +49,6 @@ class DSLabsTestListener extends RunListener {
 
     private final PrintStream out = System.out;
     private final PrintStream err = System.err;
-
-    static boolean isInCategory(Description description, Class<?> category) {
-        Category cat = description.getAnnotation(Category.class);
-        return cat != null && Arrays.asList(cat.value()).contains(category);
-    }
 
     static int testNumber(Description d) {
         assert d.isTest();

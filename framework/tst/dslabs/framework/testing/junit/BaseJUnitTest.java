@@ -83,12 +83,11 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
 
 
     protected final boolean isRunTest() {
-        return DSLabsTestListener.isInCategory(testDescription, RunTests.class);
+        return isInCategory(testDescription, RunTests.class);
     }
 
     protected final boolean isSearchTest() {
-        return DSLabsTestListener.isInCategory(testDescription,
-                SearchTests.class);
+        return isInCategory(testDescription, SearchTests.class);
     }
 
     protected void setupTest() {
