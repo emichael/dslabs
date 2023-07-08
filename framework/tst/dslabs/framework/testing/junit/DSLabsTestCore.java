@@ -26,7 +26,6 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.Sets;
 import dslabs.framework.testing.utils.ClassSearch;
 import java.util.Set;
-import java.util.function.Function;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -43,6 +42,7 @@ import org.junit.runner.manipulation.Filter;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
+import org.junit.runner.notification.StoppedByUserException;
 
 import static dslabs.framework.testing.junit.DSLabsTestListener.fullTestNumber;
 
@@ -54,12 +54,12 @@ public abstract class DSLabsTestCore {
         EXIT_ON_TEST_FAILURE = false;
     }
 
-    private static void runRequest(Request request,
-                                   Function<RunNotifier, RunListener> listenerFunction) {
+    private static void runRequest(Request request, RunListener listener) {
         final Runner runner = request.getRunner();
         final Result result = new Result();
         final RunNotifier notifier = new RunNotifier();
 
+        // TODO: why is this here? Is this just vestigial from copy-paste JUnit code?
         if (runner instanceof ErrorReportingRunner) {
             notifier.addListener(new RunListener() {
                 @Override
@@ -69,9 +69,13 @@ public abstract class DSLabsTestCore {
                 }
             });
         } else {
-            notifier.addListener(listenerFunction.apply(notifier));
+            notifier.addListener(listener);
         }
 
+        // Stop the tests when the visual debugger starts.
+        notifier.addListener(new VizStartedListener(notifier));
+
+        // TODO: same question, why is this here?
         final RunListener defaultListener = result.createListener();
         notifier.addFirstListener(defaultListener);
 
@@ -79,6 +83,8 @@ public abstract class DSLabsTestCore {
             notifier.fireTestRunStarted(runner.getDescription());
             runner.run(notifier);
             notifier.fireTestRunFinished(result);
+        } catch (StoppedByUserException ignored) {
+            // This shouldn't bubble up and print for the user to see.
         } finally {
             notifier.removeListener(defaultListener);
         }
@@ -139,7 +145,7 @@ public abstract class DSLabsTestCore {
             }
 
             Request request = Request.classes(CheckSavedTracesTest.class);
-            runRequest(request, ReplaySavedTracesTestListener::new);
+            runRequest(request, new ReplaySavedTracesTestListener());
             return;
         }
 
@@ -225,6 +231,6 @@ public abstract class DSLabsTestCore {
         // Sort methods and test classes
         request = request.sortWith(new TestOrder());
 
-        runRequest(request, DSLabsTestListener::new);
+        runRequest(request, new DSLabsTestListener());
     }
 }

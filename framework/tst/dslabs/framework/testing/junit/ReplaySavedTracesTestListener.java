@@ -27,10 +27,6 @@ import org.junit.runner.Result;
 import org.junit.runner.notification.RunNotifier;
 
 class ReplaySavedTracesTestListener extends DSLabsTestListener {
-    ReplaySavedTracesTestListener(RunNotifier runNotifier) {
-        super(runNotifier);
-    }
-
     @Override
     public void testRunFinished(Result result) {
         // Don't print out final results

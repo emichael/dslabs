@@ -24,7 +24,6 @@ package dslabs.framework.testing.junit;
 
 
 import com.google.common.base.Throwables;
-import dslabs.framework.testing.utils.GlobalSettings;
 import java.io.PrintStream;
 import java.text.NumberFormat;
 import java.util.Arrays;
@@ -34,13 +33,12 @@ import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
-import org.junit.runner.notification.RunNotifier;
+
+import static dslabs.framework.testing.junit.VizStartedListener.vizStarted;
 
 class DSLabsTestListener extends RunListener {
     protected static final String large_sep = StringUtils.repeat('=', 50);
     protected static final String small_sep = StringUtils.repeat('-', 50);
-
-    private final RunNotifier runNotifier;
 
     private int totalPoints = 0;
     private int pointsEarned = 0;
@@ -54,10 +52,6 @@ class DSLabsTestListener extends RunListener {
     static boolean isInCategory(Description description, Class<?> category) {
         Category cat = description.getAnnotation(Category.class);
         return cat != null && Arrays.asList(cat.value()).contains(category);
-    }
-
-    DSLabsTestListener(RunNotifier runNotifier) {
-        this.runNotifier = runNotifier;
     }
 
     static int testNumber(Description d) {
@@ -115,19 +109,12 @@ class DSLabsTestListener extends RunListener {
     public void testFailure(Failure failure) {
         testFailed = true;
 
-        // If we dropped into the visualization tool, halt other tests.
-        if (isInCategory(failure.getDescription(), SearchTests.class) &&
-                failure.getException() instanceof VizStarted &&
-                GlobalSettings.startVisualization()) {
-            // Don't let the main method kill the visualization tool.
-            DSLabsTestCore.preventExitOnFailure();
-
-            runNotifier.pleaseStop();
-        } else {
-            // Otherwise print the exception.
-            err.println(
-                    Throwables.getStackTraceAsString(failure.getException()));
+        // Don't print the failure if the visualizer started.
+        if (vizStarted(failure)) {
+            return;
         }
+
+        err.println(Throwables.getStackTraceAsString(failure.getException()));
     }
 
     @Override
