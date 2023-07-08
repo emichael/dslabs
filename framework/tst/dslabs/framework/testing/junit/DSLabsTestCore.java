@@ -44,14 +44,28 @@ import org.junit.runner.notification.RunListener;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runner.notification.StoppedByUserException;
 
-import static dslabs.framework.testing.junit.DSLabsTestListener.fullTestNumber;
 
-
-public abstract class DSLabsTestCore {
+public final class DSLabsTestCore {
     private static boolean EXIT_ON_TEST_FAILURE = true;
 
     static void preventExitOnFailure() {
         EXIT_ON_TEST_FAILURE = false;
+    }
+
+    static int testNumber(Description d) {
+        assert d.isTest();
+        String n = d.getMethodName();
+        return Integer.parseInt(n.replaceFirst("test(\\d+)\\w+", "$1"));
+    }
+
+    static String fullTestNumber(Description d) {
+        assert d.isTest();
+        Part p = d.getTestClass().getAnnotation(Part.class);
+        if (p == null) {
+            return Integer.toString(testNumber(d));
+        } else {
+            return p.value() + "." + testNumber(d);
+        }
     }
 
     private static void runRequest(Request request, RunListener listener) {
@@ -232,5 +246,9 @@ public abstract class DSLabsTestCore {
         request = request.sortWith(new TestOrder());
 
         runRequest(request, new DSLabsTestListener());
+    }
+
+    private DSLabsTestCore() {
+        throw new UnsupportedOperationException();
     }
 }

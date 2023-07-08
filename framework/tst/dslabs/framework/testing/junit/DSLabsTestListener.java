@@ -32,6 +32,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunListener;
 
 import static dslabs.framework.testing.junit.DSLabsJUnitTest.isInCategory;
+import static dslabs.framework.testing.junit.DSLabsTestCore.fullTestNumber;
 import static dslabs.framework.testing.junit.VizStartedListener.vizStarted;
 
 class DSLabsTestListener extends RunListener {
@@ -43,22 +44,6 @@ class DSLabsTestListener extends RunListener {
     private int numPassed = 0;
     private boolean testFailed = false;
     private long startMillis = 0;
-
-    static int testNumber(Description d) {
-        assert d.isTest();
-        String n = d.getMethodName();
-        return Integer.parseInt(n.replaceFirst("test(\\d+)\\w+", "$1"));
-    }
-
-    static String fullTestNumber(Description d) {
-        assert d.isTest();
-        Part p = d.getTestClass().getAnnotation(Part.class);
-        if (p == null) {
-            return Integer.toString(testNumber(d));
-        } else {
-            return p.value() + "." + testNumber(d);
-        }
-    }
 
     @Override
     public void testRunFinished(Result result) {
