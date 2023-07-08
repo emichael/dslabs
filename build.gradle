@@ -95,6 +95,9 @@ dependencies {
   graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
   graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.5.0', classifier: 'sources'
 
+  graderImplementation group: 'commons-io', name: 'commons-io', version: '2.13.0'
+  graderSources        group: 'commons-io', name: 'commons-io', version: '2.13.0', classifier: 'sources'
+
   // Swing stuff
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1'
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1', classifier: 'sources'
