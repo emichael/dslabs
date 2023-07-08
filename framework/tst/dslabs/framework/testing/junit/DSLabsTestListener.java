@@ -24,11 +24,8 @@ package dslabs.framework.testing.junit;
 
 
 import com.google.common.base.Throwables;
-import java.io.PrintStream;
 import java.text.NumberFormat;
-import java.util.Arrays;
 import org.apache.commons.lang3.StringUtils;
-import org.junit.experimental.categories.Category;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
 import org.junit.runner.notification.Failure;
@@ -46,9 +43,6 @@ class DSLabsTestListener extends RunListener {
     private int numPassed = 0;
     private boolean testFailed = false;
     private long startMillis = 0;
-
-    private final PrintStream out = System.out;
-    private final PrintStream err = System.err;
 
     static int testNumber(Description d) {
         assert d.isTest();
@@ -68,21 +62,23 @@ class DSLabsTestListener extends RunListener {
 
     @Override
     public void testRunFinished(Result result) {
-        out.println(large_sep);
-        out.println();
-        out.println("Tests passed: " + numPassed + "/" + result.getRunCount());
-        out.println(String.format("Points: %s/%s (%.2f%%)", pointsEarned,
-                totalPoints, totalPoints != 0 ?
+        System.out.println(large_sep);
+        System.out.println();
+        System.out.println(
+                "Tests passed: " + numPassed + "/" + result.getRunCount());
+        System.out.printf("Points: %s/%s (%.2f%%)%n", pointsEarned, totalPoints,
+                totalPoints != 0 ?
                         100 * ((double) pointsEarned) / ((double) totalPoints) :
-                        0));
-        out.println("Total time: " + elapsedTimeAsString(result.getRunTime()) +
-                "s");
+                        0);
+        System.out.println(
+                "Total time: " + elapsedTimeAsString(result.getRunTime()) +
+                        "s");
         if (result.wasSuccessful()) {
-            out.println("\nALL PASS");
+            System.out.println("\nALL PASS");
         } else {
-            out.println("\nFAIL");
+            System.out.println("\nFAIL");
         }
-        out.println(large_sep);
+        System.out.println(large_sep);
     }
 
     protected void logTestStarted() {
@@ -94,8 +90,8 @@ class DSLabsTestListener extends RunListener {
     public void testStarted(Description description) {
         logTestStarted();
 
-        out.println(small_sep);
-        out.println("TEST " + fullTestNumber(description) + ": " +
+        System.out.println(small_sep);
+        System.out.println("TEST " + fullTestNumber(description) + ": " +
                 testName(description) + " (" + totalPoints(description) +
                 "pts)\n");
         totalPoints += totalPoints(description);
@@ -110,7 +106,8 @@ class DSLabsTestListener extends RunListener {
             return;
         }
 
-        err.println(Throwables.getStackTraceAsString(failure.getException()));
+        System.err.println(
+                Throwables.getStackTraceAsString(failure.getException()));
     }
 
     @Override
@@ -118,11 +115,11 @@ class DSLabsTestListener extends RunListener {
         if (!testFailed) {
             pointsEarned += totalPoints(description);
             numPassed++;
-            out.print("...PASS");
+            System.out.print("...PASS");
         } else {
-            out.print("...FAIL");
+            System.out.print("...FAIL");
         }
-        out.println(" (" +
+        System.out.println(" (" +
                 elapsedTimeAsString(System.currentTimeMillis() - startMillis) +
                 "s)");
     }
@@ -131,7 +128,7 @@ class DSLabsTestListener extends RunListener {
     public void testAssumptionFailure(Failure failure) {
         System.out.println(
                 "ASSUMPTION FAILURE: " + testName(failure.getDescription()));
-        out.println(small_sep);
+        System.out.println(small_sep);
     }
 
     private String testName(Description description) {
