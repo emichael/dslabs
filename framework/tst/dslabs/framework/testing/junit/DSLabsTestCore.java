@@ -159,7 +159,7 @@ public final class DSLabsTestCore {
             }
 
             Request request = Request.classes(CheckSavedTracesTest.class);
-            runRequest(request, new ReplaySavedTracesTestListener());
+            runRequest(request, new ReplaySavedTracesTestResultsPrinter());
             return;
         }
 
@@ -245,7 +245,7 @@ public final class DSLabsTestCore {
         // Sort methods and test classes
         request = request.sortWith(new TestOrder());
 
-        runRequest(request, new DSLabsTestListener());
+        runRequest(request, new TestResultsPrinter());
     }
 
     private DSLabsTestCore() {

@@ -35,7 +35,7 @@ import static dslabs.framework.testing.junit.DSLabsJUnitTest.isInCategory;
 import static dslabs.framework.testing.junit.DSLabsTestCore.fullTestNumber;
 import static dslabs.framework.testing.junit.VizStartedListener.vizStarted;
 
-class DSLabsTestListener extends RunListener {
+class TestResultsPrinter extends RunListener {
     protected static final String large_sep = StringUtils.repeat('=', 50);
     protected static final String small_sep = StringUtils.repeat('-', 50);
 

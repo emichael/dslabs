@@ -24,9 +24,8 @@ package dslabs.framework.testing.junit;
 
 import org.junit.runner.Description;
 import org.junit.runner.Result;
-import org.junit.runner.notification.RunNotifier;
 
-class ReplaySavedTracesTestListener extends DSLabsTestListener {
+class ReplaySavedTracesTestResultsPrinter extends TestResultsPrinter {
     @Override
     public void testRunFinished(Result result) {
         // Don't print out final results
