@@ -115,16 +115,16 @@ class DSLabsTestListener extends RunListener {
     public void testFailure(Failure failure) {
         testFailed = true;
 
-        // If we dropped into the visualization client, halt other tests
+        // If we dropped into the visualization tool, halt other tests.
         if (isInCategory(failure.getDescription(), SearchTests.class) &&
-                failure.getException() instanceof VizClientStarted &&
+                failure.getException() instanceof VizStarted &&
                 GlobalSettings.startVisualization()) {
-            // Don't let the main method kill the visualization client
+            // Don't let the main method kill the visualization tool.
             DSLabsTestCore.preventExitOnFailure();
 
             runNotifier.pleaseStop();
         } else {
-            // Otherwise print the exception
+            // Otherwise print the exception.
             err.println(
                     Throwables.getStackTraceAsString(failure.getException()));
         }

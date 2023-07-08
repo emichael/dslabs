@@ -338,7 +338,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
                         "\nException thrown by nodes during search. Visualization started.\n");
             }
 
-            throw new VizClientStarted();
+            throw new VizStarted();
         }
 
         if (ec == INVARIANT_VIOLATED) {
@@ -413,7 +413,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
 
             System.err.println(sb);
 
-            throw new VizClientStarted();
+            throw new VizStarted();
         }
 
         if (endTestOnFailure) {

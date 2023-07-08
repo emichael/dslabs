@@ -24,8 +24,8 @@ package dslabs.framework.testing.junit;
 
 /**
  * Special exception which tells the JUnit test runner to stop running further
- * tests because the visualization client has started and an active visual
+ * tests because the visualization tool has started and an active visual
  * debugging session is ongoing.
  */
-public class VizClientStarted extends RuntimeException {
+public class VizStarted extends RuntimeException {
 }
