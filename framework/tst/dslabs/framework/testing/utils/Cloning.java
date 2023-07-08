@@ -43,9 +43,10 @@ import org.apache.commons.lang3.SerializationUtils;
 /**
  * Wrapper around serialization utils to allow easy replacement in the future.
  * All cloning, serialization, and deserialization is done with this utility
- * class. Currently, the clone method attempts to use {@link
- * com.rits.cloning.Cloner} for faster cloning through reflection and the use of
- * various fast-cloners. As a fallback, serialization/deserialization is used.
+ * class. Currently, the clone method attempts to use
+ * {@link com.rits.cloning.Cloner} for faster cloning through reflection and the
+ * use of various fast-cloners. As a fallback, serialization/deserialization is
+ * used.
  *
  * <p>The fast cloning library is configured to have the same behavior for
  * transient fields as Java serialization/deserialization - namely, it sets them
@@ -66,7 +67,7 @@ import org.apache.commons.lang3.SerializationUtils;
  * transparent to students - aside from the requirement of annotating classes
  * with {@link Serializable}.
  */
-public abstract class Cloning {
+public final class Cloning {
     private static final Cloner jdclCloner = new Cloner();
     private static final Set<Class<?>> cannotClone =
             Collections.newSetFromMap(new ConcurrentHashMap<>());
@@ -153,5 +154,10 @@ public abstract class Cloning {
 
     public static long size(Serializable object) {
         return serialize(object).length;
+    }
+
+    private Cloning() {
+        // Uninstantiable utility class
+        throw new UnsupportedOperationException();
     }
 }

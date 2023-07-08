@@ -33,7 +33,7 @@ import java.util.logging.Logger;
 import lombok.Getter;
 import lombok.Setter;
 
-public abstract class GlobalSettings {
+public final class GlobalSettings {
     private static final Properties props = System.getProperties();
 
     private static final String TEST_NUM = "testNum", LOG_LEVEL = "logLevel";
@@ -117,5 +117,10 @@ public abstract class GlobalSettings {
 
     public static boolean doErrorChecks() {
         return doChecks || errorChecksTemporarilyEnabled;
+    }
+
+    private GlobalSettings() {
+        // Uninstantiable utility class
+        throw new UnsupportedOperationException();
     }
 }

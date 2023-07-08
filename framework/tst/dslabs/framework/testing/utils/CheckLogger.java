@@ -38,7 +38,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * Registers the results of various checks and prints out a report on test
  * shutdown.
  */
-public abstract class CheckLogger {
+public final class CheckLogger {
     private static final Class[] ignoredClasses = {Workload.class};
 
     private static final Map<Class, Object> notEqualToClone =
@@ -187,5 +187,10 @@ public abstract class CheckLogger {
         m.forEach((key, value) -> System.err.println(
                 String.format("- %s | %s", key, value)));
         System.err.println();
+    }
+
+    private CheckLogger() {
+        // Uninstantiable utility class
+        throw new UnsupportedOperationException();
     }
 }

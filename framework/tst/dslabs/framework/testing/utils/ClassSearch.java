@@ -32,7 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public abstract class ClassSearch {
+public final class ClassSearch {
     private static final ClassPath classPath;
 
     static {
@@ -85,5 +85,10 @@ public abstract class ClassSearch {
 
     public static Class<? extends VizConfig>[] vizConfigs() {
         return subclassesOf(VizConfig.class, true, true, "dslabs");
+    }
+
+    private ClassSearch() {
+        // Uninstantiable utility class
+        throw new UnsupportedOperationException();
     }
 }
