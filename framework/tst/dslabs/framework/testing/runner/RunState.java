@@ -36,10 +36,13 @@ import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.java.Log;
@@ -63,6 +66,11 @@ public class RunState extends AbstractState {
     private final Map<Address, Thread> nodeThreads = new HashMap<>();
     private long startTimeMillis;
     private boolean running = false, shuttingDown = false;
+    /**
+     * The time the system was most recently stopped, {@code null} if this
+     * {@link RunState} was never started or is currently running.
+     */
+    private Instant stopTime = null;
 
     // TODO: memoize important settings (e.g. multithreaded) at start time to
     //       ensure safety (even though they should never be modified)
@@ -233,6 +241,7 @@ public class RunState extends AbstractState {
                 }
 
                 this.running = true;
+                this.stopTime = null;
                 this.settings = settings;
                 this.startTimeMillis = System.currentTimeMillis();
                 this.mainThread = Thread.currentThread();
@@ -258,6 +267,9 @@ public class RunState extends AbstractState {
                     this.running = false;
                 }
                 this.mainThread = null;
+                if (stopTime == null) {
+                    stopTime = Instant.now();
+                }
                 notifyAll();
             }
         }
@@ -280,6 +292,7 @@ public class RunState extends AbstractState {
 
         this.settings = settings;
         this.running = true;
+        this.stopTime = null;
         this.startTimeMillis = System.currentTimeMillis();
 
         if (this.settings.multiThreaded()) {
@@ -332,11 +345,17 @@ public class RunState extends AbstractState {
         shuttingDown = true;
 
         // Interrupt all threads
+        Instant prewait = Instant.now();
         if (mainThread != null) {
             mainThread.interrupt();
         }
         for (Thread t : nodeThreads.values()) {
             t.interrupt();
+        }
+
+        // Log the stop time at the moment we start shutting down the threads.
+        if (stopTime == null) {
+            stopTime = Instant.now();
         }
 
         // Wait on all threads
@@ -349,9 +368,24 @@ public class RunState extends AbstractState {
             notifyAll();
         }
 
+        Duration timeWaited = Duration.between(prewait, Instant.now());
+        if (timeWaited.compareTo(Duration.ofSeconds(1)) > 0) {
+            LOG.warning("Took more than one second (" + timeWaited +
+                    "ms) to shutdown threads. This likely indicates a " +
+                    "performance bug in your system where a single " +
+                    "message/timer takes more than a second to process.");
+        }
+
         running = false;
     }
 
+    /**
+     * If the system is stopped, return the time that it stopped at. Otherwise,
+     * return {@code null}.
+     */
+    public synchronized @Nullable Instant stopTime() {
+        return stopTime;
+    }
 
     @Override
     public Iterable<TimerEnvelope> timers(Address address) {

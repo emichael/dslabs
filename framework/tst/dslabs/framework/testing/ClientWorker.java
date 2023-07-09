@@ -31,10 +31,13 @@ import dslabs.framework.Result;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
 import dslabs.framework.testing.utils.Cloning;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
+import javax.annotation.Nullable;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -43,8 +46,6 @@ import lombok.ToString;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.Triple;
-
-import static org.apache.commons.lang3.math.NumberUtils.max;
 
 @EqualsAndHashCode(of = {"client", "results"}, callSuper = false)
 @ToString(of = {"client", "results"})
@@ -71,7 +72,7 @@ public final class ClientWorker extends Node {
     @VizIgnore private boolean waitingToSend = false;
     @VizIgnore private Command lastCommand = null;
     @VizIgnore private Result expectedResult = null;
-    @VizIgnore private long lastSendTimeMillis;
+    @VizIgnore private Instant lastSendTime = null;
 
     // Resulting state
     @Getter @VizIgnore private final List<Command> sentCommands =
@@ -79,7 +80,8 @@ public final class ClientWorker extends Node {
     @Getter private final List<Result> results = new ArrayList<>();
     @Getter @VizIgnore private boolean resultsOk = true;
     @Getter @VizIgnore private Pair<Result, Result> expectedAndReceived = null;
-    @VizIgnore private long maxWaitTimeMillis = 0;
+    @VizIgnore private Duration maxWaitTime = Duration.ZERO;
+    @VizIgnore private Instant maxWaitTimeSendTime = null;
 
 
     public <C extends Node & Client> ClientWorker(@NonNull C client,
@@ -118,12 +120,37 @@ public final class ClientWorker extends Node {
         sendNextCommandWhilePossible();
     }
 
-    public synchronized long maxWaitTimeMilis() {
-        if (waitingOnResult) {
-            return max(maxWaitTimeMillis,
-                    System.currentTimeMillis() - lastSendTimeMillis);
+    /**
+     * Compute the maximum time this client has waited to receive the result of
+     * a command, assuming that the system stopped running at {@code stopTime}.
+     *
+     * <p>If {@code stopTime} is {@code null}, this method assumes that the
+     * system is still running and takes the current time when computing how
+     * long it has waited for the most recently sent command.
+     *
+     * @return the maximum amount of time the client waited, along with the time
+     * it sent the command it waited the most time for. Returns {@code null} if
+     * it never sent a command.
+     */
+    public synchronized @Nullable Pair<Duration, Instant> maxWaitTime(
+            @Nullable Instant stopTime) {
+        if (!waitingOnResult) {
+            if (maxWaitTimeSendTime != null) {
+                return ImmutablePair.of(maxWaitTime, maxWaitTimeSendTime);
+            }
+            return null;
         }
-        return maxWaitTimeMillis;
+        if (stopTime == null) {
+            stopTime = Instant.now();
+        }
+        Duration currentWaitTime = Duration.between(lastSendTime, stopTime);
+        if (currentWaitTime.compareTo(maxWaitTime) > 0) {
+            return ImmutablePair.of(currentWaitTime, lastSendTime);
+        }
+        if (maxWaitTimeSendTime != null) {
+            return ImmutablePair.of(maxWaitTime, maxWaitTimeSendTime);
+        }
+        return null;
     }
 
     private void sendNextCommandWhilePossible() {
@@ -148,8 +175,12 @@ public final class ClientWorker extends Node {
                     results.add(result);
                 }
 
-                maxWaitTimeMillis = max(maxWaitTimeMillis,
-                        System.currentTimeMillis() - lastSendTimeMillis);
+                Duration waitTime =
+                        Duration.between(lastSendTime, Instant.now());
+                if (waitTime.compareTo(maxWaitTime) > 0) {
+                    maxWaitTime = waitTime;
+                    maxWaitTimeSendTime = lastSendTime;
+                }
 
                 if (workload.hasResults() &&
                         !Objects.equals(expectedResult, result)) {
@@ -205,7 +236,7 @@ public final class ClientWorker extends Node {
 
         waitingToSend = false;
         waitingOnResult = true;
-        lastSendTimeMillis = System.currentTimeMillis();
+        lastSendTime = Instant.now();
     }
 
     public synchronized boolean done() {

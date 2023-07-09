@@ -41,10 +41,14 @@ import dslabs.framework.testing.utils.Cloning;
 import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.visualization.DebuggerWindow;
 import java.text.DecimalFormat;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TimeZone;
 import lombok.SneakyThrows;
 import org.junit.Rule;
 import org.junit.rules.TestRule;
@@ -229,19 +233,29 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
 
     protected final void assertMaxWaitTimeLessThan(long allowedMillis) {
         // TODO: maybe shut the runstate and threads down here
-
-        long maxWaitTimeMillis = 0;
+        Instant stopTime = runState.stopTime();
+        Duration maxWaitTime = Duration.ZERO;
         for (ClientWorker cw : runState.clientWorkers()) {
-            long t = cw.maxWaitTimeMilis();
-            if (t > allowedMillis) {
-                fail(String.format("%s waited too long, %s ms (%s ms allowed)",
-                        cw.address(), t, allowedMillis));
+            var maxWait = cw.maxWaitTime(stopTime);
+            if (maxWait == null) {
+                continue;
             }
-            maxWaitTimeMillis = Math.max(maxWaitTimeMillis, t);
+            Duration waitTime = maxWait.getLeft();
+            if (waitTime.toMillis() > allowedMillis) {
+                fail(String.format(
+                        "%s waited too long, %s ms (%s ms allowed), started " +
+                                "waiting at %s", cw.address(),
+                        waitTime.toMillis(), allowedMillis,
+                        ZonedDateTime.ofInstant(maxWait.getRight(),
+                                TimeZone.getDefault().toZoneId())));
+            }
+            if (waitTime.compareTo(maxWaitTime) > 0) {
+                maxWaitTime = waitTime;
+            }
         }
 
         System.out.printf("Maximum client wait time %s ms (%s ms allowed)%n",
-                maxWaitTimeMillis, allowedMillis);
+                maxWaitTime.toMillis(), allowedMillis);
     }
 
 
