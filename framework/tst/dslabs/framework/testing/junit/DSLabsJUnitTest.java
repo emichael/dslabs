@@ -22,15 +22,20 @@
 
 package dslabs.framework.testing.junit;
 
+import com.google.common.collect.ImmutableList;
 import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.utils.GlobalSettings;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
+import lombok.SneakyThrows;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runner.RunWith;
+import org.junit.runners.model.MultipleFailureException;
 import org.junit.runners.model.Statement;
 
 /**
@@ -104,5 +109,40 @@ public abstract class DSLabsJUnitTest {
                 base.evaluate();
             }
         });
+    }
+
+    private List<Throwable> testFailures;
+
+    /**
+     * Throws all reported failures (even those reported through
+     * {@link #failAndContinue}) at the end of a test.
+     */
+    @Rule(order = Rule.DEFAULT_ORDER - 1)
+    public final TestRule failureMonitor() {
+        return testRule(((base, description) -> {
+            testFailures = new ArrayList<>();
+            try {
+                base.evaluate();
+            } catch (Throwable t) {
+                testFailures.add(t);
+            } finally {
+                throwFailures();
+            }
+        }));
+    }
+
+    @SneakyThrows
+    private void throwFailures() {
+        if (testFailures == null || testFailures.isEmpty()) {
+            return;
+        }
+        if (testFailures.size() == 1) {
+            throw testFailures.get(0);
+        }
+        throw new MultipleFailureException(ImmutableList.copyOf(testFailures));
+    }
+
+    protected void failAndContinue(Throwable failure) {
+        testFailures.add(failure);
     }
 }
