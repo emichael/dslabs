@@ -266,7 +266,7 @@ public class StatePredicate implements Serializable {
      * state. Because StatePredicates can call user code, they can throw
      * exceptions.
      *
-     * Invariant: this.exceptionThrown() == (this.value() == null)
+     * <p>Invariant: this.exceptionThrown() == (this.value() == null)
      */
     public static class PredicateResult {
         @Getter private final StatePredicate predicate;
