@@ -78,9 +78,9 @@ repositories {
 }
 
 dependencies {
-  implementation      group: 'org.projectlombok', name: 'lombok', version: '1.18.20'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.20'
-  sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.20', classifier: 'sources'
+  implementation      group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
+  sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.30', classifier: 'sources'
 
   implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
   sources        group: 'com.google.guava', name: 'guava', version: '31.1-jre', classifier: 'sources'
