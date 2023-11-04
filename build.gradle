@@ -1,14 +1,14 @@
-// Gradle 6.4.1
-
 plugins {
   id 'java'
-  id 'com.github.johnrengelman.shadow' version '5.2.0'
+  id 'com.github.johnrengelman.shadow' version '8.1.1'
 }
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 
-sourceCompatibility = '14'
-targetCompatibility = '14'
+java {
+  sourceCompatibility = '14'
+  targetCompatibility = '14'
+}
 
 sourceSets {
   main {
@@ -131,31 +131,31 @@ task graderJar(type: ShadowJar) {
 
 task scaffoldingSourcesJar(type: ShadowJar) {
   archiveBaseName = 'framework'
-  classifier = 'sources'
+  archiveClassifier = 'sources'
   from sourceSets.main.java
 }
 
 task graderSourcesJar(type: ShadowJar) {
   archiveBaseName = 'grader'
-  classifier = 'sources'
+  archiveClassifier = 'sources'
   from sourceSets.grader.java
 }
 
 task scaffoldingDependenciesJar(type: ShadowJar) {
   archiveBaseName = 'framework'
-  classifier = 'deps'
+  archiveClassifier = 'deps'
   configurations = [ project.configurations.runtimeClasspath ]
 }
 
 task graderDependenciesJar(type: ShadowJar) {
   archiveBaseName = 'grader'
-  classifier = 'deps'
+  archiveClassifier = 'deps'
   configurations = [ project.configurations.graderRuntimeClasspath ]
 }
 
 task scaffoldingDependenciesSourcesJar(type: ShadowJar) {
   archiveBaseName = 'framework'
-  classifier = 'deps-sources'
+  archiveClassifier = 'deps-sources'
   configurations = [ project.configurations.sources ]
 }
 
