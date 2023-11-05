@@ -395,7 +395,7 @@ public class DebuggerWindow extends JFrame {
                              public void actionPerformed(ActionEvent e) {
                                  List<EventTreeState> p =
                                          currentState.pathToBestDescendent();
-                                 if (p.size() > 0) {
+                                 if (!p.isEmpty()) {
                                      setState(p.get(0));
                                  }
                              }
@@ -575,7 +575,7 @@ public class DebuggerWindow extends JFrame {
         } else {
             p.setVisible(true);
             p.setCollapsed(false);
-            l.setText(String.format(LINE_WRAPPING_FORMAT, t.toString()));
+            l.setText(String.format(LINE_WRAPPING_FORMAT, t));
             StringWriter sw = new StringWriter();
             t.printStackTrace(new PrintWriter(sw));
             l.setToolTipText(sw.toString());
