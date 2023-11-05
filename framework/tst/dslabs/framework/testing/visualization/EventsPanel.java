@@ -23,10 +23,12 @@
 package dslabs.framework.testing.visualization;
 
 import dslabs.framework.testing.Event;
+import dslabs.framework.testing.visualization.EventVisibilityPane.HiddenEventClasses;
 import java.awt.Dimension;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import javax.annotation.Nullable;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -61,7 +63,7 @@ class EventsPanel extends JPanel {
         scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
         add(scrollPane, "grow");
 
-        update(initialState);
+        update(initialState, null);
 
         // TODO: should this go in DebuggerWindow?
         setPreferredSize(new Dimension(300, getPreferredSize().height));
@@ -110,7 +112,11 @@ class EventsPanel extends JPanel {
         return tree;
     }
 
-    void update(EventTreeState s) {
+    void update(EventTreeState s,
+                @Nullable HiddenEventClasses hiddenEventClasses) {
+        if (hiddenEventClasses == null) {
+            hiddenEventClasses = HiddenEventClasses.EMPTY;
+        }
         Iterator<EventTreeState> i1 = s.pathFromInitial().iterator();
         Iterator<Pair<EventTreeState, ObjectJTree>> i2 = events.iterator();
 
@@ -121,13 +127,6 @@ class EventsPanel extends JPanel {
             addEventTreeState(i1.next());
         } else {
             i1.next();
-        }
-
-        // TODO: slightly hacky
-        if (i1.hasNext()) {
-            initialState.setTreeDisplayType(JTreeDisplayType.DEFAULT);
-        } else {
-            initialState.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
         }
 
         while (i1.hasNext() && i2.hasNext()) {
@@ -144,28 +143,13 @@ class EventsPanel extends JPanel {
                     i2.remove();
                 }
                 ObjectJTree tree = addEventTreeState(e);
-                // TODO: don't actually update if unnecessary
-                if (!i1.hasNext()) {
-                    tree.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
-                }
                 i2 = null;
                 break;
-            }
-
-            // TODO: don't actually update if unnecessary
-            if (i1.hasNext()) {
-                p.getRight().setTreeDisplayType(JTreeDisplayType.DEFAULT);
-            } else {
-                p.getRight().setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
             }
         }
 
         while (i1.hasNext()) {
             ObjectJTree tree = addEventTreeState(i1.next());
-            // TODO: don't actually update if unnecessary
-            if (!i1.hasNext()) {
-                tree.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
-            }
             i2 = null;
         }
 
@@ -187,19 +171,14 @@ class EventsPanel extends JPanel {
                     i2.remove();
                 }
                 ObjectJTree tree = addEventTreeState(e);
-                // TODO: don't actually update if unnecessary
-                tree.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
                 i2 = null;
                 break;
-            } else {
-                p.getRight().setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
             }
         }
 
         while (i1.hasNext()) {
             i2 = null;
             ObjectJTree tree = addEventTreeState(i1.next());
-            tree.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
         }
 
         // TODO: this giant method barely works and depends on how the best path is chosen...
@@ -208,6 +187,42 @@ class EventsPanel extends JPanel {
         while (i2 != null && i2.hasNext()) {
             inner.remove(i2.next().getRight().getParent());
             i2.remove();
+        }
+
+        // Paint the states correctly
+        boolean beforeCurrent = true;
+        for (var e : events) {
+            EventTreeState state = e.getLeft();
+            var component = e.getRight();
+
+            if (state == s) {
+                component.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
+                beforeCurrent = false;
+            } else if (beforeCurrent) {
+                component.setTreeDisplayType(JTreeDisplayType.DEFAULT);
+            } else {
+                component.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
+            }
+        }
+
+        // Remove events that are hidden by the filters
+        // TODO: adding and then immediately removing events is inefficient
+        var it = events.iterator();
+        while (it.hasNext()) {
+            var e = it.next();
+
+            EventTreeState state = e.getLeft();
+            var component = e.getRight();
+
+            if (state == s) {
+                continue;
+            }
+
+            Event event = state.previousEvent();
+            if (event != null && hiddenEventClasses.isHidden(event)) {
+                inner.remove(component.getParent());
+                it.remove();
+            }
         }
 
         // Need both revalidate and repaint here for whatever reason
