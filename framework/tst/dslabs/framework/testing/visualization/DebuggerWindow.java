@@ -152,6 +152,8 @@ public class DebuggerWindow extends JFrame {
     private final List<Pair<StatePredicate, JLabel>> prunes = new ArrayList<>();
     private final List<Pair<StatePredicate, JLabel>> goals = new ArrayList<>();
 
+    private final EventVisibilityPane eventVisibilityPane;
+
     private final Pair<JXTaskPane, JLabel> exceptionPanel;
 
     private final JXMultiSplitPane splitPane;
@@ -332,6 +334,11 @@ public class DebuggerWindow extends JFrame {
             exceptionPane.add(exceptionLabel);
             sideBar.add(exceptionPane);
             updateExceptionPane();
+
+            eventVisibilityPane =
+                    new EventVisibilityPane(() -> setState(currentState));
+            sideBar.add(eventVisibilityPane);
+            updateEventVisibilityPane();
 
             sideBar.setMinimumSize(new Dimension(20, 0));
             // Don't let sidebar be too large on startup
@@ -582,6 +589,17 @@ public class DebuggerWindow extends JFrame {
         }
     }
 
+    private void updateEventVisibilityPane() {
+        for (var m : currentState.network()) {
+            eventVisibilityPane.addMessageCheckbox(m.message().getClass());
+        }
+        for (Address a : currentState.addresses()) {
+            for (var t : currentState.timers(a)) {
+                eventVisibilityPane.addTimerCheckbox(t.timer().getClass());
+            }
+        }
+    }
+
     private void layoutNodes() {
         /*
          * We must reset the JXMultiSplitPane every time. Unfortunately, hiding
@@ -655,6 +673,7 @@ public class DebuggerWindow extends JFrame {
     void reset() {
         stateTreeCanvas.reset();
         eventsPanel.reset();
+        eventVisibilityPane.reset();
         setState(EventTreeState.convert(DebuggerWindow.this.initialState));
     }
 
@@ -667,14 +686,19 @@ public class DebuggerWindow extends JFrame {
     void setState(@NonNull EventTreeState s) {
         stateTreeCanvas.showEvent(s);
         currentState = s;
+
         for (Address a : currentState.addresses()) {
             assert statePanels.containsKey(a);
             statePanels.get(a).updateState(currentState,
                     ignoreSearchSettings ? null : searchSettings,
                     viewDeliveredMessages);
         }
-        eventsPanel.update(currentState);
+
+        eventsPanel.update(currentState,
+                eventVisibilityPane.hiddenEventClasses());
+
         updatePredicatePanes();
         updateExceptionPane();
+        updateEventVisibilityPane();
     }
 }

@@ -124,7 +124,13 @@ class BaseJTree extends JTree {
         // setShowsRootHandles(true);
     }
 
+    private JTreeDisplayType currentDisplayType = JTreeDisplayType.DEFAULT;
+
     void setTreeDisplayType(JTreeDisplayType jTreeDisplayType) {
+        if (currentDisplayType == jTreeDisplayType) {
+            return;
+        }
+        currentDisplayType = jTreeDisplayType;
         putClientProperty("FlatLaf.styleClass", jTreeDisplayType.styleClass);
     }
 }
