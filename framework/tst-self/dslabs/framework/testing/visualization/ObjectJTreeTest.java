@@ -28,9 +28,11 @@ import dslabs.framework.Node;
 import dslabs.framework.testing.LocalAddress;
 import java.lang.reflect.Method;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import javax.swing.JLabel;
 import lombok.EqualsAndHashCode;
@@ -132,6 +134,26 @@ public class ObjectJTreeTest {
         f2.v03 = null;
         f2.v04 = new int[]{1, 2, 3, 4};
         f2.v05 = null;
+        f2.v06 = null;
+        f2.v06v1 = new LocalAddress(("jkjkjk"));
+        f2.v0not7v1 = null;
+        f2.v0not7v2 = new LinkedList<>() {
+            @Override
+            public String toString() {
+                return "[]";
+            }
+        };
+        f2.v08 = null;
+        f2.v09 = new Integer[]{17, 42};
+        f2.v11 = null;
+        f2.v12 = new HashMap<>();
+        f2.v12.put("a", 3);
+        f2.v12.put("b", 47);
+        f2.v13 = null;
+        f2.v14 = new HashSet<>();
+        f2.v14.add("a");
+        f2.v14.add("b");
+
 
         t.update(f2);
 
@@ -163,12 +185,22 @@ class Foo extends Node {
     int[] v04 = null;
     int[] v05 = new int[3];
     Address v06 = new LocalAddress("asdf");
+    Address v06v1 = null;
     List<Object> v07 = new LinkedList<>() {
         @Override
         public String toString() {
             return "[]";
         }
     };
+    // carefully avoid "v07" regex match in these field names because the tests
+    // look for that to match the previous field.
+    List<Object> v0not7v1 = new LinkedList<>() {
+        @Override
+        public String toString() {
+            return "[]";
+        }
+    };
+    List<Object> v0not7v2 = null;
 
     Integer[] v08 = new Integer[]{0, 5, 3};
     Integer[] v09 = null;
@@ -176,6 +208,9 @@ class Foo extends Node {
     Object[] v10 = new Object[]{"foo", 4, new int[]{1, 2, 3}};
 
     Map<String, Integer> v11 = new HashMap<>();
+    Map<String, Integer> v12 = null;
+    Set<String> v13 = new HashSet<>();
+    Set<String> v14 = null;
 
     {
         v07.add("qwerty");
@@ -183,6 +218,9 @@ class Foo extends Node {
 
         v11.put("lbskj", 78525);
         v11.put("asiudb", 98623578);
+
+        v13.add("wreuio");
+        v13.add("097");
     }
 
     protected Foo(@NonNull Address address) {
