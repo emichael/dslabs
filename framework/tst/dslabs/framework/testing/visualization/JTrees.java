@@ -267,13 +267,14 @@ class ObjectJTree extends BaseJTree {
      * MessageEnvelope, or Timer. Tree nodes expand as their children are
      * queried; this allows for circular references in object graphs.
      *
-     * Sub-classes should implement a {@code static boolean canHandle(Object)}
-     * method and should be listed in {@link #NODE_TYPES_IN_PRIORITY_ORDER}.
-     * They should also implement a constructor with arguments Object, Object.
+     * <p>Sub-classes should implement a
+     * {@code static boolean canHandle(Object)} method and should be listed in
+     * {@link #NODE_TYPES_IN_PRIORITY_ORDER}. They should also implement a
+     * constructor with arguments Object, Object.
      *
-     * All state necessary for DSLabsTreeNodes should be encoded in the key and
-     * value; sub-classes should not have any extra fields. If nodes expand and
-     * create children, children should only be added through the addChild
+     * <p>All state necessary for DSLabsTreeNodes should be encoded in the key
+     * and value; sub-classes should not have any extra fields. If nodes expand
+     * and create children, children should only be added through the addChild
      * method below.
      */
     private static abstract class ObjectTreeNode
@@ -300,7 +301,8 @@ class ObjectJTree extends BaseJTree {
                 if ((Boolean) c.getDeclaredMethod("canHandle", Class.class)
                                .invoke(null, clz)) {
                     return (ObjectTreeNode) c.getDeclaredConstructor(
-                                                     Object.class, ObjectJTree.class)
+                                                     Object.class,
+                                                     ObjectJTree.class)
                                              .newInstance(value, tree);
                 }
             }
