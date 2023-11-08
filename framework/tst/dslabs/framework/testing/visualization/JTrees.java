@@ -65,6 +65,7 @@ import lombok.NonNull;
 import lombok.Setter;
 import lombok.SneakyThrows;
 import org.apache.commons.lang3.ClassUtils;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import static dslabs.framework.testing.visualization.Utils.makeIcon;
 
@@ -348,7 +349,7 @@ class ObjectJTree extends BaseJTree {
         }
 
         private KeyInstance keyInstance;
-        @Getter(AccessLevel.PROTECTED) private Object valueObj;
+        @Getter(AccessLevel.PROTECTED) @Nullable private Object valueObj;
         private ObjectTreeNode diffTarget;
         private boolean isDiffed = false;
         private boolean hasExpanded = false;
