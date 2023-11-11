@@ -20,6 +20,7 @@ import dslabs.framework.testing.junit.TestPointValue;
 import dslabs.framework.testing.junit.UnreliableTests;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SearchState;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.kvstore.KVStore;
 import dslabs.kvstore.KVStoreWorkload;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Random;
 import java.util.Set;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.commons.lang3.tuple.ImmutablePair;
@@ -641,7 +643,7 @@ public class PaxosTest extends BaseJUnitTest {
                 sendCommandAndCheck(client, put(key, "foo"), putOk());
             }
         }
-        Thread.sleep(4000);
+        runState.sleep(4000);
         runState.stop();
 
         long finishBytes = nodesSize();
@@ -712,7 +714,7 @@ public class PaxosTest extends BaseJUnitTest {
                     false);
         }
 
-        Thread.sleep(5000);
+        runState.sleep(5000);
         assertRunInvariantsHold();
 
         // Partition off some servers and the clients
@@ -722,12 +724,12 @@ public class PaxosTest extends BaseJUnitTest {
             partition.add(client(i));
         }
         runSettings.partition(partition);
-        Thread.sleep(1000);
+        runState.sleep(1000);
         assertRunInvariantsHold();
 
         // Heal the partition
         runSettings.reconnect();
-        Thread.sleep(5000);
+        runState.sleep(5000);
 
         // Shut the clients down
         runState.stop();
@@ -764,11 +766,12 @@ public class PaxosTest extends BaseJUnitTest {
                 servers.add(server);
             }
 
+            Random rand = new Random(GlobalSettings.rand().nextLong());
             try {
                 while (!Thread.interrupted()) {
                     for (int i = 0; i < 2; i++) {
                         List<Address> newPartition = new LinkedList<>(clients);
-                        Collections.shuffle(servers);
+                        Collections.shuffle(servers, rand);
 
                         // Grab a majority
                         for (int j = 0; j * 2 <= nServers; j++) {
@@ -776,11 +779,11 @@ public class PaxosTest extends BaseJUnitTest {
                         }
 
                         runSettings.reconnect().partition(newPartition);
-                        Thread.sleep(2000);
+                        runState.sleep(2000);
                     }
 
                     runSettings.reconnect();
-                    Thread.sleep(2000);
+                    runState.sleep(2000);
                 }
             } catch (InterruptedException ignored) {
             }
@@ -788,7 +791,7 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Let the clients run
         runState.start(runSettings);
-        Thread.sleep(testLengthSecs * 1000);
+        runState.sleep(testLengthSecs * 1000);
 
         // Shut the clients down
         shutdownStartedThreads();
@@ -840,11 +843,12 @@ public class PaxosTest extends BaseJUnitTest {
                 servers.add(server);
             }
 
+            Random rand = new Random(GlobalSettings.rand().nextLong());
             try {
                 while (!Thread.interrupted()) {
                     for (int i = 0; i < 2; i++) {
                         List<Address> newPartition = new LinkedList<>(clients);
-                        Collections.shuffle(servers);
+                        Collections.shuffle(servers, rand);
 
                         // Grab a majority
                         for (int j = 0; j * 2 <= nServers; j++) {
@@ -854,14 +858,14 @@ public class PaxosTest extends BaseJUnitTest {
                         runSettings.reconnect().partition(newPartition);
 
                         if (i == 0) {
-                            Thread.sleep(5000);
+                            runState.sleep(5000);
                         } else {
-                            Thread.sleep(1000);
+                            runState.sleep(1000);
                         }
                     }
 
                     runSettings.reconnect();
-                    Thread.sleep(5000);
+                    runState.sleep(5000);
                 }
             } catch (InterruptedException ignored) {
             }
@@ -869,7 +873,7 @@ public class PaxosTest extends BaseJUnitTest {
 
         // Let the clients run
         runState.start(runSettings);
-        Thread.sleep(testLengthSecs * 1000);
+        runState.sleep(testLengthSecs * 1000);
 
         // Shut the clients down
         shutdownStartedThreads();

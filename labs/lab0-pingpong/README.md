@@ -241,7 +241,42 @@ ALL PASS
 ==================================================
 ```
 
-It's alive! We can also use the visual debugger to see our system in action.
+It's alive! Alternatively, add `--simulated` and an optional `--seed` arguments 
+to run the test in deterministic simulation mode.
+
+```
+$ ./run-tests.py --lab 0 --test 1 -g FINEST --simulated --seed 1
+--------------------------------------------------
+TEST 1: Single client ping test [RUN] (0pts)
+
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.Node] MessageSend(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.testing.runner.SimulatedImpl]  ... will happen at 0.039437ms = 0.000000ms (now) + 0.012935ms (processed) + 0.026502ms (message latency)
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.Node] TimerSet(-> client1, PingTimer(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.testing.runner.SimulatedImpl]  ... will happen at 10.017509ms = 0.000000ms (now) + 0.017510ms (processed) + 10.000000ms (timer length)
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.testing.runner.SimulatedImpl] 0.039437 ms in simulation ...
+[FINER  ] [2023-01-08 07:46:22] [dslabs.framework.Node] MessageReceive(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.Node] MessageSend(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.testing.runner.SimulatedImpl]  ... will happen at 0.106207ms = 0.039437ms (now) + 0.020181ms (processed) + 0.046589ms (message latency)
+[FINEST ] [2023-01-08 07:46:22] [dslabs.framework.testing.runner.SimulatedImpl] 0.106207 ms in simulation ...
+[FINER  ] [2023-01-08 07:46:22] [dslabs.framework.Node] MessageReceive(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
+...PASS (0.094s)
+==================================================
+
+Tests passed: 1/1
+Points: 0/0 (0.00%)
+Total time: 0.107s
+
+ALL PASS
+==================================================
+```
+
+Rerun the tests, notice how every message receives at the same (virtual) time
+every time, and how the times change whenever a different seed is used. In more
+complicated tests such as `--test 2` this will result in different order of
+message handling, which can help to explore various bugs in a reproducible 
+fashion.
+
+We can also use the visual debugger to see our system in action.
 Let's do that.
 
 ```

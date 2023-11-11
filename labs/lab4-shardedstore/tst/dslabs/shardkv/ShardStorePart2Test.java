@@ -107,7 +107,7 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
                 multiPut("key1-1", "foo1", "key1-2", "foo2"), multiPutOk());
 
         // Let the previous transaction result propagate
-        Thread.sleep(1000);
+        runState.sleep(1000);
 
         // Client can talk to both groups, but they can't talk to each other
         runSettings.partition(servers(1, numServersPerGroup),
@@ -128,7 +128,7 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
         // Send command to both
         client.sendCommand(multiPut("key4-1", "foo1", "key4-2", "foo2"));
 
-        Thread.sleep(5000);
+        runState.sleep(5000);
 
         // Make sure the last command didn't get executed
         assertFalse(client.hasResult());
@@ -192,7 +192,7 @@ public class ShardStorePart2Test extends ShardStoreBaseTest {
             startThread(moveShards(numGroups, numShards));
         }
 
-        Thread.sleep(testLengthSecs * 1000);
+        runState.sleep(testLengthSecs * 1000);
 
         // Shut everything down
         shutdownStartedThreads();

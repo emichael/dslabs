@@ -193,6 +193,11 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     }
 
     protected void shutdownStartedThreads() throws InterruptedException {
+        if (GlobalSettings.simulated() && isRunTest()) {
+            runState.shutdownStartedThreads();
+            return;
+        }    
+    
         for (Thread thread : startedThreads) {
             thread.interrupt();
         }
@@ -214,6 +219,10 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     }
 
     protected final void startThread(Runnable runnable) {
+        if (GlobalSettings.simulated() && isRunTest()) {
+            runState.startThread(runnable);
+            return;
+        }
         Thread thread = new Thread(runnable);
         startedThreads.add(thread);
         thread.start();

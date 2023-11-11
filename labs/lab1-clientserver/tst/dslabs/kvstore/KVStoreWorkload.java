@@ -7,6 +7,7 @@ import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.InfiniteWorkload;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
+import dslabs.framework.testing.utils.GlobalSettings;
 import dslabs.framework.testing.utils.SerializableFunction;
 import dslabs.kvstore.KVStore.Append;
 import dslabs.kvstore.KVStore.AppendResult;
@@ -201,7 +202,7 @@ public abstract class KVStoreWorkload extends Workload {
 
     private static class DifferentKeysInfiniteWorkload
             extends InfiniteWorkload {
-        private final Random rand = new Random();
+        private final Random rand = new Random(GlobalSettings.rand().nextLong());
         private final Map<String, String> data = new HashMap<>();
         private boolean lastWasGet = true;
         private String lastPutKey = null;

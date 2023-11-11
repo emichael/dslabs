@@ -36,6 +36,8 @@ import dslabs.framework.testing.StateGenerator;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
+import dslabs.framework.testing.utils.GlobalSettings;
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -48,7 +50,20 @@ import org.apache.commons.lang3.tuple.Pair;
 @Log
 @ToString(callSuper = true)
 public class RunState extends AbstractState {
-    @Getter private final Network network = new Network();
+    // although `SimulatedImpl` can also work with `Network`, by inserting 
+    // messages and already-due timers into `Network` then immediately `poll`
+    // them out, but that is unnecessarily stupid and poorly performant
+    // luckily `network` is only minimal made use by lab 2 and lab 3, which 
+    // makes it fairly easy to proxy the use caes
+    // @Getter
+    private final Network network = new Network();
+
+    public Network network() {
+        if (simulated) {
+            return new SimulatedNetwork(simulatedImpl);
+        }
+        return network;
+    }
 
     private volatile RunSettings settings;
 
@@ -57,6 +72,11 @@ public class RunState extends AbstractState {
      * message or timer.
      */
     @Getter private volatile boolean exceptionThrown = false;
+
+    // used by `SimulatedImpl`
+    void exceptionThrown(boolean value) {
+        exceptionThrown = value;
+    }
 
     // All accesses to these variables must be protected by synchronized(this)
     private Thread mainThread;
@@ -69,13 +89,19 @@ public class RunState extends AbstractState {
 
     // TODO: break up synchronization a bit
 
+    SimulatedImpl simulatedImpl;
+    boolean simulated = GlobalSettings.simulated();
+
     public RunState(Set<Address> servers, Set<Address> clientWorkers,
-                    Set<Address> clients, StateGenerator stateGenerator) {
+            Set<Address> clients, StateGenerator stateGenerator) {
         super(servers, clientWorkers, clients, stateGenerator);
+        if (simulated) {
+            simulatedImpl = new SimulatedImpl(this);
+        }
     }
 
     public RunState(Set<Address> servers, Set<Address> clientWorkers,
-                    StateGenerator stateGenerator) {
+            StateGenerator stateGenerator) {
         this(servers, clientWorkers, Collections.emptySet(), stateGenerator);
     }
 
@@ -87,6 +113,11 @@ public class RunState extends AbstractState {
     @Override
     protected synchronized void setupNode(Address address) {
         final Node node = node(address);
+        if (simulated) {
+            simulatedImpl.setupNode(node);
+            return;
+        }
+
         final Inbox inbox = network.inbox(address);
 
         node.config(me -> {
@@ -183,6 +214,11 @@ public class RunState extends AbstractState {
      *         if interrupted while waiting
      */
     public void waitFor() throws InterruptedException {
+        if (simulated) {
+            simulatedImpl.waitFor();
+            return;
+        }
+
         if (settings.timeLimited() && settings.waitForClients() &&
                 Iterables.size(clientWorkers()) > 0) {
             for (ClientWorker c : clientWorkers()) {
@@ -216,6 +252,11 @@ public class RunState extends AbstractState {
     public void run(RunSettings settings) throws InterruptedException {
         if (settings == null) {
             settings = new RunSettings();
+        }
+
+        if (simulated) {
+            simulatedImpl.run(settings);
+            return;
         }
 
         if (settings.multiThreaded()) {
@@ -264,6 +305,10 @@ public class RunState extends AbstractState {
     }
 
     public void start(RunSettings settings) {
+        if (simulated) {
+            simulatedImpl.start(settings);
+            return;
+        }
         startInternal(settings);
     }
 
@@ -324,6 +369,11 @@ public class RunState extends AbstractState {
      * is interrupted, does not ensure a full shutdown, only initiates one.
      */
     public synchronized void stop() throws InterruptedException {
+        if (simulated) {
+            simulatedImpl.stop();
+            return;
+        }
+
         // Don't allow simultaneous stops
         while (shuttingDown) {
             wait();
@@ -352,6 +402,31 @@ public class RunState extends AbstractState {
         running = false;
     }
 
+    public void sleep(long millis) throws InterruptedException {
+        if (simulated) {
+            simulatedImpl.sleep(millis);
+        } else {
+            Thread.sleep(millis);
+        }
+    }
+
+    public long currentTimeMillis() {
+        if (simulated) {
+            return simulatedImpl.currentTimeMillis();
+        } else {
+            return System.currentTimeMillis();
+        }
+    }
+
+    public void startThread(Runnable runnable) {
+        assert simulated;
+        simulatedImpl.startThread(runnable);
+    }
+
+    public void shutdownStartedThreads() throws InterruptedException {
+        assert simulated;
+        simulatedImpl.shutdownStartedThreads();
+    }
 
     @Override
     public Iterable<TimerEnvelope> timers(Address address) {

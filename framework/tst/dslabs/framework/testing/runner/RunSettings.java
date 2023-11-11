@@ -25,6 +25,8 @@ package dslabs.framework.testing.runner;
 import dslabs.framework.Address;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TestSettings;
+import dslabs.framework.testing.utils.GlobalSettings;
+
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
@@ -40,7 +42,7 @@ import org.apache.commons.lang3.tuple.Pair;
  * Safe for concurrent access.
  */
 public class RunSettings extends TestSettings<RunSettings> {
-    private final static Random rand = new Random();
+    private final static Random rand = new Random(GlobalSettings.rand().nextLong());
 
     /* Defaults */
     private static final double DEFAULT_UNRELIABLE_FRACTION_DELIVERED = 0.5;
