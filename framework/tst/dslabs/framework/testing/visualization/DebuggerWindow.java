@@ -68,6 +68,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JPanel;
 import javax.swing.JRadioButtonMenuItem;
+import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
@@ -282,7 +283,8 @@ public class DebuggerWindow extends JFrame {
                 new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
         {
             final JXTaskPaneContainer sideBar = new JXTaskPaneContainer();
-            topSplitPane.add(sideBar);
+            final JScrollPane sideBarScrollPane = Utils.scrollPane(sideBar);
+            topSplitPane.add(sideBarScrollPane);
 
             secondarySplitPane.setResizeWeight(1.0);
             topSplitPane.add(secondarySplitPane);
@@ -341,9 +343,10 @@ public class DebuggerWindow extends JFrame {
             updateEventVisibilityPane();
 
             sideBar.setMinimumSize(new Dimension(20, 0));
+
             // Don't let sidebar be too large on startup
-            sideBar.setPreferredSize(new Dimension(
-                    Math.min(sideBar.getPreferredSize().width, 300),
+            sideBarScrollPane.setPreferredSize(new Dimension(
+                    Math.min(sideBarScrollPane.getPreferredSize().width, 300),
                     sideBar.getPreferredSize().height));
         }
         add(topSplitPane);
