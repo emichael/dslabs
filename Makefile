@@ -1,4 +1,4 @@
-.PHONY: all test dependencies serve clean clean-all
+.PHONY: all test format check-format dependencies serve clean clean-all
 .FORCE:
 
 FRAMEWORK_FILES = $(shell find framework -type f | sed 's/ /\\ /g')
@@ -56,6 +56,12 @@ build/handout.tar.gz: build/handout/
 
 test:
 	./gradlew test
+
+check-format:
+	./gradlew spotlessCheck
+
+format:
+	./gradlew spotlessApply
 
 www/javadoc/: build/doc/
 	rsync -a --delete $< $@

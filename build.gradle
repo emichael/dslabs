@@ -2,6 +2,7 @@ plugins {
   id 'java'
   id 'com.github.johnrengelman.shadow' version '8.1.1'
   id 'com.github.jk1.dependency-license-report' version '2.5'
+  id 'com.diffplug.spotless' version '6.22.0'
 }
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -215,4 +216,13 @@ licenseReport {
   configurations = ALL
   outputDir = "${project.buildDir}/reports/licenses"
   renderers = [ new TextReportRenderer() ]
+}
+
+// Spotless auto-formatter config
+spotless {
+  java {
+    removeUnusedImports()
+    cleanthat()
+    googleJavaFormat()
+  }
 }
