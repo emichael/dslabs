@@ -40,143 +40,138 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import org.jdesktop.swingx.JXTaskPane;
 
-
 final class EventVisibilityPane extends JXTaskPane {
 
-    private static final class EventTypeVisibilityPanel<E> extends JPanel {
-        private static final String SHOW_ALL = "Show All", HIDE_ALL =
-                "Hide All";
+  private static final class EventTypeVisibilityPanel<E> extends JPanel {
+    private static final String SHOW_ALL = "Show All", HIDE_ALL = "Hide All";
 
-        private final SortedMap<Class<? extends E>, JCheckBox> checkBoxes =
-                new TreeMap<>(Comparator.comparing(Class::getName));
+    private final SortedMap<Class<? extends E>, JCheckBox> checkBoxes =
+        new TreeMap<>(Comparator.comparing(Class::getName));
 
-        private final JButton toggle;
+    private final JButton toggle;
 
-        private final Runnable onUpdate;
+    private final Runnable onUpdate;
 
-        private EventTypeVisibilityPanel(String eventTypePlural,
-                                         Runnable onUpdate) {
-            this.onUpdate = onUpdate;
+    private EventTypeVisibilityPanel(String eventTypePlural, Runnable onUpdate) {
+      this.onUpdate = onUpdate;
 
-            setVisible(false);
-            setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
-            add(new JLabel("<html><h3>" + eventTypePlural + "</h3></html>"));
+      setVisible(false);
+      setLayout(new BoxLayout(this, BoxLayout.Y_AXIS));
+      add(new JLabel("<html><h3>" + eventTypePlural + "</h3></html>"));
 
-            toggle = new JButton(HIDE_ALL);
-            toggle.addActionListener(__ -> {
-                if (allCheckBoxesSelected()) {
-                    checkBoxes.values().forEach(c -> c.setSelected(false));
-                    toggle.setText(SHOW_ALL);
-                } else {
-                    checkBoxes.values().forEach(c -> c.setSelected(true));
-                    toggle.setText(HIDE_ALL);
-                }
-                onUpdate.run();
-            });
-            add(toggle);
-        }
-
-        private boolean allCheckBoxesSelected() {
-            return checkBoxes.values().stream().allMatch(JCheckBox::isSelected);
-        }
-
-        void addCheckBox(Class<? extends E> eventType) {
-            setVisible(true);
-
-            if (!checkBoxes.containsKey(eventType)) {
-                // Add 1 to account for the JLabel header
-                int position = checkBoxes.headMap(eventType).size() + 1;
-                JCheckBox checkBox = new JCheckBox(eventType.getSimpleName());
-                checkBox.setToolTipText(eventType.getName());
-                checkBox.setSelected(true);
-                checkBox.addActionListener(__ -> {
-                    toggle.setText(
-                            allCheckBoxesSelected() ? HIDE_ALL : SHOW_ALL);
-                    onUpdate.run();
-                });
-                add(checkBox, position);
-                checkBoxes.put(eventType, checkBox);
+      toggle = new JButton(HIDE_ALL);
+      toggle.addActionListener(
+          __ -> {
+            if (allCheckBoxesSelected()) {
+              checkBoxes.values().forEach(c -> c.setSelected(false));
+              toggle.setText(SHOW_ALL);
+            } else {
+              checkBoxes.values().forEach(c -> c.setSelected(true));
+              toggle.setText(HIDE_ALL);
             }
-        }
-
-        ImmutableSet<Class<? extends E>> hiddenEventTypes() {
-            return checkBoxes.entrySet().stream()
-                             .filter(e -> !e.getValue().isSelected())
-                             .map(Entry::getKey)
-                             .collect(ImmutableSet.toImmutableSet());
-        }
-
-        void reset() {
-            setVisible(false);
-            checkBoxes.values().forEach(this::remove);
-            checkBoxes.clear();
-            toggle.setText(HIDE_ALL);
-        }
+            onUpdate.run();
+          });
+      add(toggle);
     }
 
-    private final EventTypeVisibilityPanel<Message> messageVisibilityPanel;
-    private final EventTypeVisibilityPanel<Timer> timerVisibilityPanel;
-
-    EventVisibilityPane(Runnable onUpdate) {
-        super("Show/Hide Events");
-        setVisible(false);
-
-        // TODO: figure out how to add this tooltip to the title only
-        setToolTipText(
-                "Show/hide events in Events list. Useful for filtering the " +
-                        "visible events in long traces.");
-
-        messageVisibilityPanel =
-                new EventTypeVisibilityPanel<>("Messages", onUpdate);
-        timerVisibilityPanel =
-                new EventTypeVisibilityPanel<>("Timers", onUpdate);
-
-        add(messageVisibilityPanel);
-        add(timerVisibilityPanel);
+    private boolean allCheckBoxesSelected() {
+      return checkBoxes.values().stream().allMatch(JCheckBox::isSelected);
     }
 
-    @RequiredArgsConstructor
-    @Getter
-    @Immutable
-    static final class HiddenEventClasses {
-        static final HiddenEventClasses EMPTY =
-                new HiddenEventClasses(ImmutableSet.of(), ImmutableSet.of());
+    void addCheckBox(Class<? extends E> eventType) {
+      setVisible(true);
 
-        private final ImmutableSet<Class<? extends Message>> hiddenMessageTypes;
-        private final ImmutableSet<Class<? extends Timer>> hiddenTimerTypes;
-
-        boolean isHidden(Message m) {
-            return hiddenMessageTypes.contains(m.getClass());
-        }
-
-        boolean isHidden(Timer t) {
-            return hiddenTimerTypes.contains(t.getClass());
-        }
-
-        boolean isHidden(Event e) {
-            return e.isMessage() ? isHidden(e.message().message()) :
-                    isHidden(e.timer().timer());
-        }
+      if (!checkBoxes.containsKey(eventType)) {
+        // Add 1 to account for the JLabel header
+        int position = checkBoxes.headMap(eventType).size() + 1;
+        JCheckBox checkBox = new JCheckBox(eventType.getSimpleName());
+        checkBox.setToolTipText(eventType.getName());
+        checkBox.setSelected(true);
+        checkBox.addActionListener(
+            __ -> {
+              toggle.setText(allCheckBoxesSelected() ? HIDE_ALL : SHOW_ALL);
+              onUpdate.run();
+            });
+        add(checkBox, position);
+        checkBoxes.put(eventType, checkBox);
+      }
     }
 
-    HiddenEventClasses hiddenEventClasses() {
-        return new HiddenEventClasses(messageVisibilityPanel.hiddenEventTypes(),
-                timerVisibilityPanel.hiddenEventTypes());
-    }
-
-    void addMessageCheckbox(Class<? extends Message> messageType) {
-        setVisible(true);
-        messageVisibilityPanel.addCheckBox(messageType);
-    }
-
-    void addTimerCheckbox(Class<? extends Timer> timerType) {
-        setVisible(true);
-        timerVisibilityPanel.addCheckBox(timerType);
+    ImmutableSet<Class<? extends E>> hiddenEventTypes() {
+      return checkBoxes.entrySet().stream()
+          .filter(e -> !e.getValue().isSelected())
+          .map(Entry::getKey)
+          .collect(ImmutableSet.toImmutableSet());
     }
 
     void reset() {
-        setVisible(false);
-        messageVisibilityPanel.reset();
-        timerVisibilityPanel.reset();
+      setVisible(false);
+      checkBoxes.values().forEach(this::remove);
+      checkBoxes.clear();
+      toggle.setText(HIDE_ALL);
     }
+  }
+
+  private final EventTypeVisibilityPanel<Message> messageVisibilityPanel;
+  private final EventTypeVisibilityPanel<Timer> timerVisibilityPanel;
+
+  EventVisibilityPane(Runnable onUpdate) {
+    super("Show/Hide Events");
+    setVisible(false);
+
+    // TODO: figure out how to add this tooltip to the title only
+    setToolTipText(
+        "Show/hide events in Events list. Useful for filtering the "
+            + "visible events in long traces.");
+
+    messageVisibilityPanel = new EventTypeVisibilityPanel<>("Messages", onUpdate);
+    timerVisibilityPanel = new EventTypeVisibilityPanel<>("Timers", onUpdate);
+
+    add(messageVisibilityPanel);
+    add(timerVisibilityPanel);
+  }
+
+  @RequiredArgsConstructor
+  @Getter
+  @Immutable
+  static final class HiddenEventClasses {
+    static final HiddenEventClasses EMPTY =
+        new HiddenEventClasses(ImmutableSet.of(), ImmutableSet.of());
+
+    private final ImmutableSet<Class<? extends Message>> hiddenMessageTypes;
+    private final ImmutableSet<Class<? extends Timer>> hiddenTimerTypes;
+
+    boolean isHidden(Message m) {
+      return hiddenMessageTypes.contains(m.getClass());
+    }
+
+    boolean isHidden(Timer t) {
+      return hiddenTimerTypes.contains(t.getClass());
+    }
+
+    boolean isHidden(Event e) {
+      return e.isMessage() ? isHidden(e.message().message()) : isHidden(e.timer().timer());
+    }
+  }
+
+  HiddenEventClasses hiddenEventClasses() {
+    return new HiddenEventClasses(
+        messageVisibilityPanel.hiddenEventTypes(), timerVisibilityPanel.hiddenEventTypes());
+  }
+
+  void addMessageCheckbox(Class<? extends Message> messageType) {
+    setVisible(true);
+    messageVisibilityPanel.addCheckBox(messageType);
+  }
+
+  void addTimerCheckbox(Class<? extends Timer> timerType) {
+    setVisible(true);
+    timerVisibilityPanel.addCheckBox(timerType);
+  }
+
+  void reset() {
+    setVisible(false);
+    messageVisibilityPanel.reset();
+    timerVisibilityPanel.reset();
+  }
 }

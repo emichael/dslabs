@@ -25,23 +25,19 @@ package dslabs.framework;
 import java.io.Serializable;
 
 /**
- * <p>Applications are simple data structures used by your {@link Node}s.
+ * Applications are simple data structures used by your {@link Node}s.
  *
- * <p>Applications need not support concurrent access. However, to work with
- * the distributed systems you create, they must be deterministic.
+ * <p>Applications need not support concurrent access. However, to work with the distributed systems
+ * you create, they must be deterministic.
  */
 public interface Application extends Serializable {
-    /**
-     * Execute the given command for the application and return the result. If
-     * the application cannot handle the command, it should throw an
-     * {@link IllegalArgumentException}.
-     *
-     * @param command
-     *         the command to execute
-     * @return the result
-     *
-     * @throws IllegalArgumentException
-     *         if the application cannot handle the command type
-     */
-    Result execute(Command command) throws IllegalArgumentException;
+  /**
+   * Execute the given command for the application and return the result. If the application cannot
+   * handle the command, it should throw an {@link IllegalArgumentException}.
+   *
+   * @param command the command to execute
+   * @return the result
+   * @throws IllegalArgumentException if the application cannot handle the command type
+   */
+  Result execute(Command command) throws IllegalArgumentException;
 }

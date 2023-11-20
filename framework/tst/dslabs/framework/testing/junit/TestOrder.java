@@ -25,35 +25,36 @@ package dslabs.framework.testing.junit;
 import org.junit.runner.manipulation.Sorter;
 
 class TestOrder extends Sorter {
-    public TestOrder() {
-        // Sort methods by lab, test name
-        super((o1, o2) -> {
-            if (o1.isSuite()) {
-                assert o2.isSuite();
-                var l1 = o1.getAnnotation(Lab.class);
-                var l2 = o2.getAnnotation(Lab.class);
-                assert l1 != null;
-                assert l2 != null;
+  public TestOrder() {
+    // Sort methods by lab, test name
+    super(
+        (o1, o2) -> {
+          if (o1.isSuite()) {
+            assert o2.isSuite();
+            var l1 = o1.getAnnotation(Lab.class);
+            var l2 = o2.getAnnotation(Lab.class);
+            assert l1 != null;
+            assert l2 != null;
 
-                if (!l1.value().equals(l2.value())) {
-                    // This shouldn't happen right now...
-                    return l1.value().compareTo(l2.value());
-                }
-
-                var p1 = o1.getAnnotation(Part.class);
-                var p2 = o2.getAnnotation(Part.class);
-
-                // If running multiple test suites, they should be annotated with part numbers
-                assert p1 != null;
-                assert p2 != null;
-
-                return Integer.compare(p1.value(), p2.value());
+            if (!l1.value().equals(l2.value())) {
+              // This shouldn't happen right now...
+              return l1.value().compareTo(l2.value());
             }
 
-            assert o1.isTest();
-            assert o2.isTest();
+            var p1 = o1.getAnnotation(Part.class);
+            var p2 = o2.getAnnotation(Part.class);
 
-            return o1.getMethodName().compareTo(o2.getMethodName());
+            // If running multiple test suites, they should be annotated with part numbers
+            assert p1 != null;
+            assert p2 != null;
+
+            return Integer.compare(p1.value(), p2.value());
+          }
+
+          assert o1.isTest();
+          assert o2.isTest();
+
+          return o1.getMethodName().compareTo(o2.getMethodName());
         });
-    }
+  }
 }

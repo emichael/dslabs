@@ -28,33 +28,37 @@ import lombok.NonNull;
 
 @Lab("PaxosMadeWrong")
 public class IncorrectSingleInstancePaxos extends SingleInstancePaxos {
-    @Override
-    protected Proposer proposer(@NonNull Address address,
-                                @NonNull Address[] acceptors,
-                                int proposalNumber, int numProposers,
-                                @NonNull String proposalValue) {
-        return new BadProposer(address, acceptors, proposalNumber, numProposers,
-                proposalValue);
-    }
+  @Override
+  protected Proposer proposer(
+      @NonNull Address address,
+      @NonNull Address[] acceptors,
+      int proposalNumber,
+      int numProposers,
+      @NonNull String proposalValue) {
+    return new BadProposer(address, acceptors, proposalNumber, numProposers, proposalValue);
+  }
 }
 
 class BadProposer extends Proposer {
 
-    BadProposer(@NonNull Address address, @NonNull Address[] acceptors,
-                int proposalNumber, int numProposers,
-                @NonNull String proposalValue) {
-        super(address, acceptors, proposalNumber, numProposers, proposalValue);
+  BadProposer(
+      @NonNull Address address,
+      @NonNull Address[] acceptors,
+      int proposalNumber,
+      int numProposers,
+      @NonNull String proposalValue) {
+    super(address, acceptors, proposalNumber, numProposers, proposalValue);
+  }
+
+  @Override
+  void handleAcceptAck(AcceptAck m, Address sender) {
+    if (proposalNumber != m.proposalNumber) {
+      return;
     }
 
-    @Override
-    void handleAcceptAck(AcceptAck m, Address sender) {
-        if (proposalNumber != m.proposalNumber) {
-            return;
-        }
-
-        acceptAcks.add(sender);
-        if (acceptAcks.size() * 2 >= acceptors.length - 1) {
-            decision = proposalValue;
-        }
+    acceptAcks.add(sender);
+    if (acceptAcks.size() * 2 >= acceptors.length - 1) {
+      decision = proposalValue;
     }
+  }
 }

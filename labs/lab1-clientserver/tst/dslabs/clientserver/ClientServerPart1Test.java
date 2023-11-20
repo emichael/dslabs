@@ -1,5 +1,12 @@
 package dslabs.clientserver;
 
+import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
+import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
+import static dslabs.kvstore.KVStoreWorkload.appendDifferentKeyWorkload;
+import static dslabs.kvstore.KVStoreWorkload.appendSameKeyWorkload;
+import static dslabs.kvstore.KVStoreWorkload.get;
+import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
+
 import dslabs.framework.Client;
 import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.junit.Part;
@@ -10,92 +17,82 @@ import dslabs.framework.testing.junit.UnreliableTests;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static dslabs.framework.testing.StatePredicate.RESULTS_OK;
-import static dslabs.kvstore.KVStoreWorkload.APPENDS_LINEARIZABLE;
-import static dslabs.kvstore.KVStoreWorkload.appendDifferentKeyWorkload;
-import static dslabs.kvstore.KVStoreWorkload.appendSameKeyWorkload;
-import static dslabs.kvstore.KVStoreWorkload.get;
-import static dslabs.kvstore.KVStoreWorkload.simpleWorkload;
-
 @Lab("1")
 @Part(2)
 public final class ClientServerPart1Test extends ClientServerBaseTest {
 
-    @Test(timeout = 2 * 1000, expected = InterruptedException.class)
-    @TestDescription("Client throws InterruptedException")
-    @Category(RunTests.class)
-    @TestPointValue(5)
-    public void test01ThrowsException() throws InterruptedException {
-        final Thread mainThread = Thread.currentThread();
-        Client client = runState.addClient(client(1));
-        startThread(() -> {
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                return;
-            }
+  @Test(timeout = 2 * 1000, expected = InterruptedException.class)
+  @TestDescription("Client throws InterruptedException")
+  @Category(RunTests.class)
+  @TestPointValue(5)
+  public void test01ThrowsException() throws InterruptedException {
+    final Thread mainThread = Thread.currentThread();
+    Client client = runState.addClient(client(1));
+    startThread(
+        () -> {
+          try {
+            Thread.sleep(500);
+          } catch (InterruptedException e) {
+            return;
+          }
 
-            mainThread.interrupt();
+          mainThread.interrupt();
         });
-        client.sendCommand(get("FOO"));
-        // Should never return since the runState wasn't started
-        client.getResult();
+    client.sendCommand(get("FOO"));
+    // Should never return since the runState wasn't started
+    client.getResult();
+  }
+
+  @Test(timeout = 10 * 1000)
+  @TestDescription("Single client basic operations")
+  @Category(RunTests.class)
+  @TestPointValue(20)
+  public void test02SingleClient() throws InterruptedException {
+    runState.addClientWorker(client(1), simpleWorkload);
+    runSettings.addInvariant(RESULTS_OK);
+    runState.run(runSettings);
+  }
+
+  @Test(timeout = 10 * 1000)
+  @TestDescription("Multi-client different key appends")
+  @Category(RunTests.class)
+  @TestPointValue(20)
+  public void test03MultiClient() throws InterruptedException {
+    int numRounds = 100, numClients = 10;
+
+    for (int i = 1; i <= numClients; i++) {
+      runState.addClientWorker(client(i), appendDifferentKeyWorkload(numRounds));
     }
 
-    @Test(timeout = 10 * 1000)
-    @TestDescription("Single client basic operations")
-    @Category(RunTests.class)
-    @TestPointValue(20)
-    public void test02SingleClient() throws InterruptedException {
-        runState.addClientWorker(client(1), simpleWorkload);
-        runSettings.addInvariant(RESULTS_OK);
-        runState.run(runSettings);
+    runSettings.addInvariant(RESULTS_OK);
+    runState.run(runSettings);
+  }
+
+  @Test(timeout = 10 * 1000)
+  @TestDescription("Multi-client same key appends")
+  @Category(RunTests.class)
+  @TestPointValue(30)
+  public void test04MultiClientAppends() throws InterruptedException {
+    int numRounds = 5, numClients = 10;
+
+    for (int i = 1; i <= numClients; i++) {
+      runState.addClientWorker(client(i), appendSameKeyWorkload(numRounds));
     }
 
-    @Test(timeout = 10 * 1000)
-    @TestDescription("Multi-client different key appends")
-    @Category(RunTests.class)
-    @TestPointValue(20)
-    public void test03MultiClient() throws InterruptedException {
-        int numRounds = 100, numClients = 10;
+    runSettings.addInvariant(APPENDS_LINEARIZABLE);
+    runState.run(runSettings);
+  }
 
-        for (int i = 1; i <= numClients; i++) {
-            runState.addClientWorker(client(i),
-                    appendDifferentKeyWorkload(numRounds));
-        }
+  @Test(timeout = 30 * 1000)
+  @TestDescription("Single client can finish operations")
+  @Category({RunTests.class, UnreliableTests.class})
+  @TestPointValue(20)
+  public void test05SingleClientFinishesUnreliable() throws InterruptedException {
+    int numRounds = 25;
 
-        runSettings.addInvariant(RESULTS_OK);
-        runState.run(runSettings);
-    }
+    runState.addClientWorker(client(1), appendDifferentKeyWorkload(numRounds));
+    runSettings.networkUnreliable(true);
 
-    @Test(timeout = 10 * 1000)
-    @TestDescription("Multi-client same key appends")
-    @Category(RunTests.class)
-    @TestPointValue(30)
-    public void test04MultiClientAppends() throws InterruptedException {
-        int numRounds = 5, numClients = 10;
-
-        for (int i = 1; i <= numClients; i++) {
-            runState.addClientWorker(client(i),
-                    appendSameKeyWorkload(numRounds));
-        }
-
-        runSettings.addInvariant(APPENDS_LINEARIZABLE);
-        runState.run(runSettings);
-    }
-
-    @Test(timeout = 30 * 1000)
-    @TestDescription("Single client can finish operations")
-    @Category({RunTests.class, UnreliableTests.class})
-    @TestPointValue(20)
-    public void test05SingleClientFinishesUnreliable()
-            throws InterruptedException {
-        int numRounds = 25;
-
-        runState.addClientWorker(client(1),
-                appendDifferentKeyWorkload(numRounds));
-        runSettings.networkUnreliable(true);
-
-        runState.run(runSettings);
-    }
+    runState.run(runSettings);
+  }
 }

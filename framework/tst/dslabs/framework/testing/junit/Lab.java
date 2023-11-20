@@ -28,20 +28,16 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-
-/**
- * Use this annotation to denote the unique identifier for a lab test suite or
- * viz config.
- */
+/** Use this annotation to denote the unique identifier for a lab test suite or viz config. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 @Inherited
 public @interface Lab {
-    /**
-     * The unique identifier for the lab. This is usually a natural number
-     * (i.e., the id for lab0-pingpong, the tutorial ping lab is just "0").
-     *
-     * @return the identifier
-     */
-    String value();
+  /**
+   * The unique identifier for the lab. This is usually a natural number (i.e., the id for
+   * lab0-pingpong, the tutorial ping lab is just "0").
+   *
+   * @return the identifier
+   */
+  String value();
 }

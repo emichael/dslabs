@@ -39,171 +39,161 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.annotation.Nonnull;
 import lombok.extern.java.Log;
 
-/**
- * Simple implementation of a network object, safe for concurrent access.
- */
+/** Simple implementation of a network object, safe for concurrent access. */
 @Log
 public class Network implements Iterable<MessageEnvelope> {
-    static class Inbox {
-        private static final long MIN_WAIT_TIME_NANOS = 1500000;
+  static class Inbox {
+    private static final long MIN_WAIT_TIME_NANOS = 1500000;
 
-        private final Queue<MessageEnvelope> messages =
-                new ConcurrentLinkedQueue<>();
-        private final Queue<TimerEnvelope> timers =
-                new PriorityBlockingQueue<>();
+    private final Queue<MessageEnvelope> messages = new ConcurrentLinkedQueue<>();
+    private final Queue<TimerEnvelope> timers = new PriorityBlockingQueue<>();
 
-        // Reader thread state
-        private volatile boolean waiting = false;
-        private volatile long waitingEndTime = Long.MAX_VALUE;
+    // Reader thread state
+    private volatile boolean waiting = false;
+    private volatile long waitingEndTime = Long.MAX_VALUE;
 
-        // Writer thread state
-        private volatile boolean newMessageAvailable = false;
-        private final AtomicLong newTimerEndTime =
-                new AtomicLong(Long.MAX_VALUE);
+    // Writer thread state
+    private volatile boolean newMessageAvailable = false;
+    private final AtomicLong newTimerEndTime = new AtomicLong(Long.MAX_VALUE);
 
-        private final AtomicInteger numMessagesReceived = new AtomicInteger();
+    private final AtomicInteger numMessagesReceived = new AtomicInteger();
 
-        void send(MessageEnvelope m) {
-            messages.add(m);
-            numMessagesReceived.incrementAndGet();
+    void send(MessageEnvelope m) {
+      messages.add(m);
+      numMessagesReceived.incrementAndGet();
 
-            newMessageAvailable = true;
-            if (waiting) {
-                waiting = false;
-                synchronized (this) {
-                    notify();
-                }
+      newMessageAvailable = true;
+      if (waiting) {
+        waiting = false;
+        synchronized (this) {
+          notify();
+        }
+      }
+    }
+
+    void set(TimerEnvelope t) {
+      timers.add(t);
+
+      long endTime = t.endTimeNanos();
+
+      newTimerEndTime.accumulateAndGet(endTime, Long::min);
+      if (waiting && endTime < waitingEndTime) {
+        waiting = false;
+        synchronized (this) {
+          notify();
+        }
+      }
+    }
+
+    MessageEnvelope pollMessage() {
+      return messages.poll();
+    }
+
+    TimerEnvelope pollTimer() {
+      TimerEnvelope te = timers.peek();
+      if (te == null || !te.isDue()) {
+        return null;
+      }
+      return timers.poll();
+    }
+
+    Event take() throws InterruptedException {
+      while (true) {
+        newTimerEndTime.set(Long.MAX_VALUE);
+        TimerEnvelope te = timers.peek();
+        if (te != null && te.isDue()) {
+          return new Event(timers.poll());
+        }
+
+        newMessageAvailable = false;
+        MessageEnvelope me = messages.poll();
+        if (me != null) {
+          return new Event(me);
+        }
+
+        // Wait for new message or timer
+        if (te == null) {
+          synchronized (this) {
+            waiting = true;
+            try {
+              if (!newMessageAvailable && newTimerEndTime.get() >= waitingEndTime) {
+                wait();
+              }
+            } finally {
+              waiting = false;
             }
-        }
+          }
 
-        void set(TimerEnvelope t) {
-            timers.add(t);
+        } else {
+          // Deliver timers if they're close to being done
+          long endTime = te.endTimeNanos();
+          long waitTime = endTime - System.nanoTime();
+          if (waitTime <= MIN_WAIT_TIME_NANOS) {
+            return new Event(timers.poll());
+          }
 
-            long endTime = t.endTimeNanos();
-
-            newTimerEndTime.accumulateAndGet(endTime, Long::min);
-            if (waiting && endTime < waitingEndTime) {
-                waiting = false;
-                synchronized (this) {
-                    notify();
-                }
+          synchronized (this) {
+            waiting = true;
+            waitingEndTime = endTime;
+            try {
+              if (!newMessageAvailable && newTimerEndTime.get() >= waitingEndTime) {
+                wait(waitTime / 1000000, (int) (waitTime % 1000000));
+              }
+            } finally {
+              waiting = false;
+              waitingEndTime = Long.MAX_VALUE;
             }
+          }
         }
-
-        MessageEnvelope pollMessage() {
-            return messages.poll();
-        }
-
-        TimerEnvelope pollTimer() {
-            TimerEnvelope te = timers.peek();
-            if (te == null || !te.isDue()) {
-                return null;
-            }
-            return timers.poll();
-        }
-
-        Event take() throws InterruptedException {
-            while (true) {
-                newTimerEndTime.set(Long.MAX_VALUE);
-                TimerEnvelope te = timers.peek();
-                if (te != null && te.isDue()) {
-                    return new Event(timers.poll());
-                }
-
-                newMessageAvailable = false;
-                MessageEnvelope me = messages.poll();
-                if (me != null) {
-                    return new Event(me);
-                }
-
-                // Wait for new message or timer
-                if (te == null) {
-                    synchronized (this) {
-                        waiting = true;
-                        try {
-                            if (!newMessageAvailable &&
-                                    newTimerEndTime.get() >= waitingEndTime) {
-                                wait();
-                            }
-                        } finally {
-                            waiting = false;
-                        }
-                    }
-
-                } else {
-                    // Deliver timers if they're close to being done
-                    long endTime = te.endTimeNanos();
-                    long waitTime = endTime - System.nanoTime();
-                    if (waitTime <= MIN_WAIT_TIME_NANOS) {
-                        return new Event(timers.poll());
-                    }
-
-                    synchronized (this) {
-                        waiting = true;
-                        waitingEndTime = endTime;
-                        try {
-                            if (!newMessageAvailable &&
-                                    newTimerEndTime.get() >= waitingEndTime) {
-                                wait(waitTime / 1000000,
-                                        (int) (waitTime % 1000000));
-                            }
-                        } finally {
-                            waiting = false;
-                            waitingEndTime = Long.MAX_VALUE;
-                        }
-                    }
-
-                }
-            }
-        }
-
-        int numMessagesReceived() {
-            return numMessagesReceived.get();
-        }
-
-        Collection<MessageEnvelope> messages() {
-            return new LinkedList<>(messages);
-        }
-
-        Collection<TimerEnvelope> timers() {
-            return new LinkedList<>(timers);
-        }
+      }
     }
 
-
-    private final Map<Address, Inbox> inboxes = new ConcurrentHashMap<>();
-
-    Inbox inbox(Address address) {
-        Inbox inbox;
-        if ((inbox = inboxes.get(address)) != null) {
-            return inbox;
-        }
-        return inboxes.computeIfAbsent(address, __ -> new Inbox());
+    int numMessagesReceived() {
+      return numMessagesReceived.get();
     }
 
-    public void removeInbox(Address address) {
-        inboxes.remove(address);
+    Collection<MessageEnvelope> messages() {
+      return new LinkedList<>(messages);
     }
 
-    public void send(MessageEnvelope messageEnvelope) {
-        inbox(messageEnvelope.to().rootAddress()).send(messageEnvelope);
+    Collection<TimerEnvelope> timers() {
+      return new LinkedList<>(timers);
     }
+  }
 
-    public int numMessagesSentTo(Address address) {
-        return inbox(address.rootAddress()).numMessagesReceived();
-    }
+  private final Map<Address, Inbox> inboxes = new ConcurrentHashMap<>();
 
-    @Override
-    @Nonnull
-    public Iterator<MessageEnvelope> iterator() {
-        LinkedList<MessageEnvelope> messages = new LinkedList<>();
-        for (Inbox inbox : inboxes.values()) {
-            messages.addAll(inbox.messages());
-        }
-        return messages.iterator();
+  Inbox inbox(Address address) {
+    Inbox inbox;
+    if ((inbox = inboxes.get(address)) != null) {
+      return inbox;
     }
+    return inboxes.computeIfAbsent(address, __ -> new Inbox());
+  }
 
-    public Event take(Address address) throws InterruptedException {
-        return inbox(address.rootAddress()).take();
+  public void removeInbox(Address address) {
+    inboxes.remove(address);
+  }
+
+  public void send(MessageEnvelope messageEnvelope) {
+    inbox(messageEnvelope.to().rootAddress()).send(messageEnvelope);
+  }
+
+  public int numMessagesSentTo(Address address) {
+    return inbox(address.rootAddress()).numMessagesReceived();
+  }
+
+  @Override
+  @Nonnull
+  public Iterator<MessageEnvelope> iterator() {
+    LinkedList<MessageEnvelope> messages = new LinkedList<>();
+    for (Inbox inbox : inboxes.values()) {
+      messages.addAll(inbox.messages());
     }
+    return messages.iterator();
+  }
+
+  public Event take(Address address) throws InterruptedException {
+    return inbox(address.rootAddress()).take();
+  }
 }

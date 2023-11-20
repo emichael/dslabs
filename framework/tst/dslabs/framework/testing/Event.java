@@ -27,9 +27,8 @@ import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
-
 /**
- * <p>Represents either a timer to fire or a message to deliver.
+ * Represents either a timer to fire or a message to deliver.
  *
  * @see dslabs.framework.testing.search.SearchState
  * @see dslabs.framework.testing.runner.RunState
@@ -37,42 +36,42 @@ import lombok.Getter;
 @Getter
 @EqualsAndHashCode
 public class Event implements Serializable {
-    // invariant: exactly one of the {message, timer} fields is null
-    private final MessageEnvelope message;
-    private final TimerEnvelope timer;
+  // invariant: exactly one of the {message, timer} fields is null
+  private final MessageEnvelope message;
+  private final TimerEnvelope timer;
 
-    public Event(MessageEnvelope messageEnvelope) {
-        this.message = messageEnvelope;
-        this.timer = null;
-    }
+  public Event(MessageEnvelope messageEnvelope) {
+    this.message = messageEnvelope;
+    this.timer = null;
+  }
 
-    public Event(TimerEnvelope timer) {
-        this.message = null;
-        this.timer = timer;
-    }
+  public Event(TimerEnvelope timer) {
+    this.message = null;
+    this.timer = timer;
+  }
 
-    public boolean isMessage() {
-        return message != null;
-    }
+  public boolean isMessage() {
+    return message != null;
+  }
 
-    public boolean isTimer() {
-        return timer != null;
-    }
+  public boolean isTimer() {
+    return timer != null;
+  }
 
-    public Address locationRootAddress() {
-        if (isMessage()) {
-            return message.to().rootAddress();
-        } else {
-            return timer.to().rootAddress();
-        }
+  public Address locationRootAddress() {
+    if (isMessage()) {
+      return message.to().rootAddress();
+    } else {
+      return timer.to().rootAddress();
     }
+  }
 
-    @Override
-    public String toString() {
-        if (isMessage()) {
-            return message.toString();
-        } else {
-            return timer.toString();
-        }
+  @Override
+  public String toString() {
+    if (isMessage()) {
+      return message.toString();
+    } else {
+      return timer.toString();
     }
+  }
 }

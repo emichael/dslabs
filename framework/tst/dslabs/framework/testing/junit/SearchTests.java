@@ -22,5 +22,4 @@
 
 package dslabs.framework.testing.junit;
 
-public interface SearchTests {
-}
+public interface SearchTests {}

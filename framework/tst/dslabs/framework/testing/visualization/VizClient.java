@@ -37,63 +37,66 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 
 public abstract class VizClient {
-    public static void main(String[] args) throws Exception {
-        final Options options = new Options();
-        final Option lab = Option.builder("l").longOpt("lab").required(true)
-                                 .type(String.class).argName("LAB").hasArg(true)
-                                 .numberOfArgs(1).desc("lab identifier")
-                                 .build();
-        final Option help = Option.builder("h").longOpt("help").build();
-        options.addOption(lab);
-        options.addOption(help);
-        final CommandLineParser parser = new DefaultParser();
-        CommandLine line = null;
-        try {
-            line = parser.parse(options, args);
-            if (line.hasOption(help)) {
-                throw new ParseException(null);
-            }
-        } catch (ParseException e) {
-            if (e.getMessage() != null) {
-                System.err.println(e.getMessage());
-            }
-            HelpFormatter formatter = new HelpFormatter();
-            formatter.printHelp("-l/--lab LAB <VIZ_ARGUMENTS> [-h/--help]",
-                    options);
-            return;
-        }
-
-        final String labID = line.getOptionValue(lab);
-
-        VizConfig config = null;
-        for (var c : ClassSearch.vizConfigs()) {
-            Lab l;
-            if ((l = c.getAnnotation(Lab.class)) != null &&
-                    l.value().equals(labID)) {
-                config = c.getDeclaredConstructor().newInstance();
-                break;
-            }
-        }
-
-        if (config == null) {
-            throw new RuntimeException(
-                    "Could not find viz config for lab " + labID);
-        }
-
-        String[] vizArgs = line.getArgs();
-        SearchState state;
-        try {
-            state = config.getInitialState(vizArgs);
-        } catch (Exception e) {
-            System.err.println("Could not start viz for lab " + labID +
-                    " with arguments: " + Arrays.toString(vizArgs));
-            String helpString;
-            if ((helpString = config.argumentHelpString()) != null) {
-                System.err.println("Usage: " + helpString);
-            }
-            throw e;
-        }
-        SearchSettings settings = config.defaultSearchSettings();
-        new DebuggerWindow(state, settings);
+  public static void main(String[] args) throws Exception {
+    final Options options = new Options();
+    final Option lab =
+        Option.builder("l")
+            .longOpt("lab")
+            .required(true)
+            .type(String.class)
+            .argName("LAB")
+            .hasArg(true)
+            .numberOfArgs(1)
+            .desc("lab identifier")
+            .build();
+    final Option help = Option.builder("h").longOpt("help").build();
+    options.addOption(lab);
+    options.addOption(help);
+    final CommandLineParser parser = new DefaultParser();
+    CommandLine line = null;
+    try {
+      line = parser.parse(options, args);
+      if (line.hasOption(help)) {
+        throw new ParseException(null);
+      }
+    } catch (ParseException e) {
+      if (e.getMessage() != null) {
+        System.err.println(e.getMessage());
+      }
+      HelpFormatter formatter = new HelpFormatter();
+      formatter.printHelp("-l/--lab LAB <VIZ_ARGUMENTS> [-h/--help]", options);
+      return;
     }
+
+    final String labID = line.getOptionValue(lab);
+
+    VizConfig config = null;
+    for (var c : ClassSearch.vizConfigs()) {
+      Lab l;
+      if ((l = c.getAnnotation(Lab.class)) != null && l.value().equals(labID)) {
+        config = c.getDeclaredConstructor().newInstance();
+        break;
+      }
+    }
+
+    if (config == null) {
+      throw new RuntimeException("Could not find viz config for lab " + labID);
+    }
+
+    String[] vizArgs = line.getArgs();
+    SearchState state;
+    try {
+      state = config.getInitialState(vizArgs);
+    } catch (Exception e) {
+      System.err.println(
+          "Could not start viz for lab " + labID + " with arguments: " + Arrays.toString(vizArgs));
+      String helpString;
+      if ((helpString = config.argumentHelpString()) != null) {
+        System.err.println("Usage: " + helpString);
+      }
+      throw e;
+    }
+    SearchSettings settings = config.defaultSearchSettings();
+    new DebuggerWindow(state, settings);
+  }
 }

@@ -22,6 +22,10 @@
 
 package dslabs.framework.testing.visualization;
 
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+
 import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.utils.ClassSearch;
 import java.lang.reflect.Modifier;
@@ -29,25 +33,21 @@ import java.util.HashSet;
 import java.util.Set;
 import org.junit.Test;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 public class VizConfigSanityCheckTest {
-    @Test
-    public void vizConfigsPublicNonAbstract() {
-        for (var c : ClassSearch.vizConfigs()) {
-            assertTrue(Modifier.isPublic(c.getModifiers()));
-            assertFalse(Modifier.isAbstract(c.getModifiers()));
-        }
+  @Test
+  public void vizConfigsPublicNonAbstract() {
+    for (var c : ClassSearch.vizConfigs()) {
+      assertTrue(Modifier.isPublic(c.getModifiers()));
+      assertFalse(Modifier.isAbstract(c.getModifiers()));
     }
+  }
 
-    @Test
-    public void vizConfigsHasLabUnique() {
-        Set<String> seen = new HashSet<>();
-        for (var c : ClassSearch.vizConfigs()) {
-            assertNotNull(c.getAnnotation(Lab.class));
-            assertTrue(seen.add(c.getAnnotation(Lab.class).value()));
-        }
+  @Test
+  public void vizConfigsHasLabUnique() {
+    Set<String> seen = new HashSet<>();
+    for (var c : ClassSearch.vizConfigs()) {
+      assertNotNull(c.getAnnotation(Lab.class));
+      assertTrue(seen.add(c.getAnnotation(Lab.class).value()));
     }
+  }
 }

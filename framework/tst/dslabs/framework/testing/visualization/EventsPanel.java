@@ -42,197 +42,186 @@ import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
 
 class EventsPanel extends JPanel {
-    private BaseJTree initialState;
-    private final List<Pair<EventTreeState, ObjectJTree>> events =
-            new ArrayList<>();
-    private final JPanel inner;
-    private final DebuggerWindow parent;
+  private BaseJTree initialState;
+  private final List<Pair<EventTreeState, ObjectJTree>> events = new ArrayList<>();
+  private final JPanel inner;
+  private final DebuggerWindow parent;
 
-    EventsPanel(DebuggerWindow parent, EventTreeState initialState) {
-        this.parent = parent;
+  EventsPanel(DebuggerWindow parent, EventTreeState initialState) {
+    this.parent = parent;
 
-        setLayout(new MigLayout(new LC().wrapAfter(1).fill(), null,
-                new AC().grow(100, 1)));
-        add(new JLabel("<html><h3>Events</h3></html>"), "align center");
+    setLayout(new MigLayout(new LC().wrapAfter(1).fill(), null, new AC().grow(100, 1)));
+    add(new JLabel("<html><h3>Events</h3></html>"), "align center");
 
-        inner = new JPanel(
-                new MigLayout(new LC().wrapAfter(1), new AC().gap("0"),
-                        new AC().gap("0")));
+    inner = new JPanel(new MigLayout(new LC().wrapAfter(1), new AC().gap("0"), new AC().gap("0")));
 
-        JScrollPane scrollPane = Utils.scrollPane(inner);
-        scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
-        add(scrollPane, "grow");
+    JScrollPane scrollPane = Utils.scrollPane(inner);
+    scrollPane.getHorizontalScrollBar().setUnitIncrement(16);
+    add(scrollPane, "grow");
 
-        update(initialState, null);
+    update(initialState, null);
 
-        // TODO: should this go in DebuggerWindow?
-        setPreferredSize(new Dimension(300, getPreferredSize().height));
-        setMinimumSize(new Dimension(5, 0));
+    // TODO: should this go in DebuggerWindow?
+    setPreferredSize(new Dimension(300, getPreferredSize().height));
+    setMinimumSize(new Dimension(5, 0));
+  }
+
+  private ObjectJTree addEventTreeState(final EventTreeState s) {
+    final JPanel box = new JPanel(new MigLayout(null, null, new AC().align("top")));
+
+    final JButton button = new JButton(Utils.makeIcon(FontAwesome.ARROW_RIGHT));
+    button.setFocusable(false);
+    box.add(button, "pad 0 0");
+    button.addActionListener(e -> parent.setState(s));
+
+    if (s.isInitialState()) {
+      // XXX: kind of ugly way to do this
+      initialState = new BaseJTree(new DefaultMutableTreeNode("Initial State"));
+      initialState.rootIcon(Utils.makeIcon(FontAwesome.FLAG));
+      box.add(initialState);
+      inner.add(box);
+      button.setToolTipText(
+          "Return to the initial state of the system, before any events were delivered");
+      return null;
+    } else if (s.previousEvent().isMessage()) {
+      button.setToolTipText("Go to the state after this message was delivered");
+    } else {
+      button.setToolTipText("Go to the state after this timer was delivered");
     }
 
-    private ObjectJTree addEventTreeState(final EventTreeState s) {
-        final JPanel box =
-                new JPanel(new MigLayout(null, null, new AC().align("top")));
+    Event e = s.previousEvent();
+    ObjectJTree tree = new ObjectJTree(e.isMessage() ? e.message() : e.timer());
 
-        final JButton button =
-                new JButton(Utils.makeIcon(FontAwesome.ARROW_RIGHT));
-        button.setFocusable(false);
-        box.add(button, "pad 0 0");
-        button.addActionListener(e -> parent.setState(s));
+    tree.collapseRow(0);
+    box.add(tree);
 
-        if (s.isInitialState()) {
-            // XXX: kind of ugly way to do this
-            initialState =
-                    new BaseJTree(new DefaultMutableTreeNode("Initial State"));
-            initialState.rootIcon(Utils.makeIcon(FontAwesome.FLAG));
-            box.add(initialState);
-            inner.add(box);
-            button.setToolTipText(
-                    "Return to the initial state of the system, before any events were delivered");
-            return null;
-        } else if (s.previousEvent().isMessage()) {
-            button.setToolTipText(
-                    "Go to the state after this message was delivered");
-        } else {
-            button.setToolTipText(
-                    "Go to the state after this timer was delivered");
-        }
+    inner.add(box);
 
-        Event e = s.previousEvent();
-        ObjectJTree tree =
-                new ObjectJTree(e.isMessage() ? e.message() : e.timer());
+    events.add(new ImmutablePair<>(s, tree));
 
-        tree.collapseRow(0);
-        box.add(tree);
+    return tree;
+  }
 
-        inner.add(box);
+  void update(EventTreeState s, @Nullable HiddenEventClasses hiddenEventClasses) {
+    if (hiddenEventClasses == null) {
+      hiddenEventClasses = HiddenEventClasses.EMPTY;
+    }
+    Iterator<EventTreeState> i1 = s.pathFromInitial().iterator();
+    Iterator<Pair<EventTreeState, ObjectJTree>> i2 = events.iterator();
 
-        events.add(new ImmutablePair<>(s, tree));
-
-        return tree;
+    // Ignore initial state, handle separately using label
+    assert i1.hasNext();
+    // TODO: handle this better...
+    if (initialState == null) {
+      addEventTreeState(i1.next());
+    } else {
+      i1.next();
     }
 
-    void update(EventTreeState s,
-                @Nullable HiddenEventClasses hiddenEventClasses) {
-        if (hiddenEventClasses == null) {
-            hiddenEventClasses = HiddenEventClasses.EMPTY;
+    while (i1.hasNext() && i2.hasNext()) {
+      EventTreeState e = i1.next();
+      Pair<EventTreeState, ObjectJTree> p = i2.next();
+
+      // TODO: use .equals??
+      if (e != p.getLeft()) {
+        // XXX: brittle, depends on container structure
+        inner.remove(p.getRight().getParent());
+        i2.remove();
+        while (i2.hasNext()) {
+          inner.remove(i2.next().getRight().getParent());
+          i2.remove();
         }
-        Iterator<EventTreeState> i1 = s.pathFromInitial().iterator();
-        Iterator<Pair<EventTreeState, ObjectJTree>> i2 = events.iterator();
-
-        // Ignore initial state, handle separately using label
-        assert i1.hasNext();
-        // TODO: handle this better...
-        if (initialState == null) {
-            addEventTreeState(i1.next());
-        } else {
-            i1.next();
-        }
-
-        while (i1.hasNext() && i2.hasNext()) {
-            EventTreeState e = i1.next();
-            Pair<EventTreeState, ObjectJTree> p = i2.next();
-
-            // TODO: use .equals??
-            if (e != p.getLeft()) {
-                // XXX: brittle, depends on container structure
-                inner.remove(p.getRight().getParent());
-                i2.remove();
-                while (i2.hasNext()) {
-                    inner.remove(i2.next().getRight().getParent());
-                    i2.remove();
-                }
-                ObjectJTree tree = addEventTreeState(e);
-                i2 = null;
-                break;
-            }
-        }
-
-        while (i1.hasNext()) {
-            ObjectJTree tree = addEventTreeState(i1.next());
-            i2 = null;
-        }
-
-        i1 = s.pathToBestDescendent().iterator();
-
-        // If i2's list was altered, it was previously empty
-        while (i1.hasNext() && i2 != null && i2.hasNext()) {
-            EventTreeState e = i1.next();
-            Pair<EventTreeState, ObjectJTree> p = i2.next();
-
-            // XXX: repeated code...
-            // TODO: use .equals??
-            if (e != p.getLeft()) {
-                // XXX: brittle, depends on container structure
-                inner.remove(p.getRight().getParent());
-                i2.remove();
-                while (i2.hasNext()) {
-                    inner.remove(i2.next().getRight().getParent());
-                    i2.remove();
-                }
-                ObjectJTree tree = addEventTreeState(e);
-                i2 = null;
-                break;
-            }
-        }
-
-        while (i1.hasNext()) {
-            i2 = null;
-            ObjectJTree tree = addEventTreeState(i1.next());
-        }
-
-        // TODO: this giant method barely works and depends on how the best path is chosen...
-        // should probably switch to indices or make shallow copies before removal or something?
-
-        while (i2 != null && i2.hasNext()) {
-            inner.remove(i2.next().getRight().getParent());
-            i2.remove();
-        }
-
-        // Paint the states correctly
-        boolean beforeCurrent = true;
-        for (var e : events) {
-            EventTreeState state = e.getLeft();
-            var component = e.getRight();
-
-            if (state == s) {
-                component.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
-                beforeCurrent = false;
-            } else if (beforeCurrent) {
-                component.setTreeDisplayType(JTreeDisplayType.DEFAULT);
-            } else {
-                component.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
-            }
-        }
-
-        // Remove events that are hidden by the filters
-        // TODO: adding and then immediately removing events is inefficient
-        var it = events.iterator();
-        while (it.hasNext()) {
-            var e = it.next();
-
-            EventTreeState state = e.getLeft();
-            var component = e.getRight();
-
-            if (state == s) {
-                continue;
-            }
-
-            Event event = state.previousEvent();
-            if (event != null && hiddenEventClasses.isHidden(event)) {
-                inner.remove(component.getParent());
-                it.remove();
-            }
-        }
-
-        // Need both revalidate and repaint here for whatever reason
-        inner.revalidate();
-        inner.repaint();
+        ObjectJTree tree = addEventTreeState(e);
+        i2 = null;
+        break;
+      }
     }
 
-    void reset() {
-        inner.removeAll();
-        events.clear();
-        initialState = null;
+    while (i1.hasNext()) {
+      ObjectJTree tree = addEventTreeState(i1.next());
+      i2 = null;
     }
+
+    i1 = s.pathToBestDescendent().iterator();
+
+    // If i2's list was altered, it was previously empty
+    while (i1.hasNext() && i2 != null && i2.hasNext()) {
+      EventTreeState e = i1.next();
+      Pair<EventTreeState, ObjectJTree> p = i2.next();
+
+      // XXX: repeated code...
+      // TODO: use .equals??
+      if (e != p.getLeft()) {
+        // XXX: brittle, depends on container structure
+        inner.remove(p.getRight().getParent());
+        i2.remove();
+        while (i2.hasNext()) {
+          inner.remove(i2.next().getRight().getParent());
+          i2.remove();
+        }
+        ObjectJTree tree = addEventTreeState(e);
+        i2 = null;
+        break;
+      }
+    }
+
+    while (i1.hasNext()) {
+      i2 = null;
+      ObjectJTree tree = addEventTreeState(i1.next());
+    }
+
+    // TODO: this giant method barely works and depends on how the best path is chosen...
+    // should probably switch to indices or make shallow copies before removal or something?
+
+    while (i2 != null && i2.hasNext()) {
+      inner.remove(i2.next().getRight().getParent());
+      i2.remove();
+    }
+
+    // Paint the states correctly
+    boolean beforeCurrent = true;
+    for (var e : events) {
+      EventTreeState state = e.getLeft();
+      var component = e.getRight();
+
+      if (state == s) {
+        component.setTreeDisplayType(JTreeDisplayType.HIGHLIGHT);
+        beforeCurrent = false;
+      } else if (beforeCurrent) {
+        component.setTreeDisplayType(JTreeDisplayType.DEFAULT);
+      } else {
+        component.setTreeDisplayType(JTreeDisplayType.LOWLIGHT);
+      }
+    }
+
+    // Remove events that are hidden by the filters
+    // TODO: adding and then immediately removing events is inefficient
+    var it = events.iterator();
+    while (it.hasNext()) {
+      var e = it.next();
+
+      EventTreeState state = e.getLeft();
+      var component = e.getRight();
+
+      if (state == s) {
+        continue;
+      }
+
+      Event event = state.previousEvent();
+      if (event != null && hiddenEventClasses.isHidden(event)) {
+        inner.remove(component.getParent());
+        it.remove();
+      }
+    }
+
+    // Need both revalidate and repaint here for whatever reason
+    inner.revalidate();
+    inner.repaint();
+  }
+
+  void reset() {
+    inner.removeAll();
+    events.clear();
+    initialState = null;
+  }
 }

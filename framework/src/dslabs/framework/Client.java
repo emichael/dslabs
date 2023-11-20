@@ -23,61 +23,50 @@
 package dslabs.framework;
 
 /**
- * <p>Clients are a special case of {@link Node}. Client nodes will have
- * handlers for {@link Message}s and {@link Timer}s like all {@link Node}s but
- * also provide an interface for interactively sending {@link Command}s and
- * receiving {@link Result}s in a system.
+ * Clients are a special case of {@link Node}. Client nodes will have handlers for {@link Message}s
+ * and {@link Timer}s like all {@link Node}s but also provide an interface for interactively sending
+ * {@link Command}s and receiving {@link Result}s in a system.
  *
- * <p>Clients in this framework are "closed-loop" clients. That is, they will
- * only have one outstanding command at any given time. You are free to assume
- * this throughout the labs; the test code always waits for the previous command
- * to return a result before sending the next.
+ * <p>Clients in this framework are "closed-loop" clients. That is, they will only have one
+ * outstanding command at any given time. You are free to assume this throughout the labs; the test
+ * code always waits for the previous command to return a result before sending the next.
  *
- * <p><b>IMPORTANT:</b> Client interface methods must be properly {@code
- * synchronized} with {@link Message} handlers and {@link Timer} handlers, since
- * the event handlers are invoked concurrently with the code using the client.
- * The easiest way to do this is to add the {@code synchronized} modifier to all
- * of the aforementioned methods. Furthermore, {@link Client#hasResult()} should
- * return immediately, while {@link Client#getResult()} should block until the
- * client has received a result for the latest command it sent.
+ * <p><b>IMPORTANT:</b> Client interface methods must be properly {@code synchronized} with {@link
+ * Message} handlers and {@link Timer} handlers, since the event handlers are invoked concurrently
+ * with the code using the client. The easiest way to do this is to add the {@code synchronized}
+ * modifier to all of the aforementioned methods. Furthermore, {@link Client#hasResult()} should
+ * return immediately, while {@link Client#getResult()} should block until the client has received a
+ * result for the latest command it sent.
  */
 public interface Client {
 
-    /**
-     * Send a {@link Command} to the system with the given operation. Should
-     * send the {@link Command} and return immediately without blocking,
-     * sleeping, or starting other threads.
-     *
-     * @param command
-     *         the {@link Application} command to send
-     */
-    void sendCommand(Command command);
+  /**
+   * Send a {@link Command} to the system with the given operation. Should send the {@link Command}
+   * and return immediately without blocking, sleeping, or starting other threads.
+   *
+   * @param command the {@link Application} command to send
+   */
+  void sendCommand(Command command);
 
-    /**
-     * Whether or not a {@link Result} was received for the previously sent
-     * {@link Command}. Should return immediately without blocking, sleeping, or
-     * starting other threads.
-     *
-     * @return whether the {@link Result} has been received
-     */
-    boolean hasResult();
+  /**
+   * Whether or not a {@link Result} was received for the previously sent {@link Command}. Should
+   * return immediately without blocking, sleeping, or starting other threads.
+   *
+   * @return whether the {@link Result} has been received
+   */
+  boolean hasResult();
 
-    /**
-     * <p>Returns the value from the {@link Result} for the previously sent
-     * {@link Command}. Should block until there is such a {@link Result} or the
-     * waiting thread is interrupted; this of course means that this method
-     * should relinquish all locks/monitors it holds preventing messages from
-     * being received while it is waiting. If the calling thread is interrupted
-     * while waiting for a {@link Result}, an {@link InterruptedException}
-     * should be thrown. Successive calls to this method (and {@link
-     * Client#hasResult()}) that are not interrupted and are not interleaved
-     * with calls to {@link Client#sendCommand(Command)} should continue to
-     * return the same value.
-     *
-     * @return the value corresponding to the previously sent {@link Command}
-     *
-     * @throws InterruptedException
-     *         when the calling thread is interrupted while blocking
-     */
-    Result getResult() throws InterruptedException;
+  /**
+   * Returns the value from the {@link Result} for the previously sent {@link Command}. Should block
+   * until there is such a {@link Result} or the waiting thread is interrupted; this of course means
+   * that this method should relinquish all locks/monitors it holds preventing messages from being
+   * received while it is waiting. If the calling thread is interrupted while waiting for a {@link
+   * Result}, an {@link InterruptedException} should be thrown. Successive calls to this method (and
+   * {@link Client#hasResult()}) that are not interrupted and are not interleaved with calls to
+   * {@link Client#sendCommand(Command)} should continue to return the same value.
+   *
+   * @return the value corresponding to the previously sent {@link Command}
+   * @throws InterruptedException when the calling thread is interrupted while blocking
+   */
+  Result getResult() throws InterruptedException;
 }

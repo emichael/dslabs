@@ -29,17 +29,17 @@ import lombok.Data;
 
 @Data
 public final class MessageEnvelope implements Serializable {
-    private final Address from, to;
-    private final Message message;
+  private final Address from, to;
+  private final Message message;
 
-    public MessageEnvelope(Address from, Address to, Message message) {
-        this.from = from;
-        this.to = to;
-        this.message = message;
-    }
+  public MessageEnvelope(Address from, Address to, Message message) {
+    this.from = from;
+    this.to = to;
+    this.message = message;
+  }
 
-    @Override
-    public String toString() {
-        return String.format("Message(%s -> %s, %s)", from, to, message);
-    }
+  @Override
+  public String toString() {
+    return String.format("Message(%s -> %s, %s)", from, to, message);
+  }
 }

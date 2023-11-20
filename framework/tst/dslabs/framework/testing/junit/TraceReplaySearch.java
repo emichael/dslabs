@@ -33,77 +33,75 @@ import lombok.NonNull;
 import org.apache.commons.lang3.NotImplementedException;
 
 class TraceReplaySearch extends Search {
-    private SearchState initialState;
-    private final List<Event> trace;
-    private boolean startedReplay = false, eventsExhausted = false;
+  private SearchState initialState;
+  private final List<Event> trace;
+  private boolean startedReplay = false, eventsExhausted = false;
 
-    TraceReplaySearch(@NonNull SearchSettings settings,
-                      @NonNull List<Event> trace) {
-        super(settings);
-        assert settings.singleThreaded();
-        assert !settings.shouldOutputStatus();
-        this.trace = trace;
+  TraceReplaySearch(@NonNull SearchSettings settings, @NonNull List<Event> trace) {
+    super(settings);
+    assert settings.singleThreaded();
+    assert !settings.shouldOutputStatus();
+    this.trace = trace;
+  }
+
+  @Override
+  protected void initSearch(SearchState initialState) {
+    this.initialState = initialState;
+  }
+
+  @Override
+  protected String searchType() {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  protected String status(double elapsedSecs) {
+    throw new NotImplementedException();
+  }
+
+  @Override
+  protected boolean spaceExhausted() {
+    return eventsExhausted;
+  }
+
+  @Override
+  protected Runnable getWorker() {
+    if (startedReplay) {
+      return null;
     }
+    startedReplay = true;
+    return this::replayTrace;
+  }
 
-    @Override
-    protected void initSearch(SearchState initialState) {
-        this.initialState = initialState;
+  private void replayTrace() {
+    SearchState s = initialState;
+    if (checkState(s, false) == StateStatus.TERMINAL) {
+      return;
     }
-
-    @Override
-    protected String searchType() {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    protected String status(double elapsedSecs) {
-        throw new NotImplementedException();
-    }
-
-    @Override
-    protected boolean spaceExhausted() {
-        return eventsExhausted;
-    }
-
-    @Override
-    protected Runnable getWorker() {
-        if (startedReplay) {
-            return null;
-        }
-        startedReplay = true;
-        return this::replayTrace;
-    }
-
-    private void replayTrace() {
-        SearchState s = initialState;
-        if (checkState(s, false) == StateStatus.TERMINAL) {
-            return;
-        }
-        for (Event e : trace) {
-            final SearchState prev = s;
-            s = s.stepEvent(e, settings, false);
-            if (s == null) {
-                if (GlobalSettings.verbose()) {
-                    System.err.println(
-                            "Could not replay trace; event cannot be delivered.\n" +
-                                    prev + "\n\t" + e + "\n");
-                }
-                eventsExhausted = true;
-                return;
-            }
-
-            StateStatus status = checkState(s, true);
-            // replaying a trace should never prune states
-            assert status != StateStatus.PRUNED;
-            if (status == StateStatus.TERMINAL) {
-                return;
-            }
+    for (Event e : trace) {
+      final SearchState prev = s;
+      s = s.stepEvent(e, settings, false);
+      if (s == null) {
+        if (GlobalSettings.verbose()) {
+          System.err.println(
+              "Could not replay trace; event cannot be delivered.\n" + prev + "\n\t" + e + "\n");
         }
         eventsExhausted = true;
-    }
+        return;
+      }
 
-    @Override
-    protected SearchResults run(SearchState initialState) {
-        return super.run(initialState);
+      StateStatus status = checkState(s, true);
+      // replaying a trace should never prune states
+      assert status != StateStatus.PRUNED;
+      if (status == StateStatus.TERMINAL) {
+        return;
+      }
     }
+    eventsExhausted = true;
+  }
+
+  @Override
+  protected SearchResults run(SearchState initialState) {
+    return super.run(initialState);
+  }
 }

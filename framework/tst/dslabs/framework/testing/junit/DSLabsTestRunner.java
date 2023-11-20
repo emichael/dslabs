@@ -29,29 +29,27 @@ import org.junit.runners.model.InitializationError;
 import org.junit.runners.model.Statement;
 
 public class DSLabsTestRunner extends BlockJUnit4ClassRunner {
-    private static final boolean TIMEOUTS_ENABLED =
-            GlobalSettings.timeoutsEnabled();
+  private static final boolean TIMEOUTS_ENABLED = GlobalSettings.timeoutsEnabled();
 
-    public DSLabsTestRunner(Class<?> klass) throws InitializationError {
-        super(klass);
-        /*
-         * Sort the tests here to make sure they are sorted both when running
-         * from the command line and also in IntelliJ without having to mark
-         * every class as sorted on method name. This is a hack, to be sure.
-         * Methods within a test class are sorted multiple times. It works,
-         * though.
-         */
-        sort(new TestOrder());
-    }
+  public DSLabsTestRunner(Class<?> klass) throws InitializationError {
+    super(klass);
+    /*
+     * Sort the tests here to make sure they are sorted both when running
+     * from the command line and also in IntelliJ without having to mark
+     * every class as sorted on method name. This is a hack, to be sure.
+     * Methods within a test class are sorted multiple times. It works,
+     * though.
+     */
+    sort(new TestOrder());
+  }
 
-    @SuppressWarnings("deprecation")
-    @Override
-    protected Statement withPotentialTimeout(FrameworkMethod method,
-                                             Object test, Statement next) {
-        if (TIMEOUTS_ENABLED) {
-            return super.withPotentialTimeout(method, test, next);
-        } else {
-            return next;
-        }
+  @SuppressWarnings("deprecation")
+  @Override
+  protected Statement withPotentialTimeout(FrameworkMethod method, Object test, Statement next) {
+    if (TIMEOUTS_ENABLED) {
+      return super.withPotentialTimeout(method, test, next);
+    } else {
+      return next;
     }
+  }
 }

@@ -34,5 +34,4 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface VizIgnore {
-}
+public @interface VizIgnore {}

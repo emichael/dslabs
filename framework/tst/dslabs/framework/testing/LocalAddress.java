@@ -31,19 +31,19 @@ import lombok.EqualsAndHashCode;
 @AllArgsConstructor
 @Immutable
 public class LocalAddress implements Address {
-    private final String address;
+  private final String address;
 
-    @Override
-    public int compareTo(Address o) {
-        if (o == null || !(o instanceof LocalAddress)) {
-            return 1;
-        }
-
-        return address.compareTo(((LocalAddress) o).address);
+  @Override
+  public int compareTo(Address o) {
+    if (o == null || !(o instanceof LocalAddress)) {
+      return 1;
     }
 
-    @Override
-    public String toString() {
-        return address;
-    }
+    return address.compareTo(((LocalAddress) o).address);
+  }
+
+  @Override
+  public String toString() {
+    return address;
+  }
 }

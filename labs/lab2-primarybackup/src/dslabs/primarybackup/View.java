@@ -6,6 +6,6 @@ import lombok.Data;
 
 @Data
 class View implements Serializable {
-    private final int viewNum;
-    private final Address primary, backup;
+  private final int viewNum;
+  private final Address primary, backup;
 }

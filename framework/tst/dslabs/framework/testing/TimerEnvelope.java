@@ -31,70 +31,66 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 /**
- * Stores a timer, its delivery address, its duration, and its creation time.
- * Equality is based on delivery address, timer object, and duration only.
+ * Stores a timer, its delivery address, its duration, and its creation time. Equality is based on
+ * delivery address, timer object, and duration only.
  *
- * Note: this class has a natural ordering that is inconsistent with equals.
+ * <p>Note: this class has a natural ordering that is inconsistent with equals.
  */
 @Data
-@EqualsAndHashCode(
-        of = {"to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis"})
-public final class TimerEnvelope
-        implements Serializable, Comparable<TimerEnvelope> {
-    private static final Random rand = new Random();
+@EqualsAndHashCode(of = {"to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis"})
+public final class TimerEnvelope implements Serializable, Comparable<TimerEnvelope> {
+  private static final Random rand = new Random();
 
-    private final Address to;
-    private final Timer timer;
+  private final Address to;
+  private final Timer timer;
 
-    @VizIgnore private final int minTimerLengthMillis, maxTimerLengthMillis,
-            timerLengthMillis;
+  @VizIgnore private final int minTimerLengthMillis, maxTimerLengthMillis, timerLengthMillis;
 
-    @VizIgnore private final long startTimeNanos;
+  @VizIgnore private final long startTimeNanos;
 
-    public TimerEnvelope(Address to, Timer timer, int minTimerLengthMillis,
-                         int maxTimerLengthMillis) {
-        this.to = to;
-        this.timer = timer;
-        this.minTimerLengthMillis = minTimerLengthMillis;
-        this.maxTimerLengthMillis = maxTimerLengthMillis;
+  public TimerEnvelope(
+      Address to, Timer timer, int minTimerLengthMillis, int maxTimerLengthMillis) {
+    this.to = to;
+    this.timer = timer;
+    this.minTimerLengthMillis = minTimerLengthMillis;
+    this.maxTimerLengthMillis = maxTimerLengthMillis;
 
-        if (minTimerLengthMillis > maxTimerLengthMillis) {
-            throw new IllegalArgumentException(
-                    "Minimum timer length greater than maximum timer length");
-        }
-
-        if (minTimerLengthMillis == maxTimerLengthMillis) {
-            this.timerLengthMillis = minTimerLengthMillis;
-        } else {
-            this.timerLengthMillis = minTimerLengthMillis + rand.nextInt(
-                    1 + maxTimerLengthMillis - minTimerLengthMillis);
-        }
-
-        this.startTimeNanos = System.nanoTime();
+    if (minTimerLengthMillis > maxTimerLengthMillis) {
+      throw new IllegalArgumentException("Minimum timer length greater than maximum timer length");
     }
 
-    public long endTimeNanos() {
-        return startTimeNanos + (((long) timerLengthMillis()) * 1000000);
+    if (minTimerLengthMillis == maxTimerLengthMillis) {
+      this.timerLengthMillis = minTimerLengthMillis;
+    } else {
+      this.timerLengthMillis =
+          minTimerLengthMillis + rand.nextInt(1 + maxTimerLengthMillis - minTimerLengthMillis);
     }
 
-    public final long timeRemainingNanos() {
-        return endTimeNanos() - System.nanoTime();
-    }
+    this.startTimeNanos = System.nanoTime();
+  }
 
-    public final boolean isDue() {
-        return timeRemainingNanos() <= 0;
-    }
+  public long endTimeNanos() {
+    return startTimeNanos + (((long) timerLengthMillis()) * 1000000);
+  }
 
-    @Override
-    public final int compareTo(TimerEnvelope o) {
-        if (o == null) {
-            return 1;
-        }
-        return Long.compare(endTimeNanos(), o.endTimeNanos());
-    }
+  public final long timeRemainingNanos() {
+    return endTimeNanos() - System.nanoTime();
+  }
 
-    @Override
-    public String toString() {
-        return String.format("Timer(-> %s, %s)", to, timer);
+  public final boolean isDue() {
+    return timeRemainingNanos() <= 0;
+  }
+
+  @Override
+  public final int compareTo(TimerEnvelope o) {
+    if (o == null) {
+      return 1;
     }
+    return Long.compare(endTimeNanos(), o.endTimeNanos());
+  }
+
+  @Override
+  public String toString() {
+    return String.format("Timer(-> %s, %s)", to, timer);
+  }
 }

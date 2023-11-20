@@ -37,117 +37,128 @@ import lombok.NonNull;
 
 @Builder
 public class StateGenerator implements Serializable {
-    @NonNull private final SerializableFunction<Address, Node> serverSupplier;
-    @NonNull private final SerializableFunction<Address, Client> clientSupplier;
-    @NonNull private final SerializableFunction<Address, Workload>
-            workloadSupplier;
+  @NonNull private final SerializableFunction<Address, Node> serverSupplier;
+  @NonNull private final SerializableFunction<Address, Client> clientSupplier;
+  @NonNull private final SerializableFunction<Address, Workload> workloadSupplier;
 
-    public Node server(Address address) {
-        return serverSupplier.apply(address);
+  public Node server(Address address) {
+    return serverSupplier.apply(address);
+  }
+
+  public Map<Address, Node> servers(Set<Address> addresses) {
+    return addresses.stream().collect(Collectors.toMap(Function.identity(), this::server));
+  }
+
+  @SuppressWarnings("unchecked")
+  public <C extends Node & Client> C client(Address address) {
+    return (C) clientSupplier.apply(address);
+  }
+
+  public Map<Address, Node> clients(Set<Address> addresses) {
+    return addresses.stream().collect(Collectors.toMap(Function.identity(), this::client));
+  }
+
+  @SuppressWarnings("unchecked")
+  public <C extends Node & Client> ClientWorker clientWorker(Address address) {
+    return new ClientWorker((C) clientSupplier.apply(address), workloadSupplier.apply(address));
+  }
+
+  @SuppressWarnings("unchecked")
+  public <C extends Node & Client> ClientWorker clientWorker(
+      Address address, boolean recordCommandsAndResults) {
+    return new ClientWorker(
+        (C) clientSupplier.apply(address),
+        workloadSupplier.apply(address),
+        recordCommandsAndResults);
+  }
+
+  public ClientWorker clientWorker(Address address, Workload workload) {
+    return new ClientWorker((Node & Client) clientSupplier.apply(address), workload);
+  }
+
+  public ClientWorker clientWorker(
+      Address address, Workload workload, boolean recordCommandsAndResults) {
+    return new ClientWorker(
+        (Node & Client) clientSupplier.apply(address), workload, recordCommandsAndResults);
+  }
+
+  public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses) {
+    return addresses.stream()
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                a ->
+                    new ClientWorker(
+                        (Node & Client) clientSupplier.apply(a), workloadSupplier.apply(a))));
+  }
+
+  public Map<Address, ClientWorker> clientWorkers(
+      Set<Address> addresses, boolean recordCommandsAndResults) {
+    return addresses.stream()
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                a ->
+                    new ClientWorker(
+                        (Node & Client) clientSupplier.apply(a),
+                        workloadSupplier.apply(a),
+                        recordCommandsAndResults)));
+  }
+
+  public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses, Workload workload) {
+    return addresses.stream()
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                a -> new ClientWorker((Node & Client) clientSupplier.apply(a), workload)));
+  }
+
+  public Map<Address, ClientWorker> clientWorkers(
+      Set<Address> addresses, Workload workload, boolean recordCommandsAndResults) {
+    return addresses.stream()
+        .collect(
+            Collectors.toMap(
+                Function.identity(),
+                a ->
+                    new ClientWorker(
+                        (Node & Client) clientSupplier.apply(a),
+                        workload,
+                        recordCommandsAndResults)));
+  }
+
+  public static class StateGeneratorBuilder {
+    public StateGeneratorBuilder serverSupplier(
+        SerializableFunction<Address, Node> serverSupplier) {
+      this.serverSupplier = serverSupplier;
+      return this;
     }
 
-    public Map<Address, Node> servers(Set<Address> addresses) {
-        return addresses.stream().collect(
-                Collectors.toMap(Function.identity(), this::server));
+    public StateGeneratorBuilder serverSupplier(SerializableSupplier<Node> serverSupplier) {
+      this.serverSupplier = __ -> serverSupplier.get();
+      return this;
     }
 
-    @SuppressWarnings("unchecked")
-    public <C extends Node & Client> C client(Address address) {
-        return (C) clientSupplier.apply(address);
+    public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
+        SerializableFunction<Address, C> clientSupplier) {
+      this.clientSupplier = clientSupplier::apply;
+      return this;
     }
 
-    public Map<Address, Node> clients(Set<Address> addresses) {
-        return addresses.stream().collect(
-                Collectors.toMap(Function.identity(), this::client));
+    public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
+        SerializableSupplier<C> clientSupplier) {
+      this.clientSupplier = __ -> clientSupplier.get();
+      return this;
     }
 
-    @SuppressWarnings("unchecked")
-    public <C extends Node & Client> ClientWorker clientWorker(
-            Address address) {
-        return new ClientWorker((C) clientSupplier.apply(address),
-                workloadSupplier.apply(address));
+    public StateGeneratorBuilder workloadSupplier(
+        SerializableFunction<Address, Workload> workloadSupplier) {
+      this.workloadSupplier = workloadSupplier;
+      return this;
     }
 
-    @SuppressWarnings("unchecked")
-    public <C extends Node & Client> ClientWorker clientWorker(Address address,
-                                                               boolean recordCommandsAndResults) {
-        return new ClientWorker((C) clientSupplier.apply(address),
-                workloadSupplier.apply(address), recordCommandsAndResults);
+    public StateGeneratorBuilder workloadSupplier(Workload workload) {
+      this.workloadSupplier = __ -> workload;
+      return this;
     }
-
-    public ClientWorker clientWorker(Address address, Workload workload) {
-        return new ClientWorker((Node & Client) clientSupplier.apply(address),
-                workload);
-    }
-
-    public ClientWorker clientWorker(Address address, Workload workload,
-                                     boolean recordCommandsAndResults) {
-        return new ClientWorker((Node & Client) clientSupplier.apply(address),
-                workload, recordCommandsAndResults);
-    }
-
-    public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses) {
-        return addresses.stream().collect(Collectors.toMap(Function.identity(),
-                a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workloadSupplier.apply(a))));
-    }
-
-    public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
-                                                    boolean recordCommandsAndResults) {
-        return addresses.stream().collect(Collectors.toMap(Function.identity(),
-                a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workloadSupplier.apply(a), recordCommandsAndResults)));
-    }
-
-    public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
-                                                    Workload workload) {
-        return addresses.stream().collect(Collectors.toMap(Function.identity(),
-                a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workload)));
-    }
-
-    public Map<Address, ClientWorker> clientWorkers(Set<Address> addresses,
-                                                    Workload workload,
-                                                    boolean recordCommandsAndResults) {
-        return addresses.stream().collect(Collectors.toMap(Function.identity(),
-                a -> new ClientWorker((Node & Client) clientSupplier.apply(a),
-                        workload, recordCommandsAndResults)));
-    }
-
-    public static class StateGeneratorBuilder {
-        public StateGeneratorBuilder serverSupplier(
-                SerializableFunction<Address, Node> serverSupplier) {
-            this.serverSupplier = serverSupplier;
-            return this;
-        }
-
-        public StateGeneratorBuilder serverSupplier(
-                SerializableSupplier<Node> serverSupplier) {
-            this.serverSupplier = __ -> serverSupplier.get();
-            return this;
-        }
-
-        public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
-                SerializableFunction<Address, C> clientSupplier) {
-            this.clientSupplier = clientSupplier::apply;
-            return this;
-        }
-
-        public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
-                SerializableSupplier<C> clientSupplier) {
-            this.clientSupplier = __ -> clientSupplier.get();
-            return this;
-        }
-
-        public StateGeneratorBuilder workloadSupplier(
-                SerializableFunction<Address, Workload> workloadSupplier) {
-            this.workloadSupplier = workloadSupplier;
-            return this;
-        }
-
-        public StateGeneratorBuilder workloadSupplier(Workload workload) {
-            this.workloadSupplier = __ -> workload;
-            return this;
-        }
-    }
+  }
 }

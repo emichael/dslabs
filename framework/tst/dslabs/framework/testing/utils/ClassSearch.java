@@ -33,62 +33,57 @@ import java.util.Arrays;
 import java.util.List;
 
 public final class ClassSearch {
-    private static final ClassPath classPath;
+  private static final ClassPath classPath;
 
-    static {
-        try {
-            classPath = ClassPath.from(ClassLoader.getSystemClassLoader());
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+  static {
+    try {
+      classPath = ClassPath.from(ClassLoader.getSystemClassLoader());
+    } catch (IOException e) {
+      throw new RuntimeException(e);
     }
+  }
 
-    private static Class<?>[] classes(boolean topLevelOnly, boolean notAbstract,
-                                      String packagePrefix) {
-        List<Class<?>> classes = new ArrayList<>();
-        for (var c : topLevelOnly ? classPath.getTopLevelClasses() :
-                classPath.getAllClasses()) {
-            if (packagePrefix != null &&
-                    !c.getPackageName().startsWith(packagePrefix)) {
-                continue;
-            }
-            var clz = c.load();
-            if (notAbstract && Modifier.isAbstract(clz.getModifiers())) {
-                continue;
-            }
-            classes.add(c.load());
-        }
-        return classes.toArray(Class<?>[]::new);
+  private static Class<?>[] classes(
+      boolean topLevelOnly, boolean notAbstract, String packagePrefix) {
+    List<Class<?>> classes = new ArrayList<>();
+    for (var c : topLevelOnly ? classPath.getTopLevelClasses() : classPath.getAllClasses()) {
+      if (packagePrefix != null && !c.getPackageName().startsWith(packagePrefix)) {
+        continue;
+      }
+      var clz = c.load();
+      if (notAbstract && Modifier.isAbstract(clz.getModifiers())) {
+        continue;
+      }
+      classes.add(c.load());
     }
+    return classes.toArray(Class<?>[]::new);
+  }
 
-    @SuppressWarnings("unchecked")
-    private static <T> Class<? extends T>[] subclassesOf(Class<T> clz,
-                                                         boolean topLevelOnly,
-                                                         boolean notAbstract,
-                                                         String packagePrefix) {
-        List<Class<? extends T>> classes = new ArrayList<>();
-        for (var c : classes(topLevelOnly, notAbstract, packagePrefix)) {
-            if (clz.isAssignableFrom(c)) {
-                classes.add((Class<T>) c);
-            }
-        }
-        return classes.toArray(Class[]::new);
+  @SuppressWarnings("unchecked")
+  private static <T> Class<? extends T>[] subclassesOf(
+      Class<T> clz, boolean topLevelOnly, boolean notAbstract, String packagePrefix) {
+    List<Class<? extends T>> classes = new ArrayList<>();
+    for (var c : classes(topLevelOnly, notAbstract, packagePrefix)) {
+      if (clz.isAssignableFrom(c)) {
+        classes.add((Class<T>) c);
+      }
     }
+    return classes.toArray(Class[]::new);
+  }
 
-    @SuppressWarnings("unchecked")
-    public static Class<? extends DSLabsJUnitTest>[] testClasses() {
-        return Arrays.stream(
-                             subclassesOf(DSLabsJUnitTest.class, true, true, "dslabs"))
-                     .filter(c -> !c.equals(CheckSavedTracesTest.class))
-                     .toArray(Class[]::new);
-    }
+  @SuppressWarnings("unchecked")
+  public static Class<? extends DSLabsJUnitTest>[] testClasses() {
+    return Arrays.stream(subclassesOf(DSLabsJUnitTest.class, true, true, "dslabs"))
+        .filter(c -> !c.equals(CheckSavedTracesTest.class))
+        .toArray(Class[]::new);
+  }
 
-    public static Class<? extends VizConfig>[] vizConfigs() {
-        return subclassesOf(VizConfig.class, true, true, "dslabs");
-    }
+  public static Class<? extends VizConfig>[] vizConfigs() {
+    return subclassesOf(VizConfig.class, true, true, "dslabs");
+  }
 
-    private ClassSearch() {
-        // Uninstantiable utility class
-        throw new UnsupportedOperationException();
-    }
+  private ClassSearch() {
+    // Uninstantiable utility class
+    throw new UnsupportedOperationException();
+  }
 }

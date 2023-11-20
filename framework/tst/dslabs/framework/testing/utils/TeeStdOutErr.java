@@ -29,39 +29,40 @@ import lombok.Data;
 import org.apache.commons.io.output.TeeOutputStream;
 
 public final class TeeStdOutErr {
-    private static final PrintStream stdOut = System.out;
-    private static final PrintStream stdErr = System.err;
+  private static final PrintStream stdOut = System.out;
+  private static final PrintStream stdErr = System.err;
 
-    private static ByteArrayOutputStream stdOutTee = null;
-    private static ByteArrayOutputStream stdErrTee = null;
+  private static ByteArrayOutputStream stdOutTee = null;
+  private static ByteArrayOutputStream stdErrTee = null;
 
-    @Data
-    public static final class TeeData {
-        private final String stdOut;
-        private final String stdErr;
-    }
+  @Data
+  public static final class TeeData {
+    private final String stdOut;
+    private final String stdErr;
+  }
 
-    public static synchronized void installTees() {
-        assert stdOutTee == null && stdErrTee == null;
-        stdOutTee = new ByteArrayOutputStream();
-        stdErrTee = new ByteArrayOutputStream();
-        System.setOut(new PrintStream(new TeeOutputStream(stdOut, stdOutTee)));
-        System.setErr(new PrintStream(new TeeOutputStream(stdErr, stdErrTee)));
-    }
+  public static synchronized void installTees() {
+    assert stdOutTee == null && stdErrTee == null;
+    stdOutTee = new ByteArrayOutputStream();
+    stdErrTee = new ByteArrayOutputStream();
+    System.setOut(new PrintStream(new TeeOutputStream(stdOut, stdOutTee)));
+    System.setErr(new PrintStream(new TeeOutputStream(stdErr, stdErrTee)));
+  }
 
-    public static synchronized TeeData clearTees() {
-        assert stdOutTee != null && stdErrTee != null;
-        System.setOut(stdOut);
-        System.setErr(stdErr);
-        TeeData ret = new TeeData(stdOutTee.toString(StandardCharsets.UTF_8),
-                stdErrTee.toString(StandardCharsets.UTF_8));
-        stdOutTee = null;
-        stdErrTee = null;
-        return ret;
-    }
+  public static synchronized TeeData clearTees() {
+    assert stdOutTee != null && stdErrTee != null;
+    System.setOut(stdOut);
+    System.setErr(stdErr);
+    TeeData ret =
+        new TeeData(
+            stdOutTee.toString(StandardCharsets.UTF_8), stdErrTee.toString(StandardCharsets.UTF_8));
+    stdOutTee = null;
+    stdErrTee = null;
+    return ret;
+  }
 
-    private TeeStdOutErr() {
-        // Uninstantiable utility class
-        throw new UnsupportedOperationException();
-    }
+  private TeeStdOutErr() {
+    // Uninstantiable utility class
+    throw new UnsupportedOperationException();
+  }
 }

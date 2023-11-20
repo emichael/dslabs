@@ -9,25 +9,25 @@ import lombok.ToString;
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class PingServer extends Node {
-    private final PingApplication app = new PingApplication();
+  private final PingApplication app = new PingApplication();
 
-    /* -------------------------------------------------------------------------
-        Construction and Initialization
-       -----------------------------------------------------------------------*/
-    public PingServer(Address address) {
-        super(address);
-    }
+  /* -------------------------------------------------------------------------
+   Construction and Initialization
+  -----------------------------------------------------------------------*/
+  public PingServer(Address address) {
+    super(address);
+  }
 
-    @Override
-    public void init() {
-        // No initialization necessary
-    }
+  @Override
+  public void init() {
+    // No initialization necessary
+  }
 
-    /* -------------------------------------------------------------------------
-        Message Handlers
-       -----------------------------------------------------------------------*/
-    private void handlePingRequest(PingRequest m, Address sender) {
-        Pong p = app.execute(m.ping());
-        send(new PongReply(p), sender);
-    }
+  /* -------------------------------------------------------------------------
+   Message Handlers
+  -----------------------------------------------------------------------*/
+  private void handlePingRequest(PingRequest m, Address sender) {
+    Pong p = app.execute(m.ping());
+    send(new PongReply(p), sender);
+  }
 }

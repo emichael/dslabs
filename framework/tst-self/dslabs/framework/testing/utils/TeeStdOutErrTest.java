@@ -20,52 +20,50 @@
  * SOFTWARE.
  */
 
-
 package dslabs.framework.testing.utils;
+
+import static org.junit.Assert.assertEquals;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 public class TeeStdOutErrTest {
-    @Before
-    @After
-    public void clearTees() {
-        try {
-            TeeStdOutErr.clearTees();
-        } catch (Throwable ignored) {
-        }
+  @Before
+  @After
+  public void clearTees() {
+    try {
+      TeeStdOutErr.clearTees();
+    } catch (Throwable ignored) {
     }
+  }
 
-    @Test
-    public void testStdOut() {
-        TeeStdOutErr.installTees();
-        System.out.println("foo");
-        var result = TeeStdOutErr.clearTees();
-        assertEquals(result.stdOut(), "foo\n");
-        assertEquals(result.stdErr(), "");
-    }
+  @Test
+  public void testStdOut() {
+    TeeStdOutErr.installTees();
+    System.out.println("foo");
+    var result = TeeStdOutErr.clearTees();
+    assertEquals(result.stdOut(), "foo\n");
+    assertEquals(result.stdErr(), "");
+  }
 
-    @Test
-    public void testStdErr() {
-        TeeStdOutErr.installTees();
-        System.err.println("foo");
-        var result = TeeStdOutErr.clearTees();
-        assertEquals(result.stdOut(), "");
-        assertEquals(result.stdErr(), "foo\n");
-    }
+  @Test
+  public void testStdErr() {
+    TeeStdOutErr.installTees();
+    System.err.println("foo");
+    var result = TeeStdOutErr.clearTees();
+    assertEquals(result.stdOut(), "");
+    assertEquals(result.stdErr(), "foo\n");
+  }
 
-    @Test(expected = AssertionError.class)
-    public void testDoubleTee() {
-        TeeStdOutErr.installTees();
-        TeeStdOutErr.installTees();
-    }
+  @Test(expected = AssertionError.class)
+  public void testDoubleTee() {
+    TeeStdOutErr.installTees();
+    TeeStdOutErr.installTees();
+  }
 
-
-    @Test(expected = AssertionError.class)
-    public void testClearBeforeInstall() {
-        TeeStdOutErr.clearTees();
-    }
+  @Test(expected = AssertionError.class)
+  public void testClearBeforeInstall() {
+    TeeStdOutErr.clearTees();
+  }
 }

@@ -28,11 +28,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Apply to tests in the {@code /framework/tst-self} directory that want to test
- * the functionality of {@link BaseJUnitTest} but do not want to be subject to
- * the sanity checks in {@link JUnitSanityCheckTest}.
+ * Apply to tests in the {@code /framework/tst-self} directory that want to test the functionality
+ * of {@link BaseJUnitTest} but do not want to be subject to the sanity checks in {@link
+ * JUnitSanityCheckTest}.
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
-public @interface IgnoredDSlabsJUnitTest {
-}
+public @interface IgnoredDSlabsJUnitTest {}

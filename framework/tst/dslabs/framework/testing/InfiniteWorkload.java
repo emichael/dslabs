@@ -26,30 +26,28 @@ import dslabs.framework.Command;
 import dslabs.framework.Result;
 
 public abstract class InfiniteWorkload extends Workload {
-    @Override
-    public final boolean hasNext() {
-        return true;
-    }
+  @Override
+  public final boolean hasNext() {
+    return true;
+  }
 
-    @Override
-    public void add(Command command) {
-        throw new UnsupportedOperationException(
-                "Cannot add to an infinite workload.");
-    }
+  @Override
+  public void add(Command command) {
+    throw new UnsupportedOperationException("Cannot add to an infinite workload.");
+  }
 
-    @Override
-    public void add(Command command, Result result) {
-        throw new UnsupportedOperationException(
-                "Cannot add to an infinite workload.");
-    }
+  @Override
+  public void add(Command command, Result result) {
+    throw new UnsupportedOperationException("Cannot add to an infinite workload.");
+  }
 
-    @Override
-    public int size() {
-        return -1;
-    }
+  @Override
+  public int size() {
+    return -1;
+  }
 
-    @Override
-    public boolean infinite() {
-        return true;
-    }
+  @Override
+  public boolean infinite() {
+    return true;
+  }
 }

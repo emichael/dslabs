@@ -26,14 +26,14 @@ import org.junit.runner.Description;
 import org.junit.runner.Result;
 
 class ReplaySavedTracesTestResultsPrinter extends TestResultsPrinter {
-    @Override
-    public void testRunFinished(Result result) {
-        // Don't print out final results
-    }
+  @Override
+  public void testRunFinished(Result result) {
+    // Don't print out final results
+  }
 
-    @Override
-    public void testStarted(Description description) {
-        logTestStarted();
-        System.out.println(small_sep);
-    }
+  @Override
+  public void testStarted(Description description) {
+    logTestStarted();
+    System.out.println(small_sep);
+  }
 }

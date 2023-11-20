@@ -22,17 +22,14 @@
 
 package dslabs.framework.testing.junit;
 
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-/**
- * Use this annotation on test suites to denote parts of a multi-part lab.
- */
+/** Use this annotation on test suites to denote parts of a multi-part lab. */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.TYPE)
 public @interface Part {
-    int value();
+  int value();
 }

@@ -25,11 +25,10 @@ package dslabs.framework;
 import java.io.Serializable;
 
 /**
- * <p>Base interface for all messages in the system. You will need to create
- * implementers of Message to define various types of messages in your system.
+ * Base interface for all messages in the system. You will need to create implementers of Message to
+ * define various types of messages in your system.
  *
- * <p>All messages must properly implement {@link Object#equals(Object)},
- * {@link Object#hashCode()}, and {@link Object#toString()}.
+ * <p>All messages must properly implement {@link Object#equals(Object)}, {@link Object#hashCode()},
+ * and {@link Object#toString()}.
  */
-public interface Message extends Serializable {
-}
+public interface Message extends Serializable {}

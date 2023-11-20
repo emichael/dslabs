@@ -42,67 +42,67 @@ import org.junit.runners.Parameterized.Parameters;
 @RunWith(Parameterized.class)
 @RequiredArgsConstructor
 public class CheckSavedTracesTest extends BaseJUnitTest {
-    private static boolean prevSaveTraces;
+  private static boolean prevSaveTraces;
 
-    @Setter private static String[] traceNames = null;
-    @Setter private static String labId = null;
-    @Setter private static Integer labPart = null;
+  @Setter private static String[] traceNames = null;
+  @Setter private static String labId = null;
+  @Setter private static Integer labPart = null;
 
-    @BeforeClass
-    public static void disableTraceSaving() {
-        prevSaveTraces = GlobalSettings.saveTraces();
-        GlobalSettings.saveTraces(false);
+  @BeforeClass
+  public static void disableTraceSaving() {
+    prevSaveTraces = GlobalSettings.saveTraces();
+    GlobalSettings.saveTraces(false);
+  }
+
+  @AfterClass
+  public static void resetTraceSaving() {
+    GlobalSettings.saveTraces(prevSaveTraces);
+  }
+
+  @Parameters(name = "{0}")
+  public static Collection<SerializableTrace[]> traceFiles() {
+    if (traceNames != null) {
+      return Arrays.stream(traceNames)
+          .map(SerializableTrace::loadTrace)
+          .filter(Objects::nonNull)
+          .map(t -> new SerializableTrace[] {t})
+          .collect(Collectors.toUnmodifiableList());
     }
 
-    @AfterClass
-    public static void resetTraceSaving() {
-        GlobalSettings.saveTraces(prevSaveTraces);
+    var s = Arrays.stream(SerializableTrace.traces());
+    if (labId != null) {
+      s = s.filter(t -> t.labId().equals(labId));
+      if (labPart != null) {
+        s = s.filter(t -> Objects.equals(t.labPart(), labPart));
+      }
     }
 
-    @Parameters(name = "{0}")
-    public static Collection<SerializableTrace[]> traceFiles() {
-        if (traceNames != null) {
-            return Arrays.stream(traceNames).map(SerializableTrace::loadTrace)
-                         .filter(Objects::nonNull)
-                         .map(t -> new SerializableTrace[]{t})
-                         .collect(Collectors.toUnmodifiableList());
-        }
+    return s.map(t -> new SerializableTrace[] {t}).collect(Collectors.toUnmodifiableList());
+  }
 
-        var s = Arrays.stream(SerializableTrace.traces());
-        if (labId != null) {
-            s = s.filter(t -> t.labId().equals(labId));
-            if (labPart != null) {
-                s = s.filter(t -> Objects.equals(t.labPart(), labPart));
-            }
-        }
+  private final SerializableTrace trace;
 
-        return s.map(t -> new SerializableTrace[]{t})
-                .collect(Collectors.toUnmodifiableList());
+  @Test
+  @Category(SearchTests.class)
+  public void checkTrace() {
+    StringBuilder msg = new StringBuilder();
+    msg.append("Replaying trace ");
+    msg.append(trace.fileName().toString());
+    if (trace.testMethodName() != null) {
+      msg.append(" generated from ");
+      msg.append(trace.testMethodName());
+      if (trace.testClassName() != null) {
+        msg.append(" in ");
+        msg.append(trace.testClassName());
+      }
     }
-
-    private final SerializableTrace trace;
-
-    @Test
-    @Category(SearchTests.class)
-    public void checkTrace() {
-        StringBuilder msg = new StringBuilder();
-        msg.append("Replaying trace ");
-        msg.append(trace.fileName().toString());
-        if (trace.testMethodName() != null) {
-            msg.append(" generated from ");
-            msg.append(trace.testMethodName());
-            if (trace.testClassName() != null) {
-                msg.append(" in ");
-                msg.append(trace.testClassName());
-            }
-        }
-        msg.append("\n");
-        System.out.println(msg);
-        searchSettings.outputFreqSecs(-1);
-        searchSettings.singleThreaded(true);
-        for (StatePredicate invariant : trace.invariants()) {
-            searchSettings.addInvariant(invariant);
-        }
-        traceReplay(trace.initialState(), trace.history());
+    msg.append("\n");
+    System.out.println(msg);
+    searchSettings.outputFreqSecs(-1);
+    searchSettings.singleThreaded(true);
+    for (StatePredicate invariant : trace.invariants()) {
+      searchSettings.addInvariant(invariant);
     }
+    traceReplay(trace.initialState(), trace.history());
+  }
 }

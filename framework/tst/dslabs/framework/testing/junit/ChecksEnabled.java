@@ -28,11 +28,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Enable some extra checks (i.e., the --checks option to run-tests.py) for this
- * test method only. Does not enable checks which are not necessarily errors
- * (i.e., the check for non-idempotent handlers).
+ * Enable some extra checks (i.e., the --checks option to run-tests.py) for this test method only.
+ * Does not enable checks which are not necessarily errors (i.e., the check for non-idempotent
+ * handlers).
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
-public @interface ChecksEnabled {
-}
+public @interface ChecksEnabled {}

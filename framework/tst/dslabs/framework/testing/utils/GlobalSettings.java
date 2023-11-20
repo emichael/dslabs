@@ -34,93 +34,87 @@ import lombok.Getter;
 import lombok.Setter;
 
 public final class GlobalSettings {
-    private static final Properties props = System.getProperties();
+  private static final Properties props = System.getProperties();
 
-    private static final String TEST_NUM = "testNum", LOG_LEVEL = "logLevel";
+  private static final String TEST_NUM = "testNum", LOG_LEVEL = "logLevel";
+  @Getter
+  private static final boolean verbose = Boolean.parseBoolean(lookupWithDefault("verbose", "true")),
+      singleThreaded = Boolean.parseBoolean(lookupWithDefault("singleThreaded", "false")),
+      startVisualization = Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
 
-    @Getter private static final boolean verbose =
-            Boolean.parseBoolean(lookupWithDefault("verbose", "true")),
+  @Getter @Setter
+  private static boolean saveTraces =
+      Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
 
-    singleThreaded =
-            Boolean.parseBoolean(lookupWithDefault("singleThreaded", "false")),
+  private static final boolean doChecks =
+      Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
 
-    startVisualization =
-            Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
+  @Setter private static boolean errorChecksTemporarilyEnabled = false;
 
-    @Getter @Setter private static boolean saveTraces =
-            Boolean.parseBoolean(lookupWithDefault("saveTraces", "false"));
+  private static final boolean timeoutsDisabled =
+      Boolean.parseBoolean(lookupWithDefault("testTimeoutsDisabled", "false"));
 
-    private static final boolean doChecks =
-            Boolean.parseBoolean(lookupWithDefault("doChecks", "false"));
+  static {
+    System.setProperty(
+        "java.util.logging.SimpleFormatter.format", "[%4$-7s] [%1$tF %1$tT] [%3$s] %5$s%6$s%n");
 
-    @Setter private static boolean errorChecksTemporarilyEnabled = false;
+    // Configure logging
+    LogManager logManager = LogManager.getLogManager();
+    Logger logger = logManager.getLogger("");
 
-    private static final boolean timeoutsDisabled = Boolean.parseBoolean(
-            lookupWithDefault("testTimeoutsDisabled", "false"));
-
-    static {
-        System.setProperty("java.util.logging.SimpleFormatter.format",
-                "[%4$-7s] [%1$tF %1$tT] [%3$s] %5$s%6$s%n");
-
-        // Configure logging
-        LogManager logManager = LogManager.getLogManager();
-        Logger logger = logManager.getLogger("");
-
-        // Remove existing handlers
-        for (Handler h : logger.getHandlers()) {
-            logger.removeHandler(h);
-        }
-
-        // Setup formatter
-        ConsoleHandler handler = new ConsoleHandler();
-
-        // Set level
-        String name = lookupWithDefault(LOG_LEVEL, "WARNING");
-        Level level;
-        try {
-            level = Level.parse(name);
-        } catch (IllegalArgumentException ignored) {
-            level = Level.WARNING;
-        }
-        handler.setLevel(level);
-        logger.setLevel(level);
-
-        // Add new handler
-        logger.addHandler(handler);
+    // Remove existing handlers
+    for (Handler h : logger.getHandlers()) {
+      logger.removeHandler(h);
     }
 
-    public static boolean timeoutsEnabled() {
-        // First, if we're in debug mode, timeouts are always disabled
-        List<String> arguments =
-                ManagementFactory.getRuntimeMXBean().getInputArguments();
-        for (String arg : arguments) {
-            if (arg.equals("-Xdebug") || arg.startsWith("-agentlib:jdwp")) {
-                return false;
-            }
-        }
+    // Setup formatter
+    ConsoleHandler handler = new ConsoleHandler();
 
-        // Next, if there's a command-line option, return that
-        return !timeoutsDisabled;
+    // Set level
+    String name = lookupWithDefault(LOG_LEVEL, "WARNING");
+    Level level;
+    try {
+      level = Level.parse(name);
+    } catch (IllegalArgumentException ignored) {
+      level = Level.WARNING;
+    }
+    handler.setLevel(level);
+    logger.setLevel(level);
+
+    // Add new handler
+    logger.addHandler(handler);
+  }
+
+  public static boolean timeoutsEnabled() {
+    // First, if we're in debug mode, timeouts are always disabled
+    List<String> arguments = ManagementFactory.getRuntimeMXBean().getInputArguments();
+    for (String arg : arguments) {
+      if (arg.equals("-Xdebug") || arg.startsWith("-agentlib:jdwp")) {
+        return false;
+      }
     }
 
-    private static String lookupWithDefault(String keyName,
-                                            String defaultValue) {
-        if (props.containsKey(keyName)) {
-            return props.getProperty(keyName);
-        }
-        return defaultValue;
-    }
+    // Next, if there's a command-line option, return that
+    return !timeoutsDisabled;
+  }
 
-    public static boolean doAllChecks() {
-        return doChecks;
+  private static String lookupWithDefault(String keyName, String defaultValue) {
+    if (props.containsKey(keyName)) {
+      return props.getProperty(keyName);
     }
+    return defaultValue;
+  }
 
-    public static boolean doErrorChecks() {
-        return doChecks || errorChecksTemporarilyEnabled;
-    }
+  public static boolean doAllChecks() {
+    return doChecks;
+  }
 
-    private GlobalSettings() {
-        // Uninstantiable utility class
-        throw new UnsupportedOperationException();
-    }
+  public static boolean doErrorChecks() {
+    return doChecks || errorChecksTemporarilyEnabled;
+  }
+
+  private GlobalSettings() {
+    // Uninstantiable utility class
+    throw new UnsupportedOperationException();
+  }
 }

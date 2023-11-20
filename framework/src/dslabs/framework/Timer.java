@@ -24,17 +24,14 @@ package dslabs.framework;
 
 import java.io.Serializable;
 
-
 /**
- * <p>Base interface for all timers in the system. You will need to create
- * implementers of Timer to define various types of timers in your system.
+ * Base interface for all timers in the system. You will need to create implementers of Timer to
+ * define various types of timers in your system.
  *
- * <p>After being set ({@link Node#set}), Timers sleep for an
- * interval of time and will then be re-delivered to the {@link Node}. Once set,
- * re-delivery will always happen.
+ * <p>After being set ({@link Node#set}), Timers sleep for an interval of time and will then be
+ * re-delivered to the {@link Node}. Once set, re-delivery will always happen.
  *
- * <p>All timers must properly implement {@link Object#equals(Object)},
- * {@link Object#hashCode()}, and {@link Object#toString()}.
+ * <p>All timers must properly implement {@link Object#equals(Object)}, {@link Object#hashCode()},
+ * and {@link Object#toString()}.
  */
-public interface Timer extends Serializable {
-}
+public interface Timer extends Serializable {}

@@ -33,70 +33,72 @@ import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.builder.CompareToBuilder;
 
 /**
- * Addresses are opaque objects that uniquely identify {@link Node}s. While the
- * provided addresses might provide meaningful information via {@link
- * Object#toString()}, you should not use those {@link String}s (except when
- * printing addresses). Instead, use {@link Object#equals(Object)} and {@link
- * #compareTo(Object)} to compare addresses.
+ * Addresses are opaque objects that uniquely identify {@link Node}s. While the provided addresses
+ * might provide meaningful information via {@link Object#toString()}, you should not use those
+ * {@link String}s (except when printing addresses). Instead, use {@link Object#equals(Object)} and
+ * {@link #compareTo(Object)} to compare addresses.
  */
 public interface Address extends Serializable, Comparable<Address> {
 
-    // TODO: call root address everywhere in test framework
+  // TODO: call root address everywhere in test framework
 
-    /**
-     * Returns the root address, representing the root {@link Node} of some
-     * hierarchy.
-     *
-     * @return the root address
-     */
-    default Address rootAddress() {
-        return this;
-    }
+  /**
+   * Returns the root address, representing the root {@link Node} of some hierarchy.
+   *
+   * @return the root address
+   */
+  default Address rootAddress() {
+    return this;
+  }
 
-    /**
-     * Returns a sub-address for the given address. Used to initialize a
-     * sub-node.
-     *
-     * @param address
-     *         the address of the parent node
-     * @param id
-     *         the sub-node's identifier
-     * @return the sub-address.
-     */
-    static Address subAddress(Address address, String id) {
-        return new SubAddress(address, id);
-    }
+  /**
+   * Returns a sub-address for the given address. Used to initialize a sub-node.
+   *
+   * @param address the address of the parent node
+   * @param id the sub-node's identifier
+   * @return the sub-address.
+   */
+  static Address subAddress(Address address, String id) {
+    return new SubAddress(address, id);
+  }
 }
 
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 @EqualsAndHashCode
 class SubAddress implements Address {
-    @Getter(AccessLevel.PACKAGE) @NonNull private final Address parentAddress;
-    @Getter(AccessLevel.PACKAGE) @NonNull private final String id;
+  @Getter(AccessLevel.PACKAGE)
+  @NonNull
+  private final Address parentAddress;
 
-    @Override
-    public int compareTo(@Nonnull Address o) {
-        // TODO: check this method
+  @Getter(AccessLevel.PACKAGE)
+  @NonNull
+  private final String id;
 
-        if (!(o instanceof SubAddress)) {
-            if (Objects.equals(parentAddress, o)) {
-                return -1;
-            }
-            return parentAddress.compareTo(o);
-        }
+  @Override
+  public int compareTo(@Nonnull Address o) {
+    // TODO: check this method
 
-        SubAddress sa = (SubAddress) o;
-        return new CompareToBuilder().append(parentAddress, sa.parentAddress)
-                                     .append(id, sa.id).toComparison();
+    if (!(o instanceof SubAddress)) {
+      if (Objects.equals(parentAddress, o)) {
+        return -1;
+      }
+      return parentAddress.compareTo(o);
     }
 
-    @Override
-    public String toString() {
-        return String.format("%s/%s", parentAddress, id);
-    }
+    SubAddress sa = (SubAddress) o;
+    return new CompareToBuilder()
+        .append(parentAddress, sa.parentAddress)
+        .append(id, sa.id)
+        .toComparison();
+  }
 
-    @Override
-    public Address rootAddress() {
-        return parentAddress.rootAddress();
-    }
+  @Override
+  public String toString() {
+    return String.format("%s/%s", parentAddress, id);
+  }
+
+  @Override
+  public Address rootAddress() {
+    return parentAddress.rootAddress();
+  }
 }

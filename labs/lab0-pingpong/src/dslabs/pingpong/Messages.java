@@ -7,10 +7,10 @@ import lombok.Data;
 
 @Data
 class PingRequest implements Message {
-    private final Ping ping;
+  private final Ping ping;
 }
 
 @Data
 class PongReply implements Message {
-    private final Pong pong;
+  private final Pong pong;
 }

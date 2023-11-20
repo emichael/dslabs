@@ -29,28 +29,27 @@ import dslabs.framework.testing.search.SerializableTrace;
 import java.io.IOException;
 
 public class SavedTraceViz {
-    public static void main(String[] args) throws IOException {
-        assert args.length > 0;
+  public static void main(String[] args) throws IOException {
+    assert args.length > 0;
 
-        SerializableTrace trace = SerializableTrace.loadTrace(args[0]);
-        if (trace == null) {
-            System.err.println("Could not start visual debugger.");
-            System.exit(1);
-        }
-
-        SearchState endState = trace.endState();
-
-        if (endState == null) {
-            System.err.println(
-                    "Trace no longer fully replays. Could not start visual debugger.");
-            System.exit(1);
-        }
-
-        SearchSettings settings = new SearchSettings();
-        for (StatePredicate invariant : trace.invariants()) {
-            settings.addInvariant(invariant);
-        }
-
-        new DebuggerWindow(endState, settings);
+    SerializableTrace trace = SerializableTrace.loadTrace(args[0]);
+    if (trace == null) {
+      System.err.println("Could not start visual debugger.");
+      System.exit(1);
     }
+
+    SearchState endState = trace.endState();
+
+    if (endState == null) {
+      System.err.println("Trace no longer fully replays. Could not start visual debugger.");
+      System.exit(1);
+    }
+
+    SearchSettings settings = new SearchSettings();
+    for (StatePredicate invariant : trace.invariants()) {
+      settings.addInvariant(invariant);
+    }
+
+    new DebuggerWindow(endState, settings);
+  }
 }

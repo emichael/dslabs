@@ -32,106 +32,103 @@ import javax.annotation.Nonnull;
 import lombok.EqualsAndHashCode;
 
 /**
- * Implements an abstract timer queue for a single node. In an asynchronous
- * system, the only restriction on timer delivery is the following: if a node
- * sets timers t1, t2 in that order, and t2.minTimerLength >= t1.maxTimerLength,
- * then it must deliver t1 before t2.
+ * Implements an abstract timer queue for a single node. In an asynchronous system, the only
+ * restriction on timer delivery is the following: if a node sets timers t1, t2 in that order, and
+ * t2.minTimerLength >= t1.maxTimerLength, then it must deliver t1 before t2.
  *
- * This datastructure is not threadsafe.
+ * <p>This datastructure is not threadsafe.
  *
- * TODO: make this datastructure more efficient? Better way of representing?
+ * <p>TODO: make this datastructure more efficient? Better way of representing?
  *
- * TODO: equality checking is definitely wrong now
+ * <p>TODO: equality checking is definitely wrong now
  */
 @EqualsAndHashCode
 class TimerQueue implements Serializable, Iterable<TimerEnvelope> {
-    private final List<TimerEnvelope> timers;
+  private final List<TimerEnvelope> timers;
 
-    TimerQueue() {
-        this.timers = new LinkedList<>();
-    }
+  TimerQueue() {
+    this.timers = new LinkedList<>();
+  }
 
-    /**
-     * Creates a copy of the other TimerQueue.
-     *
-     * TODO: maybe add in a delayed copy mechanism?
-     */
-    TimerQueue(TimerQueue other) {
-        this.timers = new LinkedList<>(other.timers);
-    }
+  /**
+   * Creates a copy of the other TimerQueue.
+   *
+   * <p>TODO: maybe add in a delayed copy mechanism?
+   */
+  TimerQueue(TimerQueue other) {
+    this.timers = new LinkedList<>(other.timers);
+  }
 
-    void add(TimerEnvelope timerEnvelope) {
-        timers.add(timerEnvelope);
-    }
+  void add(TimerEnvelope timerEnvelope) {
+    timers.add(timerEnvelope);
+  }
 
-    Iterable<TimerEnvelope> deliverable() {
-        return new Iterable<TimerEnvelope>() {
-            @Override
-            @Nonnull
-            public Iterator<TimerEnvelope> iterator() {
-                return new Iterator<TimerEnvelope>() {
-                    Integer minMaxTime = null;
-                    int i = 0;
+  Iterable<TimerEnvelope> deliverable() {
+    return new Iterable<TimerEnvelope>() {
+      @Override
+      @Nonnull
+      public Iterator<TimerEnvelope> iterator() {
+        return new Iterator<TimerEnvelope>() {
+          Integer minMaxTime = null;
+          int i = 0;
 
-                    private void skip() {
-                        while (i < timers.size() && minMaxTime != null &&
-                                timers.get(i).minTimerLengthMillis() >=
-                                        minMaxTime) {
-                            i++;
-                        }
-                    }
-
-                    @Override
-                    public boolean hasNext() {
-                        return i < timers.size();
-                    }
-
-                    @Override
-                    public TimerEnvelope next() throws NoSuchElementException {
-                        if (hasNext()) {
-                            TimerEnvelope next = timers.get(i);
-                            i++;
-                            if (minMaxTime == null ||
-                                    next.maxTimerLengthMillis() < minMaxTime) {
-                                minMaxTime = next.maxTimerLengthMillis();
-                            }
-                            skip();
-                            return next;
-                        } else {
-                            throw new NoSuchElementException();
-                        }
-                    }
-                };
+          private void skip() {
+            while (i < timers.size()
+                && minMaxTime != null
+                && timers.get(i).minTimerLengthMillis() >= minMaxTime) {
+              i++;
             }
+          }
+
+          @Override
+          public boolean hasNext() {
+            return i < timers.size();
+          }
+
+          @Override
+          public TimerEnvelope next() throws NoSuchElementException {
+            if (hasNext()) {
+              TimerEnvelope next = timers.get(i);
+              i++;
+              if (minMaxTime == null || next.maxTimerLengthMillis() < minMaxTime) {
+                minMaxTime = next.maxTimerLengthMillis();
+              }
+              skip();
+              return next;
+            } else {
+              throw new NoSuchElementException();
+            }
+          }
         };
-    }
+      }
+    };
+  }
 
-    boolean isDeliverable(TimerEnvelope timerEnvelope) {
-        // TODO: quadratic
-        for (TimerEnvelope te : timers) {
-            if (te.equals(timerEnvelope)) {
-                return true;
-            }
-            if (timerEnvelope.minTimerLengthMillis() >=
-                    te.maxTimerLengthMillis()) {
-                return false;
-            }
-        }
+  boolean isDeliverable(TimerEnvelope timerEnvelope) {
+    // TODO: quadratic
+    for (TimerEnvelope te : timers) {
+      if (te.equals(timerEnvelope)) {
+        return true;
+      }
+      if (timerEnvelope.minTimerLengthMillis() >= te.maxTimerLengthMillis()) {
         return false;
+      }
     }
+    return false;
+  }
 
-    @Override
-    public String toString() {
-        return timers.toString();
-    }
+  @Override
+  public String toString() {
+    return timers.toString();
+  }
 
-    @Override
-    @Nonnull
-    public Iterator<TimerEnvelope> iterator() {
-        return timers.iterator();
-    }
+  @Override
+  @Nonnull
+  public Iterator<TimerEnvelope> iterator() {
+    return timers.iterator();
+  }
 
-    void remove(TimerEnvelope timerEnvelope) {
-        timers.remove(timerEnvelope);
-    }
+  void remove(TimerEnvelope timerEnvelope) {
+    timers.remove(timerEnvelope);
+  }
 }

@@ -35,179 +35,171 @@ import lombok.extern.java.Log;
 /**
  * Collection of settings used by the search tests.
  *
- * Safe for concurrent access.
+ * <p>Safe for concurrent access.
  */
 @Getter
 @Setter
 @Log
-public class SearchSettings extends TestSettings<SearchSettings>
-        implements Cloneable {
-    private volatile int maxDepth = -1;
-    private volatile int numThreads = defaultNumThreads();
-    private volatile int outputFreqSecs = GlobalSettings.verbose() ? 5 : -1;
+public class SearchSettings extends TestSettings<SearchSettings> implements Cloneable {
+  private volatile int maxDepth = -1;
+  private volatile int numThreads = defaultNumThreads();
+  private volatile int outputFreqSecs = GlobalSettings.verbose() ? 5 : -1;
 
-    private final Collection<StatePredicate> prunes =
-            new ConcurrentLinkedQueue<>();
-    private final Collection<StatePredicate> goals =
-            new ConcurrentLinkedQueue<>();
+  private final Collection<StatePredicate> prunes = new ConcurrentLinkedQueue<>();
+  private final Collection<StatePredicate> goals = new ConcurrentLinkedQueue<>();
 
+  private static int defaultNumThreads() {
+    return Runtime.getRuntime().availableProcessors();
+  }
 
-    private static int defaultNumThreads() {
-        return Runtime.getRuntime().availableProcessors();
+  @Override
+  protected final SearchSettings self() {
+    return this;
+  }
+
+  public final SearchSettings addPrune(StatePredicate prune) {
+    prunes.add(prune);
+    return this;
+  }
+
+  public final SearchSettings clearPrunes() {
+    prunes.clear();
+    return this;
+  }
+
+  /**
+   * Whether the state should be pruned. Currently, exceptions thrown during prune evaluation are
+   * logged, and the state is pruned.
+   *
+   * @param state the state to check
+   * @return true if any prune predicates match the state
+   */
+  public final boolean shouldPrune(SearchState state) {
+    for (StatePredicate p : prunes) {
+      PredicateResult r = p.test(state, false);
+      if (r == null) {
+        continue;
+      }
+      /*
+         TODO: actually treat this as an error and have it stop the
+               search. This is going to require a bit of re-architecture
+               in the way search works (and even has implications for how
+               traces are saved and the visual debugger works).
+
+         For now, we log the error and treat the state as pruned. This is
+         because some searches rely on states being pruned for
+         correctness. It is always safe to ignore more states, but if the
+         search is allowed to examine states it shouldn't, it could
+         report erroneous results.
+
+         Below, we do the same with goals, but there, predicates throwing
+         exceptions are simply ignored.
+
+         The issue is not that important; very few predicates *can* throw
+         exceptions (possibly only the Paxos interface predicates), but
+         it's still important to deal with.
+      */
+      if (r.exceptionThrown()) {
+        LOG.severe(r.errorMessage());
+      }
+      return true;
     }
+    return false;
+  }
 
-    @Override
-    protected final SearchSettings self() {
-        return this;
+  public final SearchSettings addGoal(StatePredicate goal) {
+    goals.add(goal);
+    return this;
+  }
+
+  public final SearchSettings clearGoals() {
+    goals.clear();
+    return this;
+  }
+
+  /**
+   * The result of any goal predicate which matches the state, or {@code null} if none does.
+   * Currently, exceptions thrown during goal evaluation are logged to stderr and ignored.
+   *
+   * @param state the state to check
+   * @return the result or {@code null}
+   */
+  public final PredicateResult goalMatched(SearchState state) {
+    for (StatePredicate p : goals) {
+      PredicateResult r = p.test(state, false);
+      if (r == null) {
+        continue;
+      }
+      // TODO: see above
+      if (r.exceptionThrown()) {
+        LOG.severe(r.errorMessage());
+        continue;
+      }
+      return r;
     }
+    return null;
+  }
 
-    public final SearchSettings addPrune(StatePredicate prune) {
-        prunes.add(prune);
-        return this;
+  @Override
+  public SearchSettings singleThreaded(boolean singleThreaded) {
+    super.singleThreaded(singleThreaded);
+
+    if (singleThreaded) {
+      numThreads = 1;
+    } else {
+      numThreads = defaultNumThreads();
     }
+    return this;
+  }
 
-    public final SearchSettings clearPrunes() {
-        prunes.clear();
-        return this;
-    }
+  @Override
+  public boolean singleThreaded() {
+    return numThreads <= 1;
+  }
 
-    /**
-     * Whether the state should be pruned. Currently, exceptions thrown during
-     * prune evaluation are logged, and the state is pruned.
-     *
-     * @param state
-     *         the state to check
-     * @return true if any prune predicates match the state
-     */
-    public final boolean shouldPrune(SearchState state) {
-        for (StatePredicate p : prunes) {
-            PredicateResult r = p.test(state, false);
-            if (r == null) {
-                continue;
-            }
-            /*
-                TODO: actually treat this as an error and have it stop the
-                      search. This is going to require a bit of re-architecture
-                      in the way search works (and even has implications for how
-                      traces are saved and the visual debugger works).
+  @Override
+  public boolean multiThreaded() {
+    return !singleThreaded();
+  }
 
-                For now, we log the error and treat the state as pruned. This is
-                because some searches rely on states being pruned for
-                correctness. It is always safe to ignore more states, but if the
-                search is allowed to examine states it shouldn't, it could
-                report erroneous results.
+  public boolean shouldOutputStatus() {
+    return outputFreqSecs > 0;
+  }
 
-                Below, we do the same with goals, but there, predicates throwing
-                exceptions are simply ignored.
+  public boolean depthLimited() {
+    return maxDepth >= 0;
+  }
 
-                The issue is not that important; very few predicates *can* throw
-                exceptions (possibly only the Paxos interface predicates), but
-                it's still important to deal with.
-             */
-            if (r.exceptionThrown()) {
-                LOG.severe(r.errorMessage());
-            }
-            return true;
-        }
-        return false;
-    }
+  @Override
+  public SearchSettings maxTimeSecs(int maxTimeSecs) {
+    super.maxTimeSecs(maxTimeSecs);
+    return this;
+  }
 
-    public final SearchSettings addGoal(StatePredicate goal) {
-        goals.add(goal);
-        return this;
-    }
+  @Override
+  public SearchSettings clear() {
+    super.clear();
+    clearPrunes();
+    clearGoals();
+    maxDepth(-1);
+    outputFreqSecs(5);
+    numThreads(defaultNumThreads());
+    return this;
+  }
 
-    public final SearchSettings clearGoals() {
-        goals.clear();
-        return this;
-    }
+  public SearchSettings() {}
 
-    /**
-     * The result of any goal predicate which matches the state, or {@code null}
-     * if none does. Currently, exceptions thrown during goal evaluation are
-     * logged to stderr and ignored.
-     *
-     * @param state
-     *         the state to check
-     * @return the result or {@code null}
-     */
-    public final PredicateResult goalMatched(SearchState state) {
-        for (StatePredicate p : goals) {
-            PredicateResult r = p.test(state, false);
-            if (r == null) {
-                continue;
-            }
-            // TODO: see above
-            if (r.exceptionThrown()) {
-                LOG.severe(r.errorMessage());
-                continue;
-            }
-            return r;
-        }
-        return null;
-    }
+  private SearchSettings(SearchSettings s) {
+    super(s);
+    goals.addAll(s.goals);
+    prunes.addAll(s.prunes);
+    maxDepth = s.maxDepth;
+    numThreads = s.numThreads;
+    outputFreqSecs = s.outputFreqSecs;
+  }
 
-    @Override
-    public SearchSettings singleThreaded(boolean singleThreaded) {
-        super.singleThreaded(singleThreaded);
-
-        if (singleThreaded) {
-            numThreads = 1;
-        } else {
-            numThreads = defaultNumThreads();
-        }
-        return this;
-    }
-
-    @Override
-    public boolean singleThreaded() {
-        return numThreads <= 1;
-    }
-
-    @Override
-    public boolean multiThreaded() {
-        return !singleThreaded();
-    }
-
-    public boolean shouldOutputStatus() {
-        return outputFreqSecs > 0;
-    }
-
-    public boolean depthLimited() {
-        return maxDepth >= 0;
-    }
-
-    @Override
-    public SearchSettings maxTimeSecs(int maxTimeSecs) {
-        super.maxTimeSecs(maxTimeSecs);
-        return this;
-    }
-
-    @Override
-    public SearchSettings clear() {
-        super.clear();
-        clearPrunes();
-        clearGoals();
-        maxDepth(-1);
-        outputFreqSecs(5);
-        numThreads(defaultNumThreads());
-        return this;
-    }
-
-    public SearchSettings() {
-    }
-
-    private SearchSettings(SearchSettings s) {
-        super(s);
-        goals.addAll(s.goals);
-        prunes.addAll(s.prunes);
-        maxDepth = s.maxDepth;
-        numThreads = s.numThreads;
-        outputFreqSecs = s.outputFreqSecs;
-    }
-
-    @Override
-    public SearchSettings clone() {
-        return new SearchSettings(this);
-    }
+  @Override
+  public SearchSettings clone() {
+    return new SearchSettings(this);
+  }
 }

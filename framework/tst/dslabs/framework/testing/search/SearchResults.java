@@ -32,56 +32,57 @@ import lombok.Setter;
 
 @Getter
 public class SearchResults {
-    public enum EndCondition {
-        SPACE_EXHAUSTED, TIME_EXHAUSTED, INVARIANT_VIOLATED, GOAL_FOUND,
-        EXCEPTION_THROWN
+  public enum EndCondition {
+    SPACE_EXHAUSTED,
+    TIME_EXHAUSTED,
+    INVARIANT_VIOLATED,
+    GOAL_FOUND,
+    EXCEPTION_THROWN
+  }
+
+  // Only set by main thread
+  @Setter private Collection<StatePredicate> invariantsTested;
+  @Setter private Collection<StatePredicate> goalsSought;
+  @Setter private EndCondition endCondition;
+
+  // Set by worker threads
+  private final AtomicReference<SearchState> invariantViolatingState = new AtomicReference<>();
+  private volatile PredicateResult invariantViolated;
+
+  private final AtomicReference<SearchState> goalMatchingState = new AtomicReference<>();
+  private volatile PredicateResult goalMatched;
+
+  private final AtomicReference<SearchState> exceptionalState = new AtomicReference<>();
+
+  @Getter(AccessLevel.PACKAGE)
+  private volatile boolean exceptionThrown;
+
+  public SearchState invariantViolatingState() {
+    return invariantViolatingState.get();
+  }
+
+  public SearchState exceptionalState() {
+    return exceptionalState.get();
+  }
+
+  public SearchState goalMatchingState() {
+    return goalMatchingState.get();
+  }
+
+  void invariantViolated(SearchState state, PredicateResult invariantViolated) {
+    if (invariantViolatingState.compareAndSet(null, state)) {
+      this.invariantViolated = invariantViolated;
     }
+  }
 
-    // Only set by main thread
-    @Setter private Collection<StatePredicate> invariantsTested;
-    @Setter private Collection<StatePredicate> goalsSought;
-    @Setter private EndCondition endCondition;
-
-    // Set by worker threads
-    private final AtomicReference<SearchState> invariantViolatingState =
-            new AtomicReference<>();
-    private volatile PredicateResult invariantViolated;
-
-    private final AtomicReference<SearchState> goalMatchingState =
-            new AtomicReference<>();
-    private volatile PredicateResult goalMatched;
-
-    private final AtomicReference<SearchState> exceptionalState =
-            new AtomicReference<>();
-    @Getter(AccessLevel.PACKAGE) private volatile boolean exceptionThrown;
-
-    public SearchState invariantViolatingState() {
-        return invariantViolatingState.get();
+  void goalFound(SearchState state, PredicateResult goalMatched) {
+    if (goalMatchingState.compareAndSet(null, state)) {
+      this.goalMatched = goalMatched;
     }
+  }
 
-    public SearchState exceptionalState() {
-        return exceptionalState.get();
-    }
-
-    public SearchState goalMatchingState() {
-        return goalMatchingState.get();
-    }
-
-    void invariantViolated(SearchState state,
-                           PredicateResult invariantViolated) {
-        if (invariantViolatingState.compareAndSet(null, state)) {
-            this.invariantViolated = invariantViolated;
-        }
-    }
-
-    void goalFound(SearchState state, PredicateResult goalMatched) {
-        if (goalMatchingState.compareAndSet(null, state)) {
-            this.goalMatched = goalMatched;
-        }
-    }
-
-    void exceptionThrown(SearchState state) {
-        exceptionThrown = true;
-        exceptionalState.compareAndSet(null, state);
-    }
+  void exceptionThrown(SearchState state) {
+    exceptionThrown = true;
+    exceptionalState.compareAndSet(null, state);
+  }
 }

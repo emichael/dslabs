@@ -39,192 +39,182 @@ import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
 class StateTreeCanvas extends ZoomableCanvas {
-    Node root = null;
-    // TODO: set of nodes not necessary, can just iterate the tree
-    Set<Node> nodes = new HashSet<>();
-    Node selected = null;
+  Node root = null;
+  // TODO: set of nodes not necessary, can just iterate the tree
+  Set<Node> nodes = new HashSet<>();
+  Node selected = null;
 
-    private static final int DEFAULT_X_SIZE = 1080, DEFAULT_Y_SIZE = 200,
-            MIN_Y_SIZE = 150;
+  private static final int DEFAULT_X_SIZE = 1080, DEFAULT_Y_SIZE = 200, MIN_Y_SIZE = 150;
+  private static final int CIRCLE_RADIUS = 40, CIRCLE_GAP = 60;
+  private static final int X_OFFSET = 100, Y_OFFSET = 75;
 
-    private static final int CIRCLE_RADIUS = 40, CIRCLE_GAP = 60;
-    private static final int X_OFFSET = 100, Y_OFFSET = 75;
+  StateTreeCanvas(DebuggerWindow parent) {
+    // XXX: is allowing flexibility okay? Do we want this to sometimes resize?
+    setMinimumSize(new Dimension(getMinimumSize().width, MIN_Y_SIZE));
+    setPreferredSize(new Dimension(DEFAULT_X_SIZE, DEFAULT_Y_SIZE));
 
-    StateTreeCanvas(DebuggerWindow parent) {
-        // XXX: is allowing flexibility okay? Do we want this to sometimes resize?
-        setMinimumSize(new Dimension(getMinimumSize().width, MIN_Y_SIZE));
-        setPreferredSize(new Dimension(DEFAULT_X_SIZE, DEFAULT_Y_SIZE));
+    addMouseListener(
+        new MouseListener() {
+          @Override
+          public void mouseClicked(MouseEvent e) {
+            if (e.isConsumed() || e.getButton() != MouseEvent.BUTTON1) {
+              return;
+            }
 
-        addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (e.isConsumed() || e.getButton() != MouseEvent.BUTTON1) {
-                    return;
+            var p = unZoomedPoint(e.getPoint());
+
+            // TODO: binary search instead of linear scan
+            for (var n : nodes) {
+              if (n.contains(p)) {
+                // Don't do anything if the state is already selected
+                if (n != selected) {
+                  parent.setState(n.state);
                 }
-
-                var p = unZoomedPoint(e.getPoint());
-
-                // TODO: binary search instead of linear scan
-                for (var n : nodes) {
-                    if (n.contains(p)) {
-                        // Don't do anything if the state is already selected
-                        if (n != selected) {
-                            parent.setState(n.state);
-                        }
-                        e.consume();
-                        break;
-                    }
-                }
+                e.consume();
+                break;
+              }
             }
+          }
 
-            @Override
-            public void mousePressed(MouseEvent e) {
+          @Override
+          public void mousePressed(MouseEvent e) {}
 
-            }
+          @Override
+          public void mouseReleased(MouseEvent e) {}
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
+          @Override
+          public void mouseEntered(MouseEvent e) {}
 
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
+          @Override
+          public void mouseExited(MouseEvent e) {}
         });
+  }
+
+  /*
+   * This replicates much of the logic from EventTreeState, but it's better to
+   * keep these things separate and less coupled.
+   */
+  @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+  private static class Node implements Shape {
+    private final EventTreeState state;
+    private final Node parent;
+
+    private final List<Node> children = new ArrayList<>();
+
+    static Node createRoot(EventTreeState state) {
+      return new Node(state, null);
     }
 
-    /*
-     * This replicates much of the logic from EventTreeState, but it's better to
-     * keep these things separate and less coupled.
-     */
-    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-    private static class Node implements Shape {
-        private final EventTreeState state;
-        private final Node parent;
-
-        private final List<Node> children = new ArrayList<>();
-
-        static Node createRoot(EventTreeState state) {
-            return new Node(state, null);
-        }
-
-        Node addChild(EventTreeState s) {
-            Node n = new Node(s, this);
-            children.add(n);
-            return n;
-        }
-
-        int depth() {
-            if (parent == null) {
-                return 0;
-            }
-            return parent.depth() + 1;
-        }
-
-        int width() {
-            if (children.isEmpty()) {
-                return 1;
-            }
-            return children.stream()
-                           .reduce(0, (i, s) -> i + s.width(), Integer::sum);
-        }
-
-        int x() {
-            return depth();
-        }
-
-        int y() {
-            if (parent == null) {
-                return 0;
-            }
-            int y = parent.y();
-            for (Node n : parent.children) {
-                if (n == this) {
-                    break;
-                }
-                y += n.width();
-            }
-            return y;
-        }
-
-        @Delegate
-        private Shape circle() {
-            return new Ellipse2D.Double(x() * CIRCLE_GAP + X_OFFSET,
-                    -y() * CIRCLE_GAP + Y_OFFSET, CIRCLE_RADIUS, CIRCLE_RADIUS);
-        }
+    Node addChild(EventTreeState s) {
+      Node n = new Node(s, this);
+      children.add(n);
+      return n;
     }
 
-    void showEvent(EventTreeState state) {
-        // TODO: resize to show entire tree?
-
-        if (root == null) {
-            root = Node.createRoot(state.pathFromInitial().get(0));
-            nodes.add(root);
-        }
-
-        Node parent = root;
-        outer:
-        for (EventTreeState s : state.pathFromInitial()) {
-            if (s.isInitialState()) {
-                assert s.equals(root.state);
-                continue;
-            }
-            for (Node n : parent.children) {
-                if (s.equals(n.state)) {
-                    parent = n;
-                    continue outer;
-                }
-            }
-            parent = parent.addChild(s);
-            nodes.add(parent);
-        }
-
-        selected = parent;
-
-        revalidate();
-        repaint();
+    int depth() {
+      if (parent == null) {
+        return 0;
+      }
+      return parent.depth() + 1;
     }
 
-    @Override
-    public void paintZoomedComponent(Graphics2D g) {
-        g.setColor(Color.BLACK);
-        g.setStroke(
-                new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL,
-                        0, new float[]{5}, 0));
-        paintNode(g, root);
+    int width() {
+      if (children.isEmpty()) {
+        return 1;
+      }
+      return children.stream().reduce(0, (i, s) -> i + s.width(), Integer::sum);
     }
 
-    private void paintNode(Graphics2D g, Node n) {
-        for (Node child : n.children) {
-            g.drawLine((int) n.getBounds2D().getCenterX(),
-                    (int) n.getBounds2D().getCenterY(),
-                    (int) child.getBounds2D().getCenterX(),
-                    (int) child.getBounds2D().getCenterY());
-        }
-
-        g.fill(n);
-        if (n == selected) {
-            var gTemp = (Graphics2D) g.create();
-            gTemp.setColor(Color.RED);
-            gTemp.setStroke(new BasicStroke(2.0f));
-            gTemp.draw(n);
-            gTemp.dispose();
-        }
-
-        for (Node child : n.children) {
-            paintNode(g, child);
-        }
+    int x() {
+      return depth();
     }
 
-    void reset() {
-        root = null;
-        selected = null;
-        nodes.clear();
+    int y() {
+      if (parent == null) {
+        return 0;
+      }
+      int y = parent.y();
+      for (Node n : parent.children) {
+        if (n == this) {
+          break;
+        }
+        y += n.width();
+      }
+      return y;
     }
+
+    @Delegate
+    private Shape circle() {
+      return new Ellipse2D.Double(
+          x() * CIRCLE_GAP + X_OFFSET, -y() * CIRCLE_GAP + Y_OFFSET, CIRCLE_RADIUS, CIRCLE_RADIUS);
+    }
+  }
+
+  void showEvent(EventTreeState state) {
+    // TODO: resize to show entire tree?
+
+    if (root == null) {
+      root = Node.createRoot(state.pathFromInitial().get(0));
+      nodes.add(root);
+    }
+
+    Node parent = root;
+    outer:
+    for (EventTreeState s : state.pathFromInitial()) {
+      if (s.isInitialState()) {
+        assert s.equals(root.state);
+        continue;
+      }
+      for (Node n : parent.children) {
+        if (s.equals(n.state)) {
+          parent = n;
+          continue outer;
+        }
+      }
+      parent = parent.addChild(s);
+      nodes.add(parent);
+    }
+
+    selected = parent;
+
+    revalidate();
+    repaint();
+  }
+
+  @Override
+  public void paintZoomedComponent(Graphics2D g) {
+    g.setColor(Color.BLACK);
+    g.setStroke(
+        new BasicStroke(3, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 0, new float[] {5}, 0));
+    paintNode(g, root);
+  }
+
+  private void paintNode(Graphics2D g, Node n) {
+    for (Node child : n.children) {
+      g.drawLine(
+          (int) n.getBounds2D().getCenterX(),
+          (int) n.getBounds2D().getCenterY(),
+          (int) child.getBounds2D().getCenterX(),
+          (int) child.getBounds2D().getCenterY());
+    }
+
+    g.fill(n);
+    if (n == selected) {
+      var gTemp = (Graphics2D) g.create();
+      gTemp.setColor(Color.RED);
+      gTemp.setStroke(new BasicStroke(2.0f));
+      gTemp.draw(n);
+      gTemp.dispose();
+    }
+
+    for (Node child : n.children) {
+      paintNode(g, child);
+    }
+  }
+
+  void reset() {
+    root = null;
+    selected = null;
+    nodes.clear();
+  }
 }
