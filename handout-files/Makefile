@@ -25,7 +25,7 @@ JAVA_TST = $(shell find labs/*/tst -type f -name "*.java")
 ################################################################################
 # Targets
 ################################################################################
-.PHONY: all clean clean-all
+.PHONY: all format clean clean-all
 
 all: $(OUT)/src/ $(OUT)/tst/
 
@@ -43,7 +43,14 @@ $(OUT)/tst/: $(JAVA_TST) $(OUT)/src
 	@ $(JC) -d $@ -cp "$(TST_JARS)$(SEP)$(OUT)/src" $(JAVA_TST)
 
 
+format:
+	@ echo "[format]"
+	@ java -jar jars/google-java-format.jar -i $(JAVA_SRC)
+
+
 submit.tar.gz: $(JAVA_SRC)
+	@ echo "[format]"
+	@ java -jar jars/google-java-format.jar -i $(JAVA_SRC)
 	@ echo "[tar] submit.tar.gz"
 	@ # prevent MacOS extended attrs from generating extra files
 	@ COPYFILE_DISABLE=1 tar -cvzf $@ labs/*/src

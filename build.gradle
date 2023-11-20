@@ -74,6 +74,9 @@ configurations {
   graderSources {
     transitive = false
   }
+  // Unused configuration, necessary to include google-java-format in license
+  // report
+  formatter
 }
 
 repositories {
@@ -114,6 +117,8 @@ dependencies {
   graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.0', classifier: 'sources'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1', classifier: 'sources'
+
+  formatter group:'com.google.googlejavaformat', name: 'google-java-format', version: '1.18.1'
 }
 
 // Create reproducible jars

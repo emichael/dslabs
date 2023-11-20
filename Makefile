@@ -32,6 +32,14 @@ all: build/handout/
 dependencies:
 	./gradlew copyDependencies
 
+deps/formatter/google-java-format.jar:
+	$(eval GVF_VERSION := $(shell $(SED) -n -E "s/^.*name:\s*'google-java-format',\s*version:\s*'([^']+)'.*$$/\1/p" build.gradle))
+	@echo "Downloading Google Java Format version $(GVF_VERSION)..."
+	# Check to make sure we extracted the version number from build.gradle
+	test -n "$(GVF_VERSION)"
+	mkdir -p deps/formatter/
+	wget "https://github.com/google/google-java-format/releases/download/v$(GVF_VERSION)/google-java-format-$(GVF_VERSION)-all-deps.jar" -O $@
+
 build/libs/: $(FRAMEWORK_FILES)
 	./gradlew assemble
 	touch $@
@@ -43,11 +51,12 @@ build/doc/: $(FRAMEWORK_FILES)
 $(LICENSE_NOTICE): build.gradle
 	./gradlew generateLicenseReport
 
-build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/ $(LICENSE_NOTICE)
+build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/ deps/formatter/google-java-format.jar $(LICENSE_NOTICE)
 	rm -rf $@
 	mkdir $@ build/handout/jars
 	$(CP) -r labs handout-files/. $(OTHER_FILES) $@
 	$(CP) $(JAR_FILES) build/handout/jars
+	$(CP) deps/formatter/google-java-format.jar build/handout/jars
 	# Strip out the date from the license report for a reproducible build
 	$(SED) -Ez -e 's/This report was generated at .*//' $(LICENSE_NOTICE) > build/handout/jars/THIRD-PARTY-NOTICES.txt
 
