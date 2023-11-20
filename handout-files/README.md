@@ -105,12 +105,14 @@ and/or failures that might lead to a violation of the invariants of the system.
 The only dependency for these labs is Java 14. Installing `openjdk-14-jdk` on
 most Linux distros should be sufficient.
 
-For the primary IDE, we also recommend using IntelliJ (a configuration file is
-included in each repo), which also has plugin support for Project Lombok (see
-below).
+We recommend using IntelliJ (a configuration directory is included in each
+repo), which also has plugin support for Project Lombok (see below). If you
+would like IntelliJ code formatting to apply the same style the handout files
+and `make format` use, you will need to install the `google-java-format` plugin
+and apply the necessary [post-install
+settings](https://github.com/google/google-java-format/blob/master/README.md#intellij-jre-config).
 
-In order to run the tests from the terminal, however, you also will need Python
-3 and Make.
+In order to run the tests from the terminal, you will need Python 3 and Make.
 
 
 ### Command-line Tools On Windows

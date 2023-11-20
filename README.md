@@ -168,7 +168,16 @@ the provided `Makefile`; MacOS users will need `gtar` and `gcp` provided by the
 IntelliJ files are provided and include a code style used by this project. In
 order to provide IntelliJ with all of the necessary libraries, you must run
 `make dependencies` once after cloning the repository and whenever you add to or
-modify the project's dependencies.
+modify the project's dependencies. You will also need the Lombok IntelliJ
+plugin.
+
+This project uses
+[`google-java-format`](https://github.com/google/google-java-format) to format
+Java files. You should run `make format` before committing changes. If you want
+IntelliJ to apply the same formatting, you will need the `google-java-format`
+IntelliJ plugin, and you will need to apply the necessary [post-install
+settings](https://github.com/google/google-java-format/blob/master/README.md#intellij-jre-config)
+in IntelliJ.
 
 If you add fields to any student-visible classes (all classes in the `framework`
 package as well as `SearchState` and related classes), you should take care to
