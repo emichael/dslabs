@@ -199,8 +199,9 @@ def main():
     group = run_modes.add_mutually_exclusive_group()
 
     parser.add_argument('-l', '--lab', help="lab to run tests for")
-    parser.add_argument('-p', '--part', type=int,
-                        help="part number for tests to run")
+
+    parser.add_argument('-p', '--part',
+                        help="part number(s) to run tests for (comma-separated)")
 
     parser.add_argument('-n', '--test-num',
                         help="specific, comma-separated test numbers to run "

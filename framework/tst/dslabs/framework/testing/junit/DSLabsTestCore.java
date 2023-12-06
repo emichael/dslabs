@@ -23,6 +23,7 @@
 package dslabs.framework.testing.junit;
 
 import com.google.common.base.Throwables;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import dslabs.framework.testing.utils.ClassSearch;
 import java.util.Set;
@@ -121,10 +122,10 @@ public final class DSLabsTestCore {
         Option.builder("p")
             .longOpt("part")
             .required(false)
-            .argName("PART")
             .hasArg(true)
             .numberOfArgs(1)
-            .desc("part number")
+            .argName("PART_NUMS")
+            .desc("comma-separated list of part numbers")
             .build();
     final Option testNum =
         Option.builder("n")
@@ -196,9 +197,13 @@ public final class DSLabsTestCore {
               }
             });
 
+    final ImmutableSet<String> partNumbers =
+        line.hasOption(part)
+            ? ImmutableSet.copyOf(line.getOptionValue(part).split(","))
+            : ImmutableSet.of();
+
     // Only run test classes for this part
-    if (line.hasOption(part)) {
-      final int partNum = Integer.parseInt(line.getOptionValue(part));
+    if (!partNumbers.isEmpty()) {
       request =
           request.filterWith(
               new Filter() {
@@ -208,25 +213,32 @@ public final class DSLabsTestCore {
                     return true;
                   }
                   var p = description.getAnnotation(Part.class);
-                  return p != null && p.value() == partNum;
+                  return p != null && partNumbers.contains(String.valueOf(p.value()));
                 }
 
                 @Override
                 public String describe() {
-                  return "part " + partNum;
+                  return String.format("part %s", partNumbers);
                 }
               });
     }
 
     // Only run chosen test numbers
     if (line.hasOption(testNum)) {
-      final Set<String> testNumbers = Sets.newHashSet(line.getOptionValue(testNum).split(","));
+      final ImmutableSet<String> specifiedTestNumbers =
+          ImmutableSet.copyOf(line.getOptionValue(testNum).split(","));
+      final Set<String> testNumbers = Sets.newHashSet(specifiedTestNumbers);
 
       // If the part is selected, allow specifying test number only
-      if (line.hasOption(part)) {
-        for (var tn : line.getOptionValue(testNum).split(",")) {
+      if (!partNumbers.isEmpty()) {
+        if (partNumbers.size() > 1) {
+          throw new IllegalArgumentException(
+              "Cannot specify multiple part numbers when selecting individual test numbers.");
+        }
+        final String partStr = partNumbers.stream().findFirst().get();
+        for (var tn : specifiedTestNumbers) {
           // XXX: not the best way of doing this, but it works
-          testNumbers.add(line.getOptionValue(part) + "." + tn);
+          testNumbers.add(partStr + "." + tn);
         }
       }
 
@@ -243,7 +255,7 @@ public final class DSLabsTestCore {
 
                 @Override
                 public String describe() {
-                  return String.format("test numbers %s", testNumbers);
+                  return String.format("test numbers %s", specifiedTestNumbers);
                 }
               });
     }
