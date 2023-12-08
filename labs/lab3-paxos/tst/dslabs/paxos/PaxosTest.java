@@ -1028,8 +1028,7 @@ public class PaxosTest extends BaseJUnitTest {
                       .addPrune(hasCommand(server(4), 1, c2))
                       .addPrune(hasCommand(server(5), 1, c1));
 
-        // Find a state where server 3 gets client 1's command via quorum
-        // {server2, server3, server4}
+        // Find a state where server 3 gets client 1's command via quorum {server2, server3, server4}
         searchSettings.nodeActive(server(1), false).nodeActive(server(5), false)
                       .deliverTimers(server(1), false)
                       .deliverTimers(server(5), false)
@@ -1042,8 +1041,7 @@ public class PaxosTest extends BaseJUnitTest {
         bfs(c1AtServer4);
         final SearchState c1AtServer3 = goalMatchingState();
 
-        // Now, find a state where server 3 has client 2's command via quorum
-        // {server1, server2, server3, server5}
+        // Now, find a state where server 3 has client 2's command via quorum {server1, server2, server3, server5}
         searchSettings.nodeActive(server(4), false).nodeActive(server(3), false)
                       .nodeActive(server(1), true).nodeActive(server(5), true)
                       .clearDeliverTimers().deliverTimers(server(4), false)
