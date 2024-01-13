@@ -192,24 +192,25 @@ public class PaxosTest extends BaseJUnitTest {
   /**
    * Checks whether a single slot in the log is consistent. Namely, it checks the following:
    *
-   * <p>1) No two different commands are chosen.
-   *
-   * <p>2) If a command has been chosen, there is a majority of servers where the command has been
-   * chosen or accepted or the slot has been cleared.
-   *
-   * <p>3) If the slot has been cleared, there is a majority of servers where the slot is non-empty.
+   * <ol>
+   *   <li>No two different commands are chosen.
+   *   <li>If a command has been chosen, there is a majority of servers where the command has been
+   *       chosen or accepted or the slot has been cleared.
+   *   <li>If the slot has been cleared, there is a majority of servers where the slot is non-empty.
+   * </ol>
    *
    * <p>This predicate is not completely exhaustive. In particular, the third check above should not
    * count acceptances of different commands towards the same majority.
    *
    * <p>This predicate also checks:
    *
-   * <p>- That if i is less than the first non-cleared or greater than the last non-empty slot for a
-   * node, it returns status CLEARED or EMPTY respectively.
-   *
-   * <p>- That CLEARED and EMPTY slots return null.
-   *
-   * <p>- That nodes don't return AMOCommands.
+   * <ul>
+   *   <li>That if {@code i} is less than the first non-cleared or greater than the last non-empty
+   *       slot for a node, it returns status {@link PaxosLogSlotStatus#CLEARED} or {@link
+   *       PaxosLogSlotStatus#CLEARED} respectively.
+   *   <li>That {@code CLEARED} and {@code EMPTY} slots return {@code null}.
+   *   <li>That nodes don't return {@link AMOCommand}s.
+   * </ul>
    */
   private static Pair<Boolean, String> slotValid(AbstractState st, int i) {
     Command chosen = null;
@@ -585,10 +586,9 @@ public class PaxosTest extends BaseJUnitTest {
 
     if (messagesPerAgreement > allowed) {
       fail(
-          "Too many messages sent, "
-              + allowed
-              + " per command allowed, got "
-              + messagesPerAgreement);
+          String.format(
+              "Too many messages sent, %d per command allowed, got %s",
+              allowed, messagesPerAgreement));
     }
   }
 
@@ -966,7 +966,7 @@ public class PaxosTest extends BaseJUnitTest {
     bfs(firstAppendSent);
     assertGoalFound();
 
-    // Checking that linearizability is preserved in both other partitions
+    // Check that linearizability is preserved in both other partitions
     searchSettings
         .clearGoals()
         .addPrune(CLIENTS_DONE)

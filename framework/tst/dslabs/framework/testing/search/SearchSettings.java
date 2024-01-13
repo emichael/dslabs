@@ -81,24 +81,18 @@ public class SearchSettings extends TestSettings<SearchSettings> implements Clon
         continue;
       }
       /*
-         TODO: actually treat this as an error and have it stop the
-               search. This is going to require a bit of re-architecture
-               in the way search works (and even has implications for how
-               traces are saved and the visual debugger works).
-
-         For now, we log the error and treat the state as pruned. This is
-         because some searches rely on states being pruned for
-         correctness. It is always safe to ignore more states, but if the
-         search is allowed to examine states it shouldn't, it could
-         report erroneous results.
-
-         Below, we do the same with goals, but there, predicates throwing
-         exceptions are simply ignored.
-
-         The issue is not that important; very few predicates *can* throw
-         exceptions (possibly only the Paxos interface predicates), but
-         it's still important to deal with.
-      */
+       * TODO: actually treat this as an error and have it stop the search. This is going to require
+       *  a bit of re-architecture in the way search works (and even has implications for how traces
+       *  are saved and the visual debugger works).
+       *
+       * For now, we log the error and treat the state as pruned. This is because some searches rely
+       * on states being pruned for correctness. It is always safe to ignore more states, but if the
+       * search is allowed to examine states it shouldn't, it could report erroneous results. Below,
+       * we do the same with goals, but there, predicates throwing exceptions are simply ignored.
+       *
+       * The issue is not that important; very few predicates *can* throw exceptions (possibly only
+       * the Paxos interface predicates), but it's still important to deal with.
+       */
       if (r.exceptionThrown()) {
         LOG.severe(r.errorMessage());
       }

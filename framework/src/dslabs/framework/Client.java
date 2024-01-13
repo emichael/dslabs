@@ -34,9 +34,9 @@ package dslabs.framework;
  * <p><b>IMPORTANT:</b> Client interface methods must be properly {@code synchronized} with {@link
  * Message} handlers and {@link Timer} handlers, since the event handlers are invoked concurrently
  * with the code using the client. The easiest way to do this is to add the {@code synchronized}
- * modifier to all of the aforementioned methods. Furthermore, {@link Client#hasResult()} should
- * return immediately, while {@link Client#getResult()} should block until the client has received a
- * result for the latest command it sent.
+ * modifier to all the aforementioned methods. Furthermore, {@link Client#hasResult()} should return
+ * immediately, while {@link Client#getResult()} should block until the client has received a result
+ * for the latest command it sent.
  */
 public interface Client {
 
@@ -49,8 +49,8 @@ public interface Client {
   void sendCommand(Command command);
 
   /**
-   * Whether or not a {@link Result} was received for the previously sent {@link Command}. Should
-   * return immediately without blocking, sleeping, or starting other threads.
+   * Whether a {@link Result} was received for the previously sent {@link Command}. Should return
+   * immediately without blocking, sleeping, or starting other threads.
    *
    * @return whether the {@link Result} has been received
    */

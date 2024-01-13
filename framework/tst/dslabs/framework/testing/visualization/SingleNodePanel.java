@@ -212,10 +212,9 @@ class SingleNodePanel extends JPanel {
     final var newTimers = Lists.newArrayList(s.timers(address).iterator());
 
     /*
-       First, remove all the timers that aren't present in the new state,
-       in reverse order so that the first copies of duplicates are removed
-       (from the "head" of the queue).
-    */
+     * First, remove all the timers that aren't present in the new state, in reverse order so that
+     * the first copies of duplicates are removed (from the "head" of the queue).
+     */
     for (int i = timers.size() - 1; i >= 0; i--) {
       var c = timers.get(i);
       var t = c.getLeft();
@@ -233,14 +232,12 @@ class SingleNodePanel extends JPanel {
     assert timers.size() <= newTimers.size();
 
     /*
-       settings.canStepTimer(t) only tells us if a timer equal to t can be
-       delivered. If there are duplicate timers in the queue, the result
-       will be the same for all of them.
-
-       However, the delivery rules for timers mean that if two identical
-       timers (with identical durations) are in the queue, then only the
-       first is actually deliverable.
-    */
+     * settings.canStepTimer(t) only tells us if a timer equal to t can be delivered. If there are
+     * duplicate timers in the queue, the result will be the same for all of them.
+     *
+     * However, the delivery rules for timers mean that if two identical timers (with identical
+     * durations) are in the queue, then only the first is actually deliverable.
+     */
     final Set<TimerEnvelope> timerSet = new HashSet<>();
 
     int i = 0;
@@ -276,19 +273,16 @@ class SingleNodePanel extends JPanel {
       }
 
       /*
-         When there is a mismatch between the existing timer queue and
-         the one we're trying to materialize, we need to decide whether
-         this is an insertion or deletion (or substitution).
-
-         The correct timer list will ultimately be displayed either way.
-         However, if we remove and re-add a timer unnecessarily, this is
-         bad for performance and also might cause a timer that should be
-         left open to be "collapsed" from the user's perspective.
-
-         For now, we just use a simple heuristic and insert the new timer
-         when there are more new timers than current and remove the
-         existing timer otherwise.
-      */
+       * When there is a mismatch between the existing timer queue and the one we're trying to
+       * materialize, we need to decide whether this is an insertion or deletion (or substitution).
+       *
+       * The correct timer list will ultimately be displayed either way. However, if we remove and
+       * re-add a timer unnecessarily, this is bad for performance and also might cause a timer
+       * that should be left open to be "collapsed" from the user's perspective.
+       *
+       * For now, we just use a simple heuristic and insert the new timer when there are more new
+       * timers than current and remove the existing timer otherwise.
+       */
 
       if (c == null || newTimers.size() > timers.size()) {
         // When there are more timers, insert t

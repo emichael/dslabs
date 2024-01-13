@@ -28,7 +28,7 @@ import java.io.Serializable;
 public interface Command extends Serializable {
 
   /**
-   * @return whether or not the command changes the application's state
+   * @return whether the command changes the application's state
    */
   default boolean readOnly() {
     return false;

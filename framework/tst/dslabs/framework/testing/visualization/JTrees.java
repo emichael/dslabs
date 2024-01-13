@@ -248,9 +248,9 @@ class ObjectJTree extends BaseJTree {
     root.clearDiffObject((DefaultTreeModel) treeModel);
   }
 
-  /*--------------------------------------------------------------------------
-  * Base ObjectTreeNode
-  -------------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Base ObjectTreeNode
+   * ---------------------------------------------------------------------------------------------*/
 
   /**
    * Custom JTree node representing some piece of state in a DSLabs node, MessageEnvelope, or Timer.
@@ -666,9 +666,9 @@ class ObjectJTree extends BaseJTree {
     }
   }
 
-  /*--------------------------------------------------------------------------
-  * ObjectTreeNode sub-classes
-  -------------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  ObjectTreeNode sub-classes
+   * ---------------------------------------------------------------------------------------------*/
 
   private static class DefaultObjectNode extends ObjectTreeNode {
     static boolean canHandle(Class<?> clz) {
@@ -688,7 +688,7 @@ class ObjectJTree extends BaseJTree {
       }
 
       // TODO: fix illegal reflective access somehow??? (probably just add --add-opens to intellij
-      // default config for launching apps)
+      //  default config for launching apps)
       for (Class<?> c = valueObj.getClass();
           c != Object.class && c != null;
           c = c.getSuperclass()) {

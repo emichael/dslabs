@@ -148,9 +148,9 @@ public final class CheckLogger {
 
     if (!notFastCloned.isEmpty()) {
       System.err.println(
-          "Objects cannot be fast-cloned. "
-              + "Check that they don't contain lambdas or other non-standard fields. "
-              + "This error could also occur due to the use of a data structure the fast-cloning library does not yet support.");
+          "Objects cannot be fast-cloned. Check that they don't contain lambdas or other "
+              + "non-standard fields. This error could also occur due to the use of a data "
+              + "structure the fast-cloning library does not yet support.");
       printClasses(notFastCloned);
     }
 

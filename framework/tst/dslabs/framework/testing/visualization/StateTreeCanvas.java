@@ -91,8 +91,8 @@ class StateTreeCanvas extends ZoomableCanvas {
   }
 
   /*
-   * This replicates much of the logic from EventTreeState, but it's better to
-   * keep these things separate and less coupled.
+   * This replicates much of the logic from EventTreeState, but it's better to keep these things
+   * separate and less coupled.
    */
   @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
   private static class Node implements Shape {

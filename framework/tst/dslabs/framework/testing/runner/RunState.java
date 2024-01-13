@@ -55,7 +55,7 @@ public class RunState extends AbstractState {
 
   private volatile RunSettings settings;
 
-  /** Whether or not an exception has been thrown during the handling of any message or timer. */
+  /** Whether an exception has been thrown during the handling of any message or timer. */
   @Getter private volatile boolean exceptionThrown = false;
 
   // All accesses to these variables must be protected by synchronized(this)
@@ -70,8 +70,8 @@ public class RunState extends AbstractState {
    */
   private Instant stopTime = null;
 
-  // TODO: memoize important settings (e.g. multithreaded) at start time to
-  //       ensure safety (even though they should never be modified)
+  // TODO: memoize important settings (e.g. multithreaded) at start time to ensure safety
+  //  (even though they should never be modified)
 
   // TODO: break up synchronization a bit
 
@@ -218,7 +218,7 @@ public class RunState extends AbstractState {
   }
 
   private long timeLeftMillis() {
-    return (startTimeMillis + settings.maxTimeSecs() * 1000) - System.currentTimeMillis();
+    return (startTimeMillis + settings.maxTimeSecs() * 1000L) - System.currentTimeMillis();
   }
 
   public void run(RunSettings settings) throws InterruptedException {

@@ -34,11 +34,9 @@ public class DSLabsTestRunner extends BlockJUnit4ClassRunner {
   public DSLabsTestRunner(Class<?> klass) throws InitializationError {
     super(klass);
     /*
-     * Sort the tests here to make sure they are sorted both when running
-     * from the command line and also in IntelliJ without having to mark
-     * every class as sorted on method name. This is a hack, to be sure.
-     * Methods within a test class are sorted multiple times. It works,
-     * though.
+     * Sort the tests here to make sure they are sorted both when running from the command line and
+     * also in IntelliJ without having to mark every class as sorted on method name. This is a hack,
+     * to be sure. Methods within a test class are sorted multiple times. It works, though.
      */
     sort(new TestOrder());
   }

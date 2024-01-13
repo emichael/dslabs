@@ -79,14 +79,14 @@ follows.
 ```java
 @Data
 class Request implements Message {
-	private final Command command;
-	private final int sequenceNum;
+  private final Command command;
+  private final int sequenceNum;
 }
 
 @Data
 class Reply implements Message {
-	private final Result result;
-	private final int sequenceNum;
+  private final Result result;
+  private final int sequenceNum;
 }
 ```
 
@@ -228,12 +228,12 @@ follows.
 ```java
 @Data
 class Request implements Message {
-	private final AMOCommand command;
+  private final AMOCommand command;
 }
 
 @Data
 class Reply implements Message {
-	private final AMOResult result;
+  private final AMOResult result;
 }
 ```
 

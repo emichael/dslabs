@@ -34,9 +34,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.commons.lang3.SerializationUtils;
 
 /*
- * TODO: replace the Immutable annotation with one of my own to allow future
- * replacement of the library. The annotation itself can be annotated with
- * com.rits.cloning.Immutable.
+ * TODO: replace the Immutable annotation with one of my own to allow future replacement of the
+ *  library. The annotation itself can be annotated with com.rits.cloning.Immutable.
  */
 
 /**
@@ -69,10 +68,9 @@ public final class Cloning {
     jdclCloner.registerCloningStrategy(
         new ICloningStrategy() {
           /*
-           * This cloning library works for most things. However, since it's
-           * not using default serializers, it's only safe to null
-           * transient fields declared in this package. Otherwise, ignore this
-           * strategy and do whatever the default in the cloning library is.
+           * This cloning library works for most things. However, since it's not using default
+           * serializers, it's only safe to null transient fields declared in this package.
+           * Otherwise, ignore this strategy and do whatever the default in the cloning library is.
            */
           @Override
           public Strategy strategyFor(Object toBeCloned, Field field) {

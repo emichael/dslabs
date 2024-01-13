@@ -190,7 +190,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
     assertSpaceExhausted();
 
     System.out.println(
-        "Checking that there is no progress if client and server " + "cannot communicate");
+        "Checking that there is no progress if client and server cannot communicate");
     searchSettings.addInvariant(NONE_DECIDED).networkActive(false).maxTimeSecs(5);
     bfs(initSearchState);
     assertSpaceExhausted();

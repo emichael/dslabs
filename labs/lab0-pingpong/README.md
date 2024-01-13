@@ -14,26 +14,26 @@ return `Result`s. The `PingApplication` is quite a simple one.
 @ToString
 @EqualsAndHashCode
 public class PingApplication implements Application {
-    @Data
-    public static final class Ping implements Command {
-        @NonNull private final String value;
+  @Data
+  public static final class Ping implements Command {
+    @NonNull private final String value;
+  }
+
+  @Data
+  public static final class Pong implements Result {
+    @NonNull private final String value;
+  }
+
+  @Override
+  public Pong execute(Command command) {
+    if (!(command instanceof Ping)) {
+      throw new IllegalArgumentException();
     }
 
-    @Data
-    public static final class Pong implements Result {
-        @NonNull private final String value;
-    }
+    Ping p = (Ping) command;
 
-    @Override
-    public Pong execute(Command command) {
-        if (!(command instanceof Ping)) {
-            throw new IllegalArgumentException();
-        }
-
-        Ping p = (Ping) command;
-
-        return new Pong(p.value());
-    }
+    return new Pong(p.value());
+  }
 }
 ```
 
@@ -45,27 +45,27 @@ the `PingServer`.
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 public class PingServer extends Node {
-    private final PingApplication app = new PingApplication();
+  private final PingApplication app = new PingApplication();
 
-    /* -------------------------------------------------------------------------
-        Construction and Initialization
-       -----------------------------------------------------------------------*/
-    public PingServer(Address address) {
-        super(address);
-    }
+  /* -----------------------------------------------------------------------------------------------
+   *  Construction and Initialization
+   * ---------------------------------------------------------------------------------------------*/
+  public PingServer(Address address) {
+    super(address);
+  }
 
-    @Override
-    public void init() {
-        // No initialization necessary
-    }
+  @Override
+  public void init() {
+    // No initialization necessary
+  }
 
-    /* -------------------------------------------------------------------------
-        Message Handlers
-       -----------------------------------------------------------------------*/
-    private void handlePingRequest(PingRequest m, Address sender) {
-        Pong p = app.execute(m.ping());
-        send(new PongReply(p), sender);
-    }
+  /* -----------------------------------------------------------------------------------------------
+   *  Message Handlers
+   * ---------------------------------------------------------------------------------------------*/
+  private void handlePingRequest(PingRequest m, Address sender) {
+    Pong p = app.execute(m.ping());
+    send(new PongReply(p), sender);
+  }
 }
 ```
 
@@ -83,12 +83,12 @@ has two. They're pretty self-explanatory.
 ```java
 @Data
 class PingRequest implements Message {
-    private final Ping ping;
+  private final Ping ping;
 }
 
 @Data
 class PongReply implements Message {
-    private final Pong pong;
+  private final Pong pong;
 }
 ```
 
@@ -100,75 +100,75 @@ use of our system.
 @ToString(callSuper = true)
 @EqualsAndHashCode(callSuper = true)
 class PingClient extends Node implements Client {
-    private final Address serverAddress;
+  private final Address serverAddress;
 
-    private Ping ping;
-    private Pong pong;
+  private Ping ping;
+  private Pong pong;
 
-    /* -------------------------------------------------------------------------
-        Construction and Initialization
-       -----------------------------------------------------------------------*/
-    public PingClient(Address address, Address serverAddress) {
-        super(address);
-        this.serverAddress = serverAddress;
+  /* -----------------------------------------------------------------------------------------------
+   *  Construction and Initialization
+   * ---------------------------------------------------------------------------------------------*/
+  public PingClient(Address address, Address serverAddress) {
+    super(address);
+    this.serverAddress = serverAddress;
+  }
+
+  @Override
+  public synchronized void init() {
+    // No initialization necessary
+  }
+
+  /* -----------------------------------------------------------------------------------------------
+   *  Client Methods
+   * ---------------------------------------------------------------------------------------------*/
+  @Override
+  public synchronized void sendCommand(Command command) {
+    if (!(command instanceof Ping)) {
+      throw new IllegalArgumentException();
     }
 
-    @Override
-    public synchronized void init() {
-        // No initialization necessary
+    Ping p = (Ping) command;
+
+    ping = p;
+    pong = null;
+
+    send(new PingRequest(p), serverAddress);
+    set(new PingTimer(p), RETRY_MILLIS);
+  }
+
+  @Override
+  public synchronized boolean hasResult() {
+    return pong != null;
+  }
+
+  @Override
+  public synchronized Result getResult() throws InterruptedException {
+    while (pong == null) {
+      wait();
     }
 
-    /* -------------------------------------------------------------------------
-        Client Methods
-       -----------------------------------------------------------------------*/
-    @Override
-    public synchronized void sendCommand(Command command) {
-        if (!(command instanceof Ping)) {
-            throw new IllegalArgumentException();
-        }
+    return pong;
+  }
 
-        Ping p = (Ping) command;
-
-        ping = p;
-        pong = null;
-
-        send(new PingRequest(p), serverAddress);
-        set(new PingTimer(p), RETRY_MILLIS);
+  /* -----------------------------------------------------------------------------------------------
+   *  Message Handlers
+   * ---------------------------------------------------------------------------------------------*/
+  private synchronized void handlePongReply(PongReply m, Address sender) {
+    if (Objects.equal(ping.value(), m.pong().value())) {
+      pong = m.pong();
+      notify();
     }
+  }
 
-    @Override
-    public synchronized boolean hasResult() {
-        return pong != null;
+  /* -----------------------------------------------------------------------------------------------
+   *  Timer Handlers
+   * ---------------------------------------------------------------------------------------------*/
+  private synchronized void onPingTimer(PingTimer t) {
+    if (Objects.equal(ping, t.ping()) && pong == null) {
+      send(new PingRequest(ping), serverAddress);
+      set(t, RETRY_MILLIS);
     }
-
-    @Override
-    public synchronized Result getResult() throws InterruptedException {
-        while (pong == null) {
-            wait();
-        }
-
-        return pong;
-    }
-
-    /* -------------------------------------------------------------------------
-        Message Handlers
-       -----------------------------------------------------------------------*/
-    private synchronized void handlePongReply(PongReply m, Address sender) {
-        if (Objects.equal(ping.value(), m.pong().value())) {
-            pong = m.pong();
-            notify();
-        }
-    }
-
-    /* -------------------------------------------------------------------------
-        Timer Handlers
-       -----------------------------------------------------------------------*/
-    private synchronized void onPingTimer(PingTimer t) {
-        if (Objects.equal(ping, t.ping()) && pong == null) {
-            send(new PingRequest(ping), serverAddress);
-            set(t, RETRY_MILLIS);
-        }
-    }
+  }
 }
 ```
 
@@ -182,8 +182,8 @@ result and notifies the calling code which may be waiting.
 ```java
 @Data
 final class PingTimer implements Timer {
-    static final int RETRY_MILLIS = 10;
-    private final Ping ping;
+  static final int RETRY_MILLIS = 10;
+  private final Ping ping;
 }
 ```
 
@@ -204,12 +204,12 @@ $ ./run-tests.py --lab 0 --test-num 1
 --------------------------------------------------
 TEST 1: Single client ping test [RUN] (0pts)
 
-...PASS (0.044s)
+...PASS (0.079s)
 ==================================================
 
 Tests passed: 1/1
-Points: 0/0
-Total time: 0.114s
+Points: 0/0 (0.00%)
+Total time: 0.107s
 
 ALL PASS
 ==================================================
@@ -224,18 +224,17 @@ $ ./run-tests.py --lab 0 --test-num 1 --log-level FINEST
 --------------------------------------------------
 TEST 1: Single client ping test [RUN] (0pts)
 
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageSend(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] TimerSet(-> client1, PingTimer(ping=PingApplication.Ping(value=Hello, World!)))
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageReceive(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageSend(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] MessageReceive(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
-[FINEST ] [2018-03-12 22:48:47] [dslabs.framework.Node] TimerReceive(-> client1, PingTimer(ping=PingApplication.Ping(value=Hello, World!)))
-...PASS (0.131s)
+[FINEST ] [2024-01-13 14:34:30] [dslabs.framework.Node] MessageSend(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2024-01-13 14:34:30] [dslabs.framework.Node] TimerSet(-> client1, PingTimer(ping=PingApplication.Ping(value=Hello, World!)))
+[FINER  ] [2024-01-13 14:34:30] [dslabs.framework.Node] MessageReceive(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=Hello, World!)))
+[FINEST ] [2024-01-13 14:34:30] [dslabs.framework.Node] MessageSend(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
+[FINER  ] [2024-01-13 14:34:30] [dslabs.framework.Node] MessageReceive(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=Hello, World!)))
+...PASS (0.087s)
 ==================================================
 
 Tests passed: 1/1
 Points: 0/0 (0.00%)
-Total time: 0.142s
+Total time: 0.109s
 
 ALL PASS
 ==================================================
@@ -261,36 +260,36 @@ $ ./run-tests.py --lab 0
 --------------------------------------------------
 TEST 1: Single client ping test [RUN] (0pts)
 
-...PASS (0.082s)
+...PASS (0.081s)
 --------------------------------------------------
 TEST 2: Multiple clients can ping simultaneously [RUN] (0pts)
 
-...PASS (0.008s)
+...PASS (0.082s)
 --------------------------------------------------
 TEST 3: Client can still ping if some messages are dropped [RUN] [UNRELIABLE] (0pts)
 
-...PASS (0.79s)
+...PASS (3.158s)
 --------------------------------------------------
 TEST 4: Single client repeatedly pings [SEARCH] (0pts)
 
 Checking that the client can finish all pings
 Starting breadth-first search...
-  Explored: 0, Depth exploring: 0 (0.00s, 0.00K states/s)
-  Explored: 20, Depth exploring: 19 (0.04s, 0.49K states/s)
+    Explored: 1, Depth: 0 (0.02s, 0.05K states/s)
+    Explored: 84, Depth: 20 (0.14s, 0.60K states/s)
 Search finished.
 
 Checking that all of the returned pongs match pings
 Starting breadth-first search...
-  Explored: 0, Depth exploring: 0 (0.01s, 0.00K states/s)
-  Explored: 20, Depth exploring: 19 (0.02s, 1.00K states/s)
+    Explored: 2, Depth: 1 (0.01s, 0.20K states/s)
+    Explored: 120, Depth: 29 (0.08s, 1.56K states/s)
 Search finished.
 
-...PASS (0.066s)
+...PASS (0.282s)
 ==================================================
 
 Tests passed: 4/4
-Points: 0/0
-Total time: 1.207s
+Points: 0/0 (0.00%)
+Total time: 3.629s
 
 ALL PASS
 ==================================================
@@ -308,10 +307,10 @@ messages gets dropped in the network *again*, the system will be stuck.
 
 ```java
 private synchronized void onPingTimer(PingTimer t) {
-    if (Objects.equal(ping, t.ping()) && pong == null) {
-        send(new PingRequest(ping), serverAddress);
-        // set(t, RETRY_MILLIS);
-    }
+  if (Objects.equal(ping, t.ping()) && pong == null) {
+    send(new PingRequest(ping), serverAddress);
+    // set(t, RETRY_MILLIS);
+  }
 }
 ```
 
@@ -324,15 +323,15 @@ $ ./run-tests.py --lab 0 --test-num 3
 TEST 3: Client can still ping if some messages are dropped [RUN] [UNRELIABLE] (0pts)
 
 org.junit.runners.model.TestTimedOutException: test timed out after 5000 milliseconds
-  at java.lang.Object.wait(Native Method)
-  ...
+    at java.base@17.0.9/java.lang.Object.wait(Native Method)
+    ...
 
-...FAIL (5.033s)
+...FAIL (5.082s)
 ==================================================
 
 Tests passed: 0/1
-Points: 0/0
-Total time: 5.103s
+Points: 0/0 (0.00%)
+Total time: 5.102s
 
 FAIL
 ==================================================
@@ -343,10 +342,10 @@ property? Okay. Let's get rid of the other crucial check in `PingClient`.
 
 ```java
 private synchronized void handlePongReply(PongReply m, Address sender) {
-    // if (Objects.equal(ping.value(), m.pong().value())) {
-        pong = m.pong();
-        notify();
-    // }
+  // if (Objects.equal(ping.value(), m.pong().value())) {
+    pong = m.pong();
+    notify();
+  // }
 }
 ```
 
@@ -365,30 +364,24 @@ TEST 4: Single client repeatedly pings [SEARCH] (0pts)
 
 Checking that the client can finish all pings
 Starting breadth-first search...
-  Explored: 0, Depth exploring: 0 (0.00s, 0.00K states/s)
-  Explored: 19038, Depth exploring: 11 (1.10s, 17.34K states/s)
+    Explored: 1, Depth: 0 (0.00s, 0.50K states/s)
+    Explored: 7, Depth: 4 (0.03s, 0.21K states/s)
 Search finished.
 
-Checking that all of the returned pongs match pings
-Starting breadth-first search...
-  Explored: 0, Depth exploring: 0 (0.00s, 0.00K states/s)
-  Explored: 5, Depth exploring: 4 (0.00s, 5.00K states/s)
-Search finished.
-
-State(nodes={pingserver=PingServer(super=Node(subNodes={}),
+State(nodes={pingserver=PingServer(super=Node(address=pingserver, subNodes={}),
 app=PingApplication()),
-client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
+client1=ClientWorker(client=PingClient(super=Node(address=client1, subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-1), pong=null),
 results=[])}, network=[Message(client1 -> pingserver,
 PingRequest(ping=PingApplication.Ping(value=ping-1)))], timers={pingserver=[],
 client1=[Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-1)))]})
 
-  Message(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=ping-1)))
+    Message(client1 -> pingserver, PingRequest(ping=PingApplication.Ping(value=ping-1)))
 
-State(nodes={pingserver=PingServer(super=Node(subNodes={}),
+State(nodes={pingserver=PingServer(super=Node(address=pingserver, subNodes={}),
 app=PingApplication()),
-client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
+client1=ClientWorker(client=PingClient(super=Node(address=client1, subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-1), pong=null),
 results=[])}, network=[Message(client1 -> pingserver,
 PingRequest(ping=PingApplication.Ping(value=ping-1))), Message(pingserver ->
@@ -396,11 +389,11 @@ client1, PongReply(pong=PingApplication.Pong(value=ping-1)))],
 timers={pingserver=[], client1=[Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-1)))]})
 
-  Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
+    Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
 
-State(nodes={pingserver=PingServer(super=Node(subNodes={}),
+State(nodes={pingserver=PingServer(super=Node(address=pingserver, subNodes={}),
 app=PingApplication()),
-client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
+client1=ClientWorker(client=PingClient(super=Node(address=client1, subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-2), pong=null),
 results=[PingApplication.Pong(value=ping-1)])}, network=[Message(client1 ->
 pingserver, PingRequest(ping=PingApplication.Ping(value=ping-2))),
@@ -411,11 +404,11 @@ timers={pingserver=[], client1=[Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-1))), Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-2)))]})
 
-  Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
+    Message(pingserver -> client1, PongReply(pong=PingApplication.Pong(value=ping-1)))
 
-State(nodes={pingserver=PingServer(super=Node(subNodes={}),
+State(nodes={pingserver=PingServer(super=Node(address=pingserver, subNodes={}),
 app=PingApplication()),
-client1=ClientWorker(client=PingClient(super=Node(subNodes={}),
+client1=ClientWorker(client=PingClient(super=Node(address=client1, subNodes={}),
 serverAddress=pingserver, ping=PingApplication.Ping(value=ping-3), pong=null),
 results=[PingApplication.Pong(value=ping-1),
 PingApplication.Pong(value=ping-1)])}, network=[Message(client1 -> pingserver,
@@ -429,19 +422,19 @@ PingTimer(ping=PingApplication.Ping(value=ping-1))), Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-2))), Timer(-> client1,
 PingTimer(ping=PingApplication.Ping(value=ping-3)))]})
 
-dslabs.framework.testing.junit.VizStarted: State violates "Clients got expected results"
+State violates "Clients got expected results"
 Error info: client1 got PingApplication.Pong(value=ping-1), expected PingApplication.Pong(value=ping-2)
-See above trace.
 
-  at dslabs.framework.testing.junit.BaseJUnitTest.invariantViolated(BaseJUnitTest.java:270)
-  ...
+java.lang.AssertionError: Invariant violated (see above trace and information).
+    at org.junit.Assert.fail(Assert.java:89)
+    ...
 
-...FAIL (1.727s)
+...FAIL (0.122s)
 ==================================================
 
 Tests passed: 0/1
-Points: 0/0
-Total time: 1.829s
+Points: 0/0 (0.00%)
+Total time: 0.145s
 
 FAIL
 ==================================================

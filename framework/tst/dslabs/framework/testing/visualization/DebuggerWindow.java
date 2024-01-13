@@ -94,8 +94,7 @@ import org.jdesktop.swingx.VerticalLayout;
 public class DebuggerWindow extends JFrame {
   static {
     /*
-     * Try to enable GPU acceleration (doesn't seem to work very well) and
-     * disable UI scaling.
+     * Try to enable GPU acceleration (doesn't seem to work very well) and disable UI scaling.
      *
      * Don't enable GPU acceleration in WSL, though. It does not like it.
      */
@@ -105,18 +104,14 @@ public class DebuggerWindow extends JFrame {
     // Disable this for now since it doesn't seem to be useful
     // System.setProperty("sun.java2d.noddraw", "true");
 
-    /*
-     * Disabling this because it seems to cause problems on MacOS and causes
-     * text to appear blurry
-     */
+    // Disabling this because it seems to cause problems on MacOS and causes text to appear blurry
     // System.setProperty("sun.java2d.uiScale.enabled", "false");
     System.setProperty("sun.java2d.win.uiScaleX", "1.0");
     System.setProperty("sun.java2d.win.uiScaleX", "1.0");
 
     /*
-     * MigLayout thinks it's so smart and wants to use different spacing on
-     * different platforms. We just want consistent behaviour. Therefore, we
-     * standardize on Gnome.
+     * MigLayout thinks it's so smart and wants to use different spacing on different platforms. We
+     * just want consistent behaviour. Therefore, we standardize on Gnome.
      */
     PlatformDefaults.setPlatform(PlatformDefaults.GNOME);
   }
@@ -195,9 +190,9 @@ public class DebuggerWindow extends JFrame {
 
     setLayout(new MigLayout(new LC().fill(), new AC().fill(), new AC().fill()));
 
-    /* ---------------------------------------------------------------------
-     SETUP THE MENU BAR
-    -------------------------------------------------------------------*/
+    /* ---------------------------------------------------------------------------------------------
+     *  SETUP THE MENU BAR
+     * -------------------------------------------------------------------------------------------*/
     final JMenuBar menuBar = new JMenuBar();
     {
       final JMenu fileMenu = new JMenu("Window");
@@ -214,8 +209,7 @@ public class DebuggerWindow extends JFrame {
       final JMenu settingsMenu = new JMenu("Settings");
       menuBar.add(settingsMenu);
 
-      // If the initial state needs delivered messages to be shown, show
-      // them by default
+      // If the initial state needs delivered messages to be shown, show them by default.
       viewDeliveredMessages = currentState.sendsDeliveredMessages();
       JCheckBoxMenuItem viewDeliveredMessagesMenuItem =
           new JCheckBoxMenuItem("Show delivered messages", viewDeliveredMessages);
@@ -229,8 +223,8 @@ public class DebuggerWindow extends JFrame {
             }
           });
 
-      // TODO: only add menu item if searchSettings actually restricts events
-      // (has prunes or prevents message/timer delivery)
+      // TODO: only add menu item if searchSettings actually restricts events (has prunes or
+      //  prevents message/timer delivery)
       if (searchSettings != null) {
         JCheckBoxMenuItem ignoreSearchSettingsMenuItem =
             new JCheckBoxMenuItem("Ignore search event delivery restrictions", false);
@@ -261,9 +255,9 @@ public class DebuggerWindow extends JFrame {
     }
     setJMenuBar(menuBar);
 
-    /* ---------------------------------------------------------------------
-     SETUP THE SIDE BAR
-    -------------------------------------------------------------------*/
+    /* ---------------------------------------------------------------------------------------------
+     *  SETUP THE SIDE BAR
+     * -------------------------------------------------------------------------------------------*/
     final JSplitPane topSplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     final JSplitPane secondarySplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
     {
@@ -334,9 +328,9 @@ public class DebuggerWindow extends JFrame {
     }
     add(topSplitPane);
 
-    /* ---------------------------------------------------------------------
-     ADD THE NODES AND EVENT PANEL
-    -------------------------------------------------------------------*/
+    /* ---------------------------------------------------------------------------------------------
+     *  ADD THE NODES AND EVENT PANEL
+     * -------------------------------------------------------------------------------------------*/
     for (Address a : addresses) {
       SingleNodePanel panel =
           new SingleNodePanel(currentState, searchSettings, a, this, viewDeliveredMessages);
@@ -361,9 +355,9 @@ public class DebuggerWindow extends JFrame {
     eventsPanel = new EventsPanel(this, currentState);
     secondarySplitPane.add(eventsPanel);
 
-    /* ---------------------------------------------------------------------
-     SETUP KEYBOARD SHORTCUTS
-    -------------------------------------------------------------------*/
+    /* ---------------------------------------------------------------------------------------------
+     *  SETUP KEYBOARD SHORTCUTS
+     * -------------------------------------------------------------------------------------------*/
     {
       InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_FOCUSED);
       inputMap.put(KeyStroke.getKeyStroke('p'), "PREVIOUS_EVENT");
@@ -402,9 +396,9 @@ public class DebuggerWindow extends JFrame {
     stateTreeCanvas.showEvent(currentState);
     add(stateTreeCanvas, "dock south");
 
-    /* ---------------------------------------------------------------------
-     SET WINDOW SIZE AND LOCATION
-    -------------------------------------------------------------------*/
+    /* ---------------------------------------------------------------------------------------------
+     *  SET WINDOW SIZE AND LOCATION
+     * -------------------------------------------------------------------------------------------*/
     addComponentListener(
         new ComponentListener() {
           @Override
@@ -548,9 +542,9 @@ public class DebuggerWindow extends JFrame {
         label.setIcon(Utils.makeIcon(FontAwesome.CHECK_CIRCLE, UIManager.getColor("successColor")));
         label.setToolTipText(null);
       } else {
-        // Not using an exclamation because even if the current state is not a goal,
-        // this isn't an error. FontAwesome apparently doesn't have a TIMES_SQUARE,
-        // so using a circle for both icons.
+        // Not using an exclamation because even if the current state is not a goal, this isn't an
+        // error. FontAwesome apparently doesn't have a TIMES_SQUARE, so using a circle for both
+        // icons.
         label.setIcon(Utils.makeIcon(FontAwesome.TIMES_CIRCLE));
         label.setToolTipText(r.detail());
       }
@@ -586,10 +580,9 @@ public class DebuggerWindow extends JFrame {
 
   private void layoutNodes() {
     /*
-     * We must reset the JXMultiSplitPane every time. Unfortunately, hiding
-     * previously-shown nodes sometimes causes an issue where the minimum
-     * size of the far right split gets set to a non-zero value and can't be
-     * resized any smaller...
+     * We must reset the JXMultiSplitPane every time. Unfortunately, hiding previously-shown nodes
+     * sometimes causes an issue where the minimum size of the far right split gets set to a
+     * non-zero value and can't be resized any smaller...
      */
 
     final MultiSplitLayout layout = splitPane.getMultiSplitLayout();

@@ -64,8 +64,7 @@ public class ShardStoreVizConfig extends VizConfig {
     }
     if (commandEnd - commandStart != 1 && commandEnd - commandStart != numClients) {
       throw new IllegalArgumentException(
-          "Please provide either a single workload for all "
-              + "clients or a separate workload for each client.");
+          "Please provide either a single workload for all clients or a separate workload for each client.");
     }
     List<List<String>> commands = new LinkedList<>();
     for (int i = commandStart; i < commandEnd; i++) {

@@ -236,7 +236,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
       if (waitTime.toMillis() > allowedMillis) {
         fail(
             String.format(
-                "%s waited too long, %s ms (%s ms allowed), started " + "waiting at %s",
+                "%s waited too long, %s ms (%s ms allowed), started waiting at %s",
                 cw.address(),
                 waitTime.toMillis(),
                 allowedMillis,

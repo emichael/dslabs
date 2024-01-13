@@ -169,20 +169,20 @@ private static final String PAXOS_ADDRESS_ID = "paxos";
 private Address paxosAddress;
 
 public void init() {
-    // Setup Paxos
-    paxosAddress = Address.subAddress(address(), PAXOS_ADDRESS_ID);
+  // Setup Paxos
+  paxosAddress = Address.subAddress(address(), PAXOS_ADDRESS_ID);
 
-    Address[] paxosAddresses = new Address[group.length];
-    for (int i = 0; i < paxosAddresses.length; i++) {
-      paxosAddresses[i] = Address.subAddress(group[i], PAXOS_ADDRESS_ID);
-    }
+  Address[] paxosAddresses = new Address[group.length];
+  for (int i = 0; i < paxosAddresses.length; i++) {
+    paxosAddresses[i] = Address.subAddress(group[i], PAXOS_ADDRESS_ID);
+  }
 
-    PaxosServer paxosServer =
-        new PaxosServer(paxosAddress, paxosAddresses, address());
-    addSubNode(paxosServer);
-    paxosServer.init();
+  PaxosServer paxosServer = new PaxosServer(
+    paxosAddress, paxosAddresses, address());
+  addSubNode(paxosServer);
+  paxosServer.init();
 
-    ...
+  ...
 }
 ```
 

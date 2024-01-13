@@ -81,7 +81,7 @@ public abstract class Search {
   }
 
   /**
-   * Should return a adjective describing "search." Only called by the main thread.
+   * Should return an adjective describing "search." Only called by the main thread.
    *
    * @return the type of search being executed
    */
@@ -104,11 +104,11 @@ public abstract class Search {
   protected abstract String status(double elapsedSecs);
 
   /**
-   * Determine whether or not the space has been fully explored, up to the limits imposed by the
-   * search settings. For example, if the depth-limit has been reached in a breadth-first search,
-   * then this method should return {@code true}. This method is free to assume that there are no
-   * active workers running for purposes of determining whether the space is exhausted or not. Need
-   * not be thread-safe.
+   * Determine whether the space has been fully explored, up to the limits imposed by the search
+   * settings. For example, if the depth-limit has been reached in a breadth-first search, then this
+   * method should return {@code true}. This method is free to assume that there are no active
+   * workers running for purposes of determining whether the space is exhausted or not. Need not be
+   * thread-safe.
    *
    * @return whether the space has been fully explored
    */
@@ -129,7 +129,8 @@ public abstract class Search {
     try {
       return ((numActiveWorkers == 0) && spaceExhausted())
           || (settings.timeLimited()
-              && ((System.currentTimeMillis() - startTimeMillis) > (settings.maxTimeSecs() * 1000)))
+              && ((System.currentTimeMillis() - startTimeMillis)
+                  > (settings.maxTimeSecs() * 1000L)))
           || (results.invariantViolated() != null)
           || (results.exceptionThrown())
           || (results.goalMatched() != null);
@@ -287,7 +288,7 @@ public abstract class Search {
 
                   while (!Thread.interrupted()) {
                     long waitTime =
-                        settings.outputFreqSecs() * 1000
+                        settings.outputFreqSecs() * 1000L
                             + lastLoggedMillis
                             - System.currentTimeMillis();
                     if (waitTime > 0) {
@@ -310,7 +311,7 @@ public abstract class Search {
         while (!searchFinished()) {
           if (settings.timeLimited()) {
             long timeRemaining =
-                settings.maxTimeSecs() * 1000 + startTimeMillis - System.currentTimeMillis();
+                settings.maxTimeSecs() * 1000L + startTimeMillis - System.currentTimeMillis();
             if (timeRemaining > 0) {
               searchFinished.await(timeRemaining, TimeUnit.MILLISECONDS);
             }
@@ -351,7 +352,7 @@ public abstract class Search {
       while (!searchFinished()) {
         // First, let's print out the status if necessary
         if (settings.shouldOutputStatus()
-            && System.currentTimeMillis() - lastLoggedMillis > settings.outputFreqSecs() * 1000) {
+            && System.currentTimeMillis() - lastLoggedMillis > settings.outputFreqSecs() * 1000L) {
           lastLoggedMillis = System.currentTimeMillis();
           printStatus();
         }

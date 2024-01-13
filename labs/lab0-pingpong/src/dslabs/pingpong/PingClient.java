@@ -21,9 +21,9 @@ class PingClient extends Node implements Client {
   private Ping ping;
   private Pong pong;
 
-  /* -------------------------------------------------------------------------
-   Construction and Initialization
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Construction and Initialization
+   * ---------------------------------------------------------------------------------------------*/
   public PingClient(Address address, Address serverAddress) {
     super(address);
     this.serverAddress = serverAddress;
@@ -34,9 +34,9 @@ class PingClient extends Node implements Client {
     // No initialization necessary
   }
 
-  /* -------------------------------------------------------------------------
-   Client Methods
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Client Methods
+   * ---------------------------------------------------------------------------------------------*/
   @Override
   public synchronized void sendCommand(Command command) {
     if (!(command instanceof Ping)) {
@@ -66,9 +66,9 @@ class PingClient extends Node implements Client {
     return pong;
   }
 
-  /* -------------------------------------------------------------------------
-   Message Handlers
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Message Handlers
+   * ---------------------------------------------------------------------------------------------*/
   private synchronized void handlePongReply(PongReply m, Address sender) {
     if (Objects.equal(ping.value(), m.pong().value())) {
       pong = m.pong();
@@ -76,9 +76,9 @@ class PingClient extends Node implements Client {
     }
   }
 
-  /* -------------------------------------------------------------------------
-   Timer Handlers
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Timer Handlers
+   * ---------------------------------------------------------------------------------------------*/
   private synchronized void onPingTimer(PingTimer t) {
     if (Objects.equal(ping, t.ping()) && pong == null) {
       send(new PingRequest(ping), serverAddress);

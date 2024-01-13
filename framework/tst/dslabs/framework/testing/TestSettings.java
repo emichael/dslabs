@@ -214,9 +214,9 @@ public abstract class TestSettings<T extends TestSettings<T>> {
   }
 
   /**
-   * Computes whether or not the link between the sender and receiver is active by first looking, in
-   * order of priority, at the status of the link, the status of the sender, the status of the
-   * receiver, and then the status of the network.
+   * Computes whether the link between the sender and receiver is active by first looking, in order
+   * of priority, at the status of the link, the status of the sender, the status of the receiver,
+   * and then the status of the network.
    *
    * @param messageEnvelope the candidate messageEnvelope
    * @return whether the messageEnvelope should be delivered

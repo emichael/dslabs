@@ -11,9 +11,9 @@ import lombok.ToString;
 public class PingServer extends Node {
   private final PingApplication app = new PingApplication();
 
-  /* -------------------------------------------------------------------------
-   Construction and Initialization
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Construction and Initialization
+   * ---------------------------------------------------------------------------------------------*/
   public PingServer(Address address) {
     super(address);
   }
@@ -23,9 +23,9 @@ public class PingServer extends Node {
     // No initialization necessary
   }
 
-  /* -------------------------------------------------------------------------
-   Message Handlers
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Message Handlers
+   * ---------------------------------------------------------------------------------------------*/
   private void handlePingRequest(PingRequest m, Address sender) {
     Pong p = app.execute(m.ping());
     send(new PongReply(p), sender);

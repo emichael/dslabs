@@ -12,9 +12,9 @@ import lombok.ToString;
 public class ShardStoreClient extends ShardStoreNode implements Client {
   // Your code here...
 
-  /* -------------------------------------------------------------------------
-   Construction and Initialization
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Construction and Initialization
+   * ---------------------------------------------------------------------------------------------*/
   public ShardStoreClient(Address address, Address[] shardMasters, int numShards) {
     super(address, shardMasters, numShards);
   }
@@ -24,9 +24,9 @@ public class ShardStoreClient extends ShardStoreNode implements Client {
     // Your code here...
   }
 
-  /* -------------------------------------------------------------------------
-   Public methods
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Client Methods
+   * ---------------------------------------------------------------------------------------------*/
   @Override
   public synchronized void sendCommand(Command command) {
     // Your code here...
@@ -44,18 +44,18 @@ public class ShardStoreClient extends ShardStoreNode implements Client {
     return null;
   }
 
-  /* -------------------------------------------------------------------------
-   Message Handlers
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Message Handlers
+   * ---------------------------------------------------------------------------------------------*/
   private synchronized void handleShardStoreReply(ShardStoreReply m, Address sender) {
     // Your code here...
   }
 
   // Your code here...
 
-  /* -------------------------------------------------------------------------
-   Timer Handlers
-  -----------------------------------------------------------------------*/
+  /* -----------------------------------------------------------------------------------------------
+   *  Timer Handlers
+   * ---------------------------------------------------------------------------------------------*/
   private synchronized void onClientTimer(ClientTimer t) {
     // Your code here...
   }
