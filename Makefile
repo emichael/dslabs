@@ -50,6 +50,7 @@ build/doc/: $(FRAMEWORK_FILES)
 
 $(LICENSE_NOTICE): build.gradle
 	./gradlew generateLicenseReport
+	touch $@
 
 build/handout/: $(LAB_FILES) $(HANDOUT_FILES) $(OTHER_FILES) build/libs/ deps/formatter/google-java-format.jar $(LICENSE_NOTICE)
 	rm -rf $@
