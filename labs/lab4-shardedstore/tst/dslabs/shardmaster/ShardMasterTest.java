@@ -316,7 +316,7 @@ public class ShardMasterTest extends DSLabsJUnitTest {
     ShardConfig config = getLatest(false);
 
     Set<Integer> groupOneShards = config.groupInfo().get(1).getRight();
-    assertTrue(groupOneShards.size() == 5);
+    assertEquals(5, groupOneShards.size());
 
     Set<Integer> remaining = new HashSet<>(groupOneShards);
     for (Integer shard : groupOneShards) {
@@ -357,7 +357,7 @@ public class ShardMasterTest extends DSLabsJUnitTest {
 
       List<Integer> groupOneShards = new ArrayList<>(config.groupInfo().get(1).getRight());
       Collections.sort(groupOneShards);
-      assertTrue(groupOneShards.size() == 50);
+      assertEquals(50, groupOneShards.size());
 
       for (int j = 0; j < 10; j++) {
         execute(new Move(2, groupOneShards.get(j)));

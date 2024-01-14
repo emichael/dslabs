@@ -546,7 +546,7 @@ class ObjectJTree extends BaseJTree {
     }
 
     final String treeCellText() {
-      return "<html>" + treeCellTextInternal() + "</html>";
+      return String.format("<html>%s</html>", treeCellTextInternal());
     }
 
     protected String treeCellTextInternal() {

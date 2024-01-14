@@ -87,7 +87,7 @@ public class CheckSavedTracesTest extends BaseJUnitTest {
   public void checkTrace() {
     StringBuilder msg = new StringBuilder();
     msg.append("Replaying trace ");
-    msg.append(trace.fileName().toString());
+    msg.append(trace.fileName());
     if (trace.testMethodName() != null) {
       msg.append(" generated from ");
       msg.append(trace.testMethodName());

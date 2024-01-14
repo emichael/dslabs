@@ -138,17 +138,18 @@ public abstract class Workload implements Serializable {
 
     Pattern token = Pattern.compile("%(?:r(\\d*)|n(\\d*)|i(?:-1|\\+1)?|a)");
 
-    StringBuffer ret = new StringBuffer();
+    StringBuilder ret = new StringBuilder();
     Matcher matcher = token.matcher(s);
 
     while (matcher.find()) {
       String fullMatch = matcher.group();
+      String randomString;
       switch (fullMatch.charAt(1)) {
         case 'r':
-          String randomString = null;
+          randomString = null;
           if (useRandomness
               && randomness.containsKey(fullMatch)
-              && randomness.get(fullMatch).size() > 0) {
+              && !randomness.get(fullMatch).isEmpty()) {
             randomString = randomness.get(fullMatch).remove(0);
           }
 
@@ -176,7 +177,7 @@ public abstract class Workload implements Serializable {
           randomString = null;
           if (useRandomness
               && randomness.containsKey(fullMatch)
-              && randomness.get(fullMatch).size() > 0) {
+              && !randomness.get(fullMatch).isEmpty()) {
             randomString = randomness.get(fullMatch).remove(0);
           }
 
@@ -251,7 +252,7 @@ public abstract class Workload implements Serializable {
         boolean doReplacements) {
       // TODO: restructure and allow either commands or commandStrings when both empty
       if (!finite
-          && ((commands != null && commands.size() == 0)
+          && ((commands != null && commands.isEmpty())
               || (commandStrings != null && commandStrings.isEmpty()))) {
         throw new IllegalArgumentException("Cannot create empty infinite workload");
       }
@@ -381,7 +382,7 @@ public abstract class Workload implements Serializable {
         throw new UnsupportedOperationException("Workload has command strings");
       }
 
-      if (commands.size() > 0 && hasResults()) {
+      if (!commands.isEmpty() && hasResults()) {
         throw new UnsupportedOperationException("Workload has results");
       }
 
@@ -416,7 +417,7 @@ public abstract class Workload implements Serializable {
         throw new UnsupportedOperationException("Workload doesn't have command strings");
       }
 
-      if (commandStrings.size() > 0 && hasResults()) {
+      if (!commandStrings.isEmpty() && hasResults()) {
         throw new UnsupportedOperationException("Workload has results");
       }
 

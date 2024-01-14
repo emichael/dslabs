@@ -260,21 +260,20 @@ public final class ClientWorker extends Node {
   }
 
   @Override
-  public final synchronized void init() {
+  public synchronized void init() {
     initialized = true;
     clientNode().init();
     sendNextCommandWhilePossible();
   }
 
   @Override
-  public final synchronized void handleMessage(
-      Message message, Address sender, Address destination) {
+  public synchronized void handleMessage(Message message, Address sender, Address destination) {
     clientNode().handleMessage(message, sender, destination);
     sendNextCommandWhilePossible();
   }
 
   @Override
-  public final synchronized void onTimer(Timer timer, Address destination) {
+  public synchronized void onTimer(Timer timer, Address destination) {
     if (timer instanceof InterRequestTimer) {
       sendNextCommand();
     } else {
@@ -284,7 +283,7 @@ public final class ClientWorker extends Node {
   }
 
   @Override
-  public final void config(
+  public void config(
       Consumer<Triple<Address, Address, Message>> messageAdder,
       Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
       Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder,

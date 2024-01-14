@@ -35,7 +35,7 @@ public class LocalAddress implements Address {
 
   @Override
   public int compareTo(Address o) {
-    if (o == null || !(o instanceof LocalAddress)) {
+    if (!(o instanceof LocalAddress)) {
       return 1;
     }
 

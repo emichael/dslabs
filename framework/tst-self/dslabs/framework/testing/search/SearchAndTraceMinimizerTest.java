@@ -259,8 +259,8 @@ public class SearchAndTraceMinimizerTest {
     assertNotNull(p);
 
     assertEquals(p.predicate(), fooException);
-    assertEquals(null, p.value());
-    assertEquals(null, p.detail());
+    assertNull(p.value());
+    assertNull(p.detail());
     assertTrue(p.exceptionThrown());
     assertTrue(p.errorMessage().startsWith("Exception thrown"));
 
@@ -275,8 +275,8 @@ public class SearchAndTraceMinimizerTest {
     assertNotNull(p);
 
     assertEquals(p.predicate(), fooException);
-    assertEquals(null, p.value());
-    assertEquals(null, p.detail());
+    assertNull(p.value());
+    assertNull(p.detail());
     assertTrue(p.exceptionThrown());
     assertTrue(p.errorMessage().startsWith("Exception thrown"));
 
@@ -379,7 +379,7 @@ public class SearchAndTraceMinimizerTest {
     String err = sb.toString();
     assertTrue(err.contains("SEVERE"));
     assertTrue(err.contains("Exception thrown while evaluating \"fooException"));
-    assertTrue(err.indexOf("SEVERE") == err.lastIndexOf("SEVERE"));
+    assertEquals(err.indexOf("SEVERE"), err.lastIndexOf("SEVERE"));
 
     l.removeHandler(handler);
     for (var h : oldHandlers) {

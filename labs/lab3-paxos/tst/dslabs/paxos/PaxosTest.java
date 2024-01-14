@@ -605,7 +605,7 @@ public class PaxosTest extends BaseJUnitTest {
 
     // Test initial allocated space
     long initialBytes = nodesSize();
-    System.out.println("Using " + readableSize(initialBytes) + " at start.");
+    System.out.printf("Using %s at start.%n", readableSize(initialBytes));
     // Must use less than 2MB at first
     assertTrue(initialBytes < 2 * Math.pow(1024, 2));
 
@@ -637,7 +637,7 @@ public class PaxosTest extends BaseJUnitTest {
     runState.stop();
 
     long finishBytes = nodesSize();
-    System.out.println("Using " + readableSize(finishBytes) + " at end.");
+    System.out.printf("Using %s at end.%n", readableSize(finishBytes));
     // Must be back under 2MB at end
     assertTrue(finishBytes < 2 * Math.pow(1024, 2));
   }

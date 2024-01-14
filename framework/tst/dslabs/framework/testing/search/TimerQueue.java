@@ -64,11 +64,11 @@ class TimerQueue implements Serializable, Iterable<TimerEnvelope> {
   }
 
   Iterable<TimerEnvelope> deliverable() {
-    return new Iterable<TimerEnvelope>() {
+    return new Iterable<>() {
       @Override
       @Nonnull
       public Iterator<TimerEnvelope> iterator() {
-        return new Iterator<TimerEnvelope>() {
+        return new Iterator<>() {
           Integer minMaxTime = null;
           int i = 0;
 

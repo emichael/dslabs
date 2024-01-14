@@ -73,16 +73,16 @@ public final class TimerEnvelope implements Serializable, Comparable<TimerEnvelo
     return startTimeNanos + (((long) timerLengthMillis()) * 1000000);
   }
 
-  public final long timeRemainingNanos() {
+  public long timeRemainingNanos() {
     return endTimeNanos() - System.nanoTime();
   }
 
-  public final boolean isDue() {
+  public boolean isDue() {
     return timeRemainingNanos() <= 0;
   }
 
   @Override
-  public final int compareTo(TimerEnvelope o) {
+  public int compareTo(TimerEnvelope o) {
     if (o == null) {
       return 1;
     }

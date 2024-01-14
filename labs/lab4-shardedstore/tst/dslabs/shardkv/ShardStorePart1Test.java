@@ -166,7 +166,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
     // Count number of keys gotten
     int numGets = runState.results().size();
-    long numFound = runState.results().values().stream().filter(l -> l.size() > 0).count();
+    long numFound = runState.results().values().stream().filter(l -> !l.isEmpty()).count();
 
     assertTrue(numFound > numShards / 3 && numFound < 2 * numShards / 3);
   }
@@ -198,9 +198,9 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     joinGroup(2, numServersPerGroup);
 
     ShardConfig config1 = getConfig();
-    Set<Integer> toMove = new HashSet<>();
-    toMove.addAll(
-        config1.groupInfo().get(1).getRight().stream().limit(10).collect(Collectors.toSet()));
+    Set<Integer> toMove =
+        new HashSet<>(
+            config1.groupInfo().get(1).getRight().stream().limit(10).collect(Collectors.toSet()));
     assertTrue(toMove.size() >= 10);
 
     for (int shard : toMove) {

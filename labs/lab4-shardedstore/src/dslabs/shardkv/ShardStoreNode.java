@@ -45,7 +45,7 @@ abstract class ShardStoreNode extends Node {
     Collections.reverse(cl);
 
     int hash = 0;
-    if (cl.size() != 0) {
+    if (!cl.isEmpty()) {
       for (char c : cl) {
         hash = hash * 10 + Character.getNumericValue(c);
       }

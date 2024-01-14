@@ -36,8 +36,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowStateListener;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -427,12 +425,7 @@ public class DebuggerWindow extends JFrame {
         });
 
     addWindowStateListener(
-        new WindowStateListener() {
-          @Override
-          public void windowStateChanged(WindowEvent e) {
-            Utils.PREFERENCES.putInt(PREFS_WINDOW_EXTENDED_STATE, e.getNewState());
-          }
-        });
+        e -> Utils.PREFERENCES.putInt(PREFS_WINDOW_EXTENDED_STATE, e.getNewState()));
 
     Set<String> preferenceKeys;
     try {

@@ -112,9 +112,10 @@ public abstract class TransactionalKVStoreWorkload extends KVStoreWorkload {
     Transaction command;
     KVStoreResult result = null;
 
+    String[] keys;
     switch (split[0]) {
       case "MULTIGET":
-        String[] keys = split[1].split(":");
+        keys = split[1].split(":");
         command = multiGet((Object[]) keys);
         if (r != null) {
           String[] values = r.split(":");

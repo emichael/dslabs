@@ -370,15 +370,18 @@ class SingleNodePanel extends JPanel {
     deliveryButton.setEnabled(!pruned && !prohibited && !exception);
     String tooltip;
     if (exception) {
-      tooltip = "This " + name + " cannot be delivered because an exception was thrown";
+      tooltip = String.format("This %s cannot be delivered because an exception was thrown", name);
     } else if (pruned) {
       tooltip =
-          "This " + name + " cannot be delivered because the current state is pruned by the search";
+          String.format(
+              "This %s cannot be delivered because the current state is pruned by the search",
+              name);
     } else if (prohibited) {
       tooltip =
-          "This " + name + " cannot be delivered because delivery is prohibited by the search";
+          String.format(
+              "This %s cannot be delivered because delivery is prohibited by the search", name);
     } else {
-      tooltip = "Deliver " + name;
+      tooltip = String.format("Deliver %s", name);
     }
     deliveryButton.setToolTipText(tooltip);
   }
