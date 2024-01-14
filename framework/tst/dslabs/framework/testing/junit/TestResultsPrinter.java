@@ -28,6 +28,8 @@ import static dslabs.framework.testing.junit.VizStartedListener.vizStarted;
 
 import com.google.common.base.Throwables;
 import java.text.NumberFormat;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.runner.Description;
 import org.junit.runner.Result;
@@ -48,13 +50,13 @@ class TestResultsPrinter extends RunListener {
   public void testRunFinished(Result result) {
     System.out.println(large_sep);
     System.out.println();
-    System.out.println("Tests passed: " + numPassed + "/" + result.getRunCount());
+    System.out.printf("Tests passed: %d/%d%n", numPassed, result.getRunCount());
     System.out.printf(
         "Points: %s/%s (%.2f%%)%n",
         pointsEarned,
         totalPoints,
         totalPoints != 0 ? 100 * ((double) pointsEarned) / ((double) totalPoints) : 0);
-    System.out.println("Total time: " + elapsedTimeAsString(result.getRunTime()) + "s");
+    System.out.printf("Total time: %ss%n", elapsedTimeAsString(result.getRunTime()));
     if (result.wasSuccessful()) {
       System.out.println("\nALL PASS");
     } else {
@@ -73,14 +75,12 @@ class TestResultsPrinter extends RunListener {
     logTestStarted();
 
     System.out.println(small_sep);
-    System.out.println(
-        "TEST "
-            + fullTestNumber(description)
-            + ": "
-            + testName(description)
-            + " ("
-            + totalPoints(description)
-            + "pts)\n");
+    System.out.printf(
+        "TEST %s: %s (%dpts)%n  START [%s]...%n%n",
+        fullTestNumber(description),
+        testName(description),
+        totalPoints(description),
+        currentDateTime());
     totalPoints += totalPoints(description);
   }
 
@@ -105,38 +105,40 @@ class TestResultsPrinter extends RunListener {
     } else {
       System.out.print("...FAIL");
     }
-    System.out.println(" (" + elapsedTimeAsString(System.currentTimeMillis() - startMillis) + "s)");
+    System.out.printf(
+        " [%s] (%ss)%n",
+        currentDateTime(), elapsedTimeAsString(System.currentTimeMillis() - startMillis));
   }
 
   @Override
   public void testAssumptionFailure(Failure failure) {
-    System.out.println("ASSUMPTION FAILURE: " + testName(failure.getDescription()));
+    System.out.printf("ASSUMPTION FAILURE: %s%n", testName(failure.getDescription()));
     System.out.println(small_sep);
   }
 
   private String testName(Description description) {
-    String name;
+    StringBuilder name = new StringBuilder();
 
     TestDescription testDescription = description.getAnnotation(TestDescription.class);
     if (testDescription != null) {
-      name = testDescription.value();
+      name = new StringBuilder(testDescription.value());
     } else {
-      name = description.getDisplayName();
+      name = new StringBuilder(description.getDisplayName());
     }
 
     if (isInCategory(description, RunTests.class)) {
-      name += " [RUN]";
+      name.append(" [RUN]");
     }
 
     if (isInCategory(description, SearchTests.class)) {
-      name += " [SEARCH]";
+      name.append(" [SEARCH]");
     }
 
     if (isInCategory(description, UnreliableTests.class)) {
-      name += " [UNRELIABLE]";
+      name.append(" [UNRELIABLE]");
     }
 
-    return name;
+    return name.toString();
   }
 
   private int totalPoints(Description description) {
@@ -156,5 +158,13 @@ class TestResultsPrinter extends RunListener {
 
   private String elapsedTimeAsString(long runTime) {
     return NumberFormat.getInstance().format((double) runTime / 1000);
+  }
+
+  /**
+   * Returns the current time in a format similar to how it is recorded by the default logger when
+   * using the @Log annotation.
+   */
+  private static String currentDateTime() {
+    return LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SS"));
   }
 }
