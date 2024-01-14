@@ -192,6 +192,7 @@ ignored by default by all cloning, serialization, and `toString` methods.
 The framework and labs have been improved thanks to valuable contributions from:
 - Alex Saveau
 - Andrew Wei
+- Arman Mohammed
 - Doug Woos
 - Guangda Sun
 - James Wilcox
