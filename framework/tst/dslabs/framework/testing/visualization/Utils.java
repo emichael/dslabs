@@ -27,6 +27,10 @@ import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLaf;
 import java.awt.Color;
 import java.awt.Component;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.prefs.BackingStoreException;
 import java.util.prefs.Preferences;
 import javax.swing.Icon;
 import javax.swing.JScrollPane;
@@ -37,7 +41,8 @@ import jiconfont.icons.font_awesome.FontAwesome;
 import jiconfont.swing.IconFontSwing;
 import lombok.NonNull;
 
-abstract class Utils {
+final class Utils {
+  // TODO: move preferences into their own utility file.
   static final Preferences PREFERENCES = Preferences.userNodeForPackage(Utils.class);
 
   static {
@@ -47,6 +52,7 @@ abstract class Utils {
 
   private static final int ICON_SIZE = 18;
   private static final String PREF_DARK_MODE = "dark_mode";
+  private static final String GPU_ACCEL = "gpu_acceleration";
 
   private static Color iconColor() {
     return UIManager.getColor("Tree.icon.expandedColor");
@@ -105,6 +111,35 @@ abstract class Utils {
 
   private static void saveThemePreference(boolean darkMode) {
     PREFERENCES.putBoolean(PREF_DARK_MODE, darkMode);
+    try {
+      PREFERENCES.flush();
+    } catch (BackingStoreException ignored) {
+      // TODO: print exception?
+    }
+  }
+
+  static boolean gpuAccelerationEnabled() {
+    // GPU acceleration is enabled by default. It's not in WSL, though; WSL does not like it.
+    return PREFERENCES.getBoolean(GPU_ACCEL, !runningInWSL());
+  }
+
+  static void setGpuAccelerationEnabled(boolean enabled) {
+    PREFERENCES.putBoolean(GPU_ACCEL, enabled);
+    try {
+      PREFERENCES.flush();
+    } catch (BackingStoreException ignored) {
+      // TODO: print exception?
+    }
+  }
+
+  /** Try to detect whether the visual debugger is running under the Windows Subsystem for Linux. */
+  private static boolean runningInWSL() {
+    try {
+      String procVersion = Files.readString(Path.of("/proc/version"));
+      return procVersion.toLowerCase().contains("microsoft");
+    } catch (IOException e) {
+      return false;
+    }
   }
 
   /**
@@ -121,4 +156,6 @@ abstract class Utils {
     scrollPane.getHorizontalScrollBar().setUnitIncrement(10);
     return scrollPane;
   }
+
+  private Utils() {}
 }

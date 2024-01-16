@@ -36,11 +36,8 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
-import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -91,12 +88,8 @@ import org.jdesktop.swingx.VerticalLayout;
 
 public class DebuggerWindow extends JFrame {
   static {
-    /*
-     * Try to enable GPU acceleration (doesn't seem to work very well) and disable UI scaling.
-     *
-     * Don't enable GPU acceleration in WSL, though. It does not like it.
-     */
-    if (!runningInWSL()) {
+    // Try to enable GPU acceleration (doesn't seem to work very well) and disable UI scaling.
+    if (Utils.gpuAccelerationEnabled()) {
       setProperty("sun.java2d.opengl", "true");
     }
     // Disable this for now since it doesn't seem to be useful
@@ -112,16 +105,6 @@ public class DebuggerWindow extends JFrame {
      * just want consistent behaviour. Therefore, we standardize on Gnome.
      */
     PlatformDefaults.setPlatform(PlatformDefaults.GNOME);
-  }
-
-  /** Try to detect whether the visual debugger is running under the Windows Subsystem for Linux. */
-  private static boolean runningInWSL() {
-    try {
-      String procVersion = Files.readString(Path.of("/proc/version"));
-      return procVersion.toLowerCase().contains("microsoft");
-    } catch (IOException e) {
-      return false;
-    }
   }
 
   /** Set a system property if it doesn't already have a value. */
@@ -257,6 +240,17 @@ public class DebuggerWindow extends JFrame {
 
       darkMode.addActionListener(e -> Utils.setupDarkTheme(true));
       lightMode.addActionListener(e -> Utils.setupLightTheme(true));
+
+      settingsMenu.addSeparator();
+
+      JCheckBoxMenuItem gpuAcceleration =
+          new JCheckBoxMenuItem("GPU Acceleration", Utils.gpuAccelerationEnabled());
+      settingsMenu.add(gpuAcceleration);
+      gpuAcceleration.addActionListener(
+          e -> {
+            Utils.setGpuAccelerationEnabled(gpuAcceleration.getState());
+          });
+      gpuAcceleration.setToolTipText("Requires restart");
     }
     setJMenuBar(menuBar);
 
