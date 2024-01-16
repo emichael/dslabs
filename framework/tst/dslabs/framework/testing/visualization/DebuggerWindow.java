@@ -97,15 +97,15 @@ public class DebuggerWindow extends JFrame {
      * Don't enable GPU acceleration in WSL, though. It does not like it.
      */
     if (!runningInWSL()) {
-      System.setProperty("sun.java2d.opengl", "true");
+      setProperty("sun.java2d.opengl", "true");
     }
     // Disable this for now since it doesn't seem to be useful
-    // System.setProperty("sun.java2d.noddraw", "true");
+    // setProperty("sun.java2d.noddraw", "true");
 
     // Disabling this because it seems to cause problems on MacOS and causes text to appear blurry
-    // System.setProperty("sun.java2d.uiScale.enabled", "false");
-    System.setProperty("sun.java2d.win.uiScaleX", "1.0");
-    System.setProperty("sun.java2d.win.uiScaleX", "1.0");
+    // setProperty("sun.java2d.uiScale.enabled", "false");
+    setProperty("sun.java2d.win.uiScaleX", "1.0");
+    setProperty("sun.java2d.win.uiScaleX", "1.0");
 
     /*
      * MigLayout thinks it's so smart and wants to use different spacing on different platforms. We
@@ -121,6 +121,13 @@ public class DebuggerWindow extends JFrame {
       return procVersion.toLowerCase().contains("microsoft");
     } catch (IOException e) {
       return false;
+    }
+  }
+
+  /** Set a system property if it doesn't already have a value. */
+  private static void setProperty(String property, String value) {
+    if (System.getProperty(property) == null) {
+      System.setProperty(property, value);
     }
   }
 

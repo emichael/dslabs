@@ -57,7 +57,7 @@ def make():
 def run_tests(lab, part=None, no_run=False, no_search=False,
               timers_disabled=False, log_level=None, single_threaded=False,
               start_viz=False, do_checks=False, test_num=None, assertions=False,
-              save_traces=False):
+              save_traces=False, jvm_properties=None):
     """Run the specified tests."""
     make()
 
@@ -84,6 +84,10 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if save_traces:
         command.append('-DsaveTraces=true')
 
+    if jvm_properties is not None:
+        for prop in jvm_properties:
+            command.append(f'-D{prop}')
+
     command += [
         '-cp',
         RUNTIME_CLASSPATH,
@@ -109,7 +113,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
 
 
 
-def run_viz_debugger(lab, args, assertions=False):
+def run_viz_debugger(lab, args, assertions=False, jvm_properties=None):
     """Start the visual debugger."""
     make()
 
@@ -117,6 +121,10 @@ def run_viz_debugger(lab, args, assertions=False):
 
     if assertions:
         command.append('-ea')
+
+    if jvm_properties is not None:
+        for prop in jvm_properties:
+            command.append(f'-D{prop}')
 
     command += [
         '-cp',
@@ -132,7 +140,7 @@ def run_viz_debugger(lab, args, assertions=False):
 
 
 
-def visualize_trace(trace_name, assertions=False):
+def visualize_trace(trace_name, assertions=False, jvm_properties=None):
     """Visualize a trace."""
     make()
 
@@ -140,6 +148,10 @@ def visualize_trace(trace_name, assertions=False):
 
     if assertions:
         command.append('-ea')
+
+    if jvm_properties is not None:
+        for prop in jvm_properties:
+            command.append(f'-D{prop}')
 
     command += [
         '-cp',
@@ -153,7 +165,8 @@ def visualize_trace(trace_name, assertions=False):
 
 
 def replay_traces(trace_names=None, lab=None, part=None, log_level=None,
-                  start_viz=False, do_checks=False, assertions=False):
+                  start_viz=False, do_checks=False, assertions=False,
+                  jvm_properties=None):
     """Replay traces."""
     make()
 
@@ -170,6 +183,10 @@ def replay_traces(trace_names=None, lab=None, part=None, log_level=None,
 
     if do_checks:
         command.append('-DdoChecks=true')
+
+    if jvm_properties is not None:
+        for prop in jvm_properties:
+            command.append(f'-D{prop}')
 
     command += [
         '-cp',
@@ -253,6 +270,11 @@ def main():
                        "specified trace, regardless of whether it still causes "
                        "an invariant violation")
 
+    parser.add_argument('-D', action="append", type=str,
+                        metavar="PROPERTY=VALUE", dest="jvm_properties",
+                        help="command-line property to pass to the JVM, can be "
+                        "repeated (e.g. -Dfoo=val1 -Dbar=val2)")
+
     args = parser.parse_args()
 
     def disallow_arguments(current_option, disallowed_options):
@@ -270,7 +292,8 @@ def main():
             ('-p/--part', '--checks', '-n/--test-num', '--no-run',
              '--no-search', '--no-timeouts', '-g/--log-level',
              '--single-threaded', '-s/--save-traces', '-z/--start-viz'))
-        run_viz_debugger(args.lab, args.debugger, assertions=args.assertions)
+        run_viz_debugger(args.lab, args.debugger, assertions=args.assertions,
+                         jvm_properties=args.jvm_properties)
 
     elif args.replay_traces is not None:
         if args.part is not None and args.lab is None:
@@ -286,14 +309,16 @@ def main():
                       log_level=args.log_level,
                       start_viz=args.start_viz,
                       do_checks=args.checks,
-                      assertions=args.assertions)
+                      assertions=args.assertions,
+                      jvm_properties=args.jvm_properties)
 
     elif args.visualize_trace is not None:
         disallow_arguments('--visualize-trace',
             ('-l/--lab', '-p/--part', '--checks', '-n/--test-num', '--no-run',
              '--no-search', '--no-timeouts', '-g/--log-level',
              '--single-threaded', '-s/--save-traces', '-z/--start-viz'))
-        visualize_trace(args.visualize_trace, assertions=args.assertions)
+        visualize_trace(args.visualize_trace, assertions=args.assertions,
+                        jvm_properties=args.jvm_properties)
 
     else:
         if args.lab is None:
@@ -309,7 +334,8 @@ def main():
                   do_checks=args.checks,
                   test_num=args.test_num,
                   assertions=args.assertions,
-                  save_traces=args.save_traces)
+                  save_traces=args.save_traces,
+                  jvm_properties=args.jvm_properties)
 
 
 if __name__ == '__main__':
