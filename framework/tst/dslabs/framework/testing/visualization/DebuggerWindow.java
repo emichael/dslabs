@@ -105,7 +105,7 @@ public class DebuggerWindow extends JFrame {
     // Disabling this because it seems to cause problems on MacOS and causes text to appear blurry
     // setProperty("sun.java2d.uiScale.enabled", "false");
     setProperty("sun.java2d.win.uiScaleX", "1.0");
-    setProperty("sun.java2d.win.uiScaleX", "1.0");
+    setProperty("sun.java2d.win.uiScaleY", "1.0");
 
     /*
      * MigLayout thinks it's so smart and wants to use different spacing on different platforms. We
