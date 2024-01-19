@@ -211,7 +211,6 @@ wrapper {
 
 // Run tests with illegal-access=deny to ensure that these warnings are caught
 test.jvmArgs(['-ea',
-              '--illegal-access=deny',
               '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
               '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
               '--add-opens', 'java.base/java.util=ALL-UNNAMED',
