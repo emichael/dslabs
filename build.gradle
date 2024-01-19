@@ -2,7 +2,7 @@ plugins {
   id 'java'
   id 'com.github.johnrengelman.shadow' version '8.1.1'
   id 'com.github.jk1.dependency-license-report' version '2.5'
-  id 'com.diffplug.spotless' version '6.22.0'
+  id 'com.diffplug.spotless' version '6.24.0'
 }
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -88,37 +88,37 @@ dependencies {
   annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.30'
   sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.30', classifier: 'sources'
 
-  implementation group: 'com.google.guava', name: 'guava', version: '31.1-jre'
-  sources        group: 'com.google.guava', name: 'guava', version: '31.1-jre', classifier: 'sources'
-  implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.10'
-  sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.10', classifier: 'sources'
+  implementation group: 'com.google.guava', name: 'guava', version: '33.0.0-jre'
+  sources        group: 'com.google.guava', name: 'guava', version: '33.0.0-jre', classifier: 'sources'
+  implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
+  sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0', classifier: 'sources'
 
   graderImplementation group: 'junit', name: 'junit', version: '4.13.2'
   graderSources        group: 'junit', name: 'junit', version: '4.13.2', classifier: 'sources'
   graderImplementation group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3'
   graderSources        group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3', classifier: 'sources'
 
-  graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.5.0'
-  graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.5.0', classifier: 'sources'
+  graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.6.0'
+  graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.6.0', classifier: 'sources'
 
-  graderImplementation group: 'commons-io', name: 'commons-io', version: '2.13.0'
-  graderSources        group: 'commons-io', name: 'commons-io', version: '2.13.0', classifier: 'sources'
+  graderImplementation group: 'commons-io', name: 'commons-io', version: '2.15.1'
+  graderSources        group: 'commons-io', name: 'commons-io', version: '2.15.1', classifier: 'sources'
 
   // Swing stuff
-  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1'
-  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '2.0.1', classifier: 'sources'
-  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '2.0.1'
-  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '2.0.1', classifier: 'sources'
+  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.3'
+  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.3', classifier: 'sources'
+  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '3.3'
+  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '3.3', classifier: 'sources'
   graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-font_awesome', version: '4.7.0.1'
   graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-font_awesome', version: '4.7.0.1', classifier: 'sources'
-  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.0'
-  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.0', classifier: 'sources'
-  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.0'
-  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.0', classifier: 'sources'
+  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.1'
+  graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.1', classifier: 'sources'
+  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.3'
+  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.3', classifier: 'sources'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1', classifier: 'sources'
 
-  formatter group:'com.google.googlejavaformat', name: 'google-java-format', version: '1.18.1'
+  formatter group:'com.google.googlejavaformat', name: 'google-java-format', version: '1.19.2'
 }
 
 // Create reproducible jars
