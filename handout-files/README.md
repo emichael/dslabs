@@ -102,7 +102,7 @@ and/or failures that might lead to a violation of the invariants of the system.
 
 
 ## Getting Started
-The only dependency for these labs is Java 14. Installing `openjdk-14-jdk` on
+The only dependency for these labs is Java 17+. Installing `openjdk-17-jdk` on
 most Linux distros should be sufficient.
 
 We recommend using IntelliJ (a configuration directory is included in each
@@ -117,13 +117,13 @@ In order to run the tests from the terminal, you will need Python 3 and Make.
 
 ### Command-line Tools On Windows
 We do not recommend using Windows. It is possible, however. You will need to
-install `make`, Python 3, and Java 14. You can do this on native Windows.
+install `make`, Python 3, and Java 17. You can do this on native Windows.
 However, installing a Windows Subsystem for Linux will make installing and
 running the command-line tools much easier (though it will potentially make
 running the visual debugger more difficult depending on your version of Windows
 and WSL; see below).
 
-If you install WSL, you can install `python3`, `java14`, and `make` through
+If you install WSL, you can install `python3`, `java17`, and `make` through
 `apt-get`. You will still need to install Java directly on Windows, though, for
 IntelliJ. (This will result in two installations of Java.)
 

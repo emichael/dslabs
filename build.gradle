@@ -9,8 +9,8 @@ import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
 import com.github.jk1.license.render.TextReportRenderer
 
 java {
-  sourceCompatibility = '14'
-  targetCompatibility = '14'
+  sourceCompatibility = '17'
+  targetCompatibility = '17'
 }
 
 sourceSets {

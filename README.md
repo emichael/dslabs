@@ -161,7 +161,7 @@ repository is an auto-built version of the handout.
 
 ## Contributing
 The main tools for development are the same as the students' dependencies — Java
-14 and Python 3. You will also need a few utilities such as `wget` to build with
+17 and Python 3. You will also need a few utilities such as `wget` to build with
 the provided `Makefile`; MacOS users will need `gtar` and `gcp` provided by the
 `coreutils` Homebrew package.
 
