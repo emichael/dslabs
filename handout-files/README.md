@@ -102,8 +102,8 @@ and/or failures that might lead to a violation of the invariants of the system.
 
 
 ## Getting Started
-The only dependency for these labs is Java 14. Installing `openjdk-14-jdk` on
-most Linux distros should be sufficient.
+The only dependency for these labs is Java 14+. Installing `openjdk-14-jdk` or  
+`openjdk-17-jdk` on most Linux distros should be sufficient.
 
 We recommend using IntelliJ (a configuration directory is included in each
 repo), which also has plugin support for Project Lombok (see below). If you
