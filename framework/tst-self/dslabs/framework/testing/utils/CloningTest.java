@@ -38,6 +38,7 @@ import dslabs.framework.Command;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.Result;
+import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
@@ -126,6 +127,11 @@ public class CloningTest {
     clonesEqual(new MessageExample("foo", false));
     clonesEqual(Address.subAddress(new AddressExample("foo"), "bar"));
 
+    clonesEqual(
+        new ClientWorker(
+            new ClientExample(new AddressExample("foo")),
+            Workload.builder().commands(new CommandExample("c")).build()));
+
     clonesEqual(new AlsoNotFastSerializable());
     clonesEqual(new ShouldFastSerialize());
   }
@@ -139,6 +145,11 @@ public class CloningTest {
     serializeDeserializeEqual(new MessageExample("foo", false));
     serializeDeserializeEqual(Address.subAddress(new AddressExample("foo"), "bar"));
 
+    serializeDeserializeEqual(
+        new ClientWorker(
+            new ClientExample(new AddressExample("foo")),
+            Workload.builder().commands(new CommandExample("c")).build()));
+
     serializeDeserializeEqual(new AlsoNotFastSerializable());
   }
 
@@ -150,6 +161,11 @@ public class CloningTest {
     Cloning.clone(new MessageExample("foo", true));
     Cloning.clone(new MessageExample("foo", false));
     Cloning.clone(Address.subAddress(new AddressExample("foo"), "bar"));
+
+    Cloning.clone(
+        new ClientWorker(
+            new ClientExample(new AddressExample("foo")),
+            Workload.builder().commands(new CommandExample("c")).build()));
 
     assertFastCloned();
 
@@ -493,6 +509,16 @@ class ApplicationExample implements Application {
   public Result execute(Command command) {
     return null;
   }
+}
+
+@Data
+class CommandExample implements Command {
+  private final String s;
+}
+
+@Data
+class ResultExample implements Result {
+  private final int i;
 }
 
 @Data

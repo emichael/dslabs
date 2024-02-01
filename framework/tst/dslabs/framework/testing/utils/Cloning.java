@@ -27,6 +27,8 @@ import com.rits.cloning.ICloningStrategy;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Objects;
 import java.util.Set;
@@ -82,6 +84,10 @@ public final class Cloning {
             return Strategy.IGNORE;
           }
         });
+    // Instant is a final class and is immutable and thread-safe.
+    jdclCloner.registerImmutable(Instant.class);
+    // Duration is a final class and is immutable and thread-safe.
+    jdclCloner.registerImmutable(Duration.class);
   }
 
   private static <T extends Serializable> T jdclClone(T object) {
