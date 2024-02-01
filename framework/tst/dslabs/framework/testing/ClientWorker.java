@@ -73,15 +73,19 @@ public final class ClientWorker extends Node {
   @VizIgnore private boolean waitingToSend = false;
   @VizIgnore private Command lastCommand = null;
   @VizIgnore private Result expectedResult = null;
-  @VizIgnore private Instant lastSendTime = null;
+  @VizIgnore private transient Instant lastSendTime = null;
 
   // Resulting state
   @Getter @VizIgnore private final List<Command> sentCommands = new ArrayList<>();
   @Getter private final List<Result> results = new ArrayList<>();
   @Getter @VizIgnore private boolean resultsOk = true;
   @Getter @VizIgnore private Pair<Result, Result> expectedAndReceived = null;
-  @VizIgnore private Duration maxWaitTime = Duration.ZERO;
-  @VizIgnore private Instant maxWaitTimeSendTime = null;
+
+  /**
+   * The longest this client worker has had to wait for a result and the time at which the
+   * corresponding command was sent.
+   */
+  @VizIgnore private transient ImmutablePair<Duration, Instant> maxWait = null;
 
   public <C extends Node & Client> ClientWorker(
       @NonNull C client, @NonNull Workload workload, boolean recordCommandsAndResults) {
@@ -126,27 +130,42 @@ public final class ClientWorker extends Node {
    * and takes the current time when computing how long it has waited for the most recently sent
    * command.
    *
+   * <p><i>Implementation note:</i> The maximum wait information is stored as a {@code transient}
+   * field. This means that if this {@code ClientWorker} is serialized/deserialized or cloned using
+   * {@link Cloning}, then this information will be lost and the value returned by this method could
+   * be {@code null} (or smaller than it otherwise would have been).
+   *
    * @return the maximum amount of time the client waited, along with the time it sent the command
    *     it waited the most time for. Returns {@code null} if it never sent a command.
    */
-  public synchronized @Nullable Pair<Duration, Instant> maxWaitTime(@Nullable Instant stopTime) {
-    if (!waitingOnResult) {
-      if (maxWaitTimeSendTime != null) {
-        return ImmutablePair.of(maxWaitTime, maxWaitTimeSendTime);
-      }
-      return null;
-    }
+  public synchronized @Nullable Pair<Duration, Instant> maxWait(@Nullable Instant stopTime) {
     if (stopTime == null) {
       stopTime = Instant.now();
     }
-    Duration currentWaitTime = Duration.between(lastSendTime, stopTime);
-    if (currentWaitTime.compareTo(maxWaitTime) > 0) {
-      return ImmutablePair.of(currentWaitTime, lastSendTime);
+    return maxWaitInternal(stopTime);
+  }
+
+  private ImmutablePair<Duration, Instant> maxWaitInternal(Instant referencePoint) {
+    assert referencePoint != null;
+
+    if (!waitingOnResult) {
+      // If we're not waiting on a result, the reference point is irrelevant. Return the known
+      // value.
+      return maxWait;
     }
-    if (maxWaitTimeSendTime != null) {
-      return ImmutablePair.of(maxWaitTime, maxWaitTimeSendTime);
+
+    if (lastSendTime == null) {
+      // We must have never sent a command, or we've lost transient state. We can only return the
+      // current value (which should be null).
+      return maxWait;
     }
-    return null;
+
+    Duration currentWaitTime = Duration.between(lastSendTime, referencePoint);
+    if (maxWait != null && maxWait.getLeft().compareTo(currentWaitTime) >= 0) {
+      return maxWait;
+    }
+
+    return ImmutablePair.of(currentWaitTime, lastSendTime);
   }
 
   private void sendNextCommandWhilePossible() {
@@ -166,15 +185,12 @@ public final class ClientWorker extends Node {
           return;
         }
 
+        // This call to maxWaitInternal must happen before we update any other tracking state.
+        maxWait = maxWaitInternal(Instant.now());
+
         if (recordCommandsAndResults) {
           sentCommands.add(lastCommand);
           results.add(result);
-        }
-
-        Duration waitTime = Duration.between(lastSendTime, Instant.now());
-        if (waitTime.compareTo(maxWaitTime) > 0) {
-          maxWaitTime = waitTime;
-          maxWaitTimeSendTime = lastSendTime;
         }
 
         if (workload.hasResults() && !Objects.equals(expectedResult, result)) {

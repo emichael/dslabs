@@ -228,7 +228,7 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
     Instant stopTime = runState.stopTime();
     Duration maxWaitTime = Duration.ZERO;
     for (ClientWorker cw : runState.clientWorkers()) {
-      var maxWait = cw.maxWaitTime(stopTime);
+      var maxWait = cw.maxWait(stopTime);
       if (maxWait == null) {
         continue;
       }
