@@ -104,6 +104,11 @@ dependencies {
   graderImplementation group: 'commons-io', name: 'commons-io', version: '2.15.1'
   graderSources        group: 'commons-io', name: 'commons-io', version: '2.15.1', classifier: 'sources'
 
+  graderImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+  graderSources        group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2', classifier: 'sources'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.15.2'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.15.2'
+
   // Swing stuff
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.3'
   graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.3', classifier: 'sources'
