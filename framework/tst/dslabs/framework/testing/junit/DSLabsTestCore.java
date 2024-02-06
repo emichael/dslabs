@@ -26,6 +26,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import dslabs.framework.testing.utils.ClassSearch;
+import dslabs.framework.testing.utils.GlobalSettings;
 import java.util.Set;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -68,7 +69,7 @@ public final class DSLabsTestCore {
     }
   }
 
-  private static void runRequest(Request request, RunListener listener) {
+  private static void runRequest(Request request, RunListener printer, RunListener... listeners) {
     final Runner runner = request.getRunner();
     final Result result = new Result();
     final RunNotifier notifier = new RunNotifier();
@@ -83,6 +84,10 @@ public final class DSLabsTestCore {
             }
           });
     } else {
+      notifier.addListener(printer);
+    }
+
+    for (RunListener listener : listeners) {
       notifier.addListener(listener);
     }
 
@@ -270,7 +275,12 @@ public final class DSLabsTestCore {
     // Sort methods and test classes
     request = request.sortWith(new TestOrder());
 
-    runRequest(request, new TestResultsPrinter());
+    if (GlobalSettings.testResultsOutputFile() != null) {
+      // For now, only attach a TestResultsLogger if we're actually logging to file.
+      runRequest(request, new TestResultsPrinter(), new TestResultsLogger());
+    } else {
+      runRequest(request, new TestResultsPrinter());
+    }
   }
 
   private DSLabsTestCore() {
