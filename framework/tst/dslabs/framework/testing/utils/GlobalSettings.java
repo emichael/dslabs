@@ -62,6 +62,15 @@ public final class GlobalSettings {
   private static final boolean timeoutsDisabled =
       Boolean.parseBoolean(lookupWithDefault("testTimeoutsDisabled", "false"));
 
+  /**
+   * The maximum log size (in bytes) the framework should retain and print to file. This size limit
+   * applies to each test independently and applies to stdout/stderr independently. If this is 0,
+   * then logging is effectively disabled. If this is less than 0, then there is no limit (default).
+   */
+  @Getter
+  private static final int maximumStdOutErrLogSize =
+      Integer.parseInt(lookupWithDefault("maxLogSize", "-1"));
+
   static {
     System.setProperty(
         "java.util.logging.SimpleFormatter.format", "[%4$-7s] [%1$tF %1$tT] [%3$s] %5$s%6$s%n");
