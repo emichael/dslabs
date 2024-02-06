@@ -36,11 +36,19 @@ import lombok.Setter;
 public final class GlobalSettings {
   private static final Properties props = System.getProperties();
 
-  private static final String TEST_NUM = "testNum", LOG_LEVEL = "logLevel";
+  private static final String TEST_NUM = "testNum";
+  private static final String LOG_LEVEL = "logLevel";
+
   @Getter
-  private static final boolean verbose = Boolean.parseBoolean(lookupWithDefault("verbose", "true")),
-      singleThreaded = Boolean.parseBoolean(lookupWithDefault("singleThreaded", "false")),
-      startVisualization = Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
+  private static final boolean verbose = Boolean.parseBoolean(lookupWithDefault("verbose", "true"));
+
+  @Getter
+  private static final boolean singleThreaded =
+      Boolean.parseBoolean(lookupWithDefault("singleThreaded", "false"));
+
+  @Getter
+  private static final boolean startVisualization =
+      Boolean.parseBoolean(lookupWithDefault("startViz", "false"));
 
   @Getter @Setter
   private static boolean saveTraces =
