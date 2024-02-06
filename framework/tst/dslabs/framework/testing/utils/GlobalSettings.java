@@ -30,6 +30,7 @@ import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -61,6 +62,19 @@ public final class GlobalSettings {
 
   private static final boolean timeoutsDisabled =
       Boolean.parseBoolean(lookupWithDefault("testTimeoutsDisabled", "false"));
+
+  /** The file to print test results to (in JSON format). */
+  @Getter @Nullable
+  private static final String testResultsOutputFile = lookupWithDefault("resultsOutputFile", null);
+
+  /**
+   * The maximum log size (in bytes) the framework should retain and print to file. This size limit
+   * applies to each test independently and applies to stdout/stderr independently. If this is 0,
+   * then logging is effectively disabled. If this is less than 0, then there is no limit (default).
+   */
+  @Getter
+  private static final int maximumStdOutErrLogSize =
+      Integer.parseInt(lookupWithDefault("maxLogSize", "-1"));
 
   static {
     System.setProperty(
