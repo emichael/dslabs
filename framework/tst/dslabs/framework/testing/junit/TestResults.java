@@ -66,6 +66,9 @@ class TestResults implements Serializable {
     //  framework itself and log those here (to differentiate user/framework
     //  logging).
 
+    // TODO: somehow timestamp the saved stdout/stderr logs so that we can retain the interleaving
+    //  between the streams
+
     String stdOutLog;
     Boolean stdOutTruncated;
     String stdErrLog;
