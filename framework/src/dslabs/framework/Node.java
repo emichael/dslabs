@@ -248,6 +248,10 @@ public abstract class Node implements Serializable {
   }
 
   private void send(Message message, Address from, Address to) {
+    send(message, from, to, true);
+  }
+
+  private void send(Message message, Address from, Address to, boolean logMessage) {
     if (message == null) {
       LOG.severe(
           String.format("Attempting to send null message from %s to %s, not sending", from, to));
@@ -261,14 +265,16 @@ public abstract class Node implements Serializable {
       return;
     }
 
-    LOG.finest(() -> String.format("MessageSend(%s -> %s, %s)", from, to, message));
+    if (logMessage) {
+      LOG.finest(() -> String.format("MessageSend(%s -> %s, %s)", from, to, message));
+    }
 
     if (messageAdder != null) {
       messageAdder.accept(new ImmutableTriple<>(from, to, message));
     } else if (batchMessageAdder != null) {
       batchMessageAdder.accept(new ImmutableTriple<>(from, new Address[] {to}, message));
     } else if (parentNode != null) {
-      parentNode.send(message, from, to);
+      parentNode.send(message, from, to, false);
     } else {
       LOG.severe(
           String.format(
