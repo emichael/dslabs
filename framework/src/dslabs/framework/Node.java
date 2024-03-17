@@ -261,14 +261,18 @@ public abstract class Node implements Serializable {
       return;
     }
 
+    // If this Node is a sub-Node, use the parent to send the message.
+    if (parentNode != null && messageAdder == null && batchMessageAdder == null) {
+      parentNode.send(message, from, to);
+      return;
+    }
+
     LOG.finest(() -> String.format("MessageSend(%s -> %s, %s)", from, to, message));
 
     if (messageAdder != null) {
       messageAdder.accept(new ImmutableTriple<>(from, to, message));
     } else if (batchMessageAdder != null) {
       batchMessageAdder.accept(new ImmutableTriple<>(from, new Address[] {to}, message));
-    } else if (parentNode != null) {
-      parentNode.send(message, from, to);
     } else {
       LOG.severe(
           String.format(
@@ -299,6 +303,12 @@ public abstract class Node implements Serializable {
       }
     }
 
+    // If this Node is a sub-Node, use the parent to broadcast the message.
+    if (parentNode != null && messageAdder == null && batchMessageAdder == null) {
+      parentNode.broadcast(message, from, to);
+      return;
+    }
+
     LOG.finest(
         () -> String.format("MessageSend(%s -> %s, %s)", from, Arrays.toString(to), message));
 
@@ -308,8 +318,6 @@ public abstract class Node implements Serializable {
       for (Address a : to) {
         messageAdder.accept(new ImmutableTriple<>(from, a, message));
       }
-    } else if (parentNode != null) {
-      parentNode.broadcast(message, from, to);
     } else {
       LOG.severe(
           String.format(
@@ -324,14 +332,18 @@ public abstract class Node implements Serializable {
       return;
     }
 
+    // If this Node is a sub-Node, use the parent to set the timer.
+    if (parentNode != null && timerAdder == null) {
+      parentNode.set(timer, minTimerLengthMillis, maxTimerLengthMillis, from);
+      return;
+    }
+
     LOG.finest(() -> String.format("TimerSet(-> %s, %s)", from, timer));
 
     if (timerAdder != null) {
       timerAdder.accept(
           new ImmutableTriple<>(
               from, timer, new ImmutablePair<>(minTimerLengthMillis, maxTimerLengthMillis)));
-    } else if (parentNode != null) {
-      parentNode.set(timer, minTimerLengthMillis, maxTimerLengthMillis, from);
     } else {
       LOG.severe(
           String.format(
