@@ -133,7 +133,7 @@ Now you'll build a sharded fault-tolerant key/value storage system.
 
 Each `ShardStoreServer` will operate as part of a replica group. Each replica
 group will serve operations for some of the key-space shards. Use `keyToShard()`
-in `ShardStoreNode` to find which shard a key belongs to; you should use use
+in `ShardStoreNode` to find which shard a key belongs to; you should use
 `SingleKeyCommand.key()` (all of the operations you'll handle in part 2 are
 single-key operations) in `ShardStoreClient` to determine the key for a given
 operation.
