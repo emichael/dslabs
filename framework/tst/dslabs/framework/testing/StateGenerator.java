@@ -32,10 +32,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import lombok.Builder;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
-@Builder
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class StateGenerator implements Serializable {
   @NonNull private final SerializableFunction<Address, Node> serverSupplier;
   @NonNull private final SerializableFunction<Address, Client> clientSupplier;
@@ -126,7 +127,15 @@ public class StateGenerator implements Serializable {
                         recordCommandsAndResults)));
   }
 
+  public static StateGeneratorBuilder builder() {
+    return new StateGeneratorBuilder();
+  }
+
   public static class StateGeneratorBuilder {
+    private SerializableFunction<Address, Node> serverSupplier;
+    private SerializableFunction<Address, Client> clientSupplier;
+    private SerializableFunction<Address, Workload> workloadSupplier;
+
     public StateGeneratorBuilder serverSupplier(
         SerializableFunction<Address, Node> serverSupplier) {
       this.serverSupplier = serverSupplier;
@@ -160,5 +169,11 @@ public class StateGenerator implements Serializable {
       this.workloadSupplier = __ -> workload;
       return this;
     }
+
+    public StateGenerator build() {
+      return new StateGenerator(this.serverSupplier, this.clientSupplier, this.workloadSupplier);
+    }
+
+    private StateGeneratorBuilder() {}
   }
 }
