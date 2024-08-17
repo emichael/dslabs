@@ -13,8 +13,8 @@ implementations of real distributed systems. DSLabs incorporates automated
 **model checking** to search students' implementations for bugs and report back
 with example traces when bugs are found.
 
-The labs are written in Java and come packaged all necessary dependencies. They
-also include a **visual debugger**, which allows students to explore the
+The labs are written in Java and come packaged with all necessary dependencies.
+They also include a **visual debugger**, which allows students to explore the
 reachable states of their systems and visualize bugs reported by the model
 checker.
 
