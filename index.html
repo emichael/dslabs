@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <!-- Google analytics tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-CYGH5M4NVH"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      gtag('config', 'G-CYGH5M4NVH');
+    </script>
+
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width,maximum-scale=2">
+    <link rel="stylesheet" type="text/css" media="screen" href="/dslabs/css/style.css">
+    <link rel="stylesheet" type="text/css" media="screen" href="//cdn.jsdelivr.net/npm/@mdi/font@6.5.95/css/materialdesignicons.min.css">
+    <meta name="author" content="Ellis Michael">
+
+    <title>DSLabs</title>
+  </head>
+
+
+  <body>
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <h1 id="project_title">DSLabs</h1>
+          <h2 id="project_tagline">Framework and lab assignments for teaching distributed systems</h2>
+          <nav><ul>
+            <li><a href="https://github.com/emichael/dslabs"><i class="mdi mdi-github"></i> GitHub Repo</a></li>
+            <li><a href="/dslabs/javadoc"><i class="mdi mdi-language-java"></i> Framework Javadoc</a></li>
+            <li><a href="https://ellismichael.com/papers/dslabs-eurosys19.pdf"><i class="mdi mdi-file-outline"></i> EuroSys Paper</a></li>
+          </ul></nav>
+        </div>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <p>DSLabs is a framework for creating, testing, model checking, visualizing, and
+debugging distributed systems lab assignments. The labs have been used to teach
+hundreds of students in the <a href="https://courses.cs.washington.edu/courses/cse452/">University of Washington&rsquo;s CSE
+452</a> and courses in
+universities around the world.</p>
+
+<p>It is designed from the ground up help students create <em>correct and runnable</em>
+implementations of real distributed systems. DSLabs incorporates automated
+<strong>model checking</strong> to search students&rsquo; implementations for bugs and report back
+with example traces when bugs are found.</p>
+
+<p>The labs are written in Java and come packaged with all necessary dependencies.
+They also include a <strong>visual debugger</strong>, which allows students to explore the
+reachable states of their systems and visualize bugs reported by the model
+checker.</p>
+
+<h2>Labs</h2>
+
+<p>There are currently 4 labs in the DSLabs package. These labs have students
+implement:</p>
+
+<ol>
+  <li>A simple key-value store and at-most-once RPC service</li>
+  <li>A Primary/Backup system</li>
+  <li>Paxos-based State Machine Replication</li>
+  <li>A Sharded reconfigurable key-value service with distributed transactions</li>
+</ol>
+
+<p>Parts of this sequence of assignments (especially labs 2 and 4) are adapted from
+the <a href="http://nil.csail.mit.edu/6.824/2015/">MIT 6.824 Labs</a>.</p>
+
+<p>Labs 2, 3, and 4 depend on parts of lab 1, and lab 4 depends on lab 3. The labs
+increase in difficulty; lab 2 primarily functions as a training exercise before
+implementing Paxos. Part 3 of lab 4 (distributed transactions) is particularly
+challenging. In some years, it has been extra-credit at UW.</p>
+
+<p>See <a href="https://github.com/emichael/dslabs">the GitHub repository</a> for more
+information.</p>
+
+<h2>Advice and Materials for Teachers</h2>
+
+<p>If you are looking to incorporate DSLabs into a course you teach, the first
+thing to do is to complete the labs yourself. The <a href="https://github.com/emichael/dslabs/blob/master/README.md">main
+<code class="language-plaintext highlighter-rouge">README</code></a> and the
+<a href="https://github.com/emichael/dslabs/blob/master/handout-files/README.md">students&rsquo;
+<code class="language-plaintext highlighter-rouge">README</code></a>
+contain more information about getting started.</p>
+
+<h3>Suggested Reading</h3>
+
+<p>The lab <code class="language-plaintext highlighter-rouge">README</code>s help provide some background, but to ensure students have the
+necessary information to complete the labs, we strongly suggest assigning &ldquo;Paxos
+Made Moderately Complex&rdquo; and chapter 7 of Bernstein, Hadzilacos, and Goodman&rsquo;s
+&ldquo;Concurrency Control and Recovery in Database Systems&rdquo;, up to but not including
+the section on 3-phase commit. Labs 1 and 2 are fairly self-contained, however.
+See recent offerings of <a href="https://courses.cs.washington.edu/courses/cse452/">UW CSE
+452</a> for full example
+syllabi.</p>
+
+<h3>Distribution</h3>
+
+<p>The default GitHub branch is not setup for use by students. Instead, we create a
+handout for distribution to students that comes packaged with all dependencies.
+This handout is automatically deployed to the <a href="https://github.com/emichael/dslabs/tree/handout"><code class="language-plaintext highlighter-rouge">handout</code> branch of the
+repository</a> but is periodically
+overwritten.</p>
+
+<p>Our suggested distribution strategy is to create a private clone of the main
+repository for use by course staff and a repository viewable by students. You
+can make changes to your private repository and merge in changes from upstream
+at will. Then, using a script like the following, you can push new versions of
+the built handout to students as necessary. They will only see the fully built
+version of DSLabs and will be able to merge in changes.</p>
+
+<div class="language-bash highlighter-rouge"><div class="highlight"><pre class="highlight"><code>make build/handout/
+<span class="nv">HASH</span><span class="o">=</span><span class="sb">`</span>git rev-parse <span class="nt">--short</span><span class="o">=</span>8 HEAD<span class="sb">`</span>
+<span class="nv">DATE</span><span class="o">=</span><span class="sb">`</span><span class="nb">date</span> <span class="s2">"+%Y-%m-%d %H:%M:%S"</span><span class="sb">`</span>
+git checkout <span class="nt">-b</span> temp
+git add <span class="nt">-f</span> build/handout/
+git commit <span class="nt">-m</span> <span class="s2">"Handout temp"</span>
+git clean <span class="nt">-fxd</span>
+git filter-branch <span class="nt">-f</span> <span class="nt">--subdirectory-filter</span> build/handout/
+git remote add handout <span class="si">$(</span>HANDOUT_REPO<span class="si">)</span>
+git fetch handout master
+git checkout <span class="nt">-b</span> handout handout/master <span class="o">||</span> git checkout <span class="nt">--orphan</span> handout
+git <span class="nb">rm</span> <span class="nt">-rf</span> <span class="nb">.</span>
+git checkout temp <span class="nt">--</span> <span class="nb">.</span>
+git commit <span class="nt">--allow-empty</span> <span class="nt">-m</span> <span class="s2">"Publishing handout on </span><span class="si">$(</span>DATE<span class="si">)</span><span class="s2"> from </span><span class="si">$(</span>HASH<span class="si">)</span><span class="s2">"</span>
+git push handout handout:master
+</code></pre></div></div>
+
+<p><strong>Please ensure your students do not publicly post solutions to the labs.</strong> The
+continued success of this project is dependent on keeping solution sets off of
+the internet.</p>
+
+<h3>Grading</h3>
+
+<p>Several grading scripts are included in the DSLabs repository, and the
+<code class="language-plaintext highlighter-rouge">Makefile</code> distributed to students includes a target that packages up a
+<code class="language-plaintext highlighter-rouge">submit.tar.gz</code> file for submission. The grading scripts may need to be adapted
+to your particular infrastructure. Please note that the grading scripts are not
+perfect. Bounded model checking is not guaranteed to find all bugs. Also, it is
+entirely possible to circumvent the spirit of the DSLabs framework (e.g., by
+using <code class="language-plaintext highlighter-rouge">static</code> for inter-Node communication) or <strong>circumvent the tests
+entirely</strong> (e.g., by using reflection to overwrite the testing infrastructure
+and always report success). You should always check to ensure submitted code is
+not pathological or malicious.</p>
+
+<h3>Discussion Slides</h3>
+
+<p>Over the years, our intrepid UW TAs have led discussion sections as
+introductions to the lab assignments. The slides they created have a number of
+useful tips and implementation strategies, based on their own experience. While
+the lab <code class="language-plaintext highlighter-rouge">README</code>s are complete and address most of the major pitfalls, we
+provide <a href="/dslabs/452%20Discussion%20Section%20Slides.pdf">the discussion slides from a recent iteration of the
+course</a> as an example of the kinds of things you might want
+to discuss with students about the labs.</p>
+
+
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">&copy; 2021&ndash;2024 <a href="https://github.com/emichael">Ellis Michael</a>.</p>
+      </footer>
+    </div>
+  </body>
+</html>
