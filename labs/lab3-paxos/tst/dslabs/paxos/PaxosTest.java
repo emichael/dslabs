@@ -1057,7 +1057,7 @@ public class PaxosTest extends BaseJUnitTest {
     bfs(c2AtServer5);
     final SearchState c2AtServer3 = goalMatchingState();
 
-    // Now, clear the prunes and find a state where server 2 has c1
+    // Now, clear the prunes and find a state where server 1 has c1
     searchSettings.clear().maxTimeSecs(30).addInvariant(slotValid(1));
 
     // Drop all pending messages to narrow search
