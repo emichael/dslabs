@@ -57,7 +57,7 @@ public abstract class VizClient {
     try {
       line = parser.parse(options, args);
       if (line.hasOption(help)) {
-        throw new ParseException(null);
+        throw new ParseException((String) null);
       }
     } catch (ParseException e) {
       if (e.getMessage() != null) {

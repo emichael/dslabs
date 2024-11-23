@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [ '17', '20', '21' ]
+        java: [ '21' ]
     steps:
       - uses: actions/checkout@v3
 
@@ -35,7 +35,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - run: make check-format
@@ -52,7 +52,7 @@ jobs:
       - uses: actions/setup-java@v3
         with:
           distribution: 'adopt'
-          java-version: '17'
+          java-version: '21'
           cache: 'gradle'
 
       - run: make build/handout/
