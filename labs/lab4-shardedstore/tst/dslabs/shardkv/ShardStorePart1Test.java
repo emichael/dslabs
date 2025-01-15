@@ -79,7 +79,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
     runState.start(runSettings);
 
-    joinGroup(1, 3);
+    joinGroup(1, numServersPerGroup);
 
     Client client = runState.addClient(client(1));
     Map<String, String> kv = new HashMap<>();
@@ -131,7 +131,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
     runState.start(runSettings);
 
-    joinGroup(1, 3);
+    joinGroup(1, numServersPerGroup);
 
     Client client = runState.addClient(client(1));
     Map<String, String> kv = new HashMap<>();
@@ -182,7 +182,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
     runState.start(runSettings);
 
-    joinGroup(1, 3);
+    joinGroup(1, numServersPerGroup);
 
     Client client = runState.addClient(client(1));
     Map<String, String> kv = new HashMap<>();
