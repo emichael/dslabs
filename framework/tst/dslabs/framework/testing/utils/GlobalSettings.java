@@ -78,7 +78,7 @@ public final class GlobalSettings {
 
   static {
     System.setProperty(
-        "java.util.logging.SimpleFormatter.format", "[%4$-7s] [%1$tF %1$tT] [%3$s] %5$s%6$s%n");
+        "java.util.logging.SimpleFormatter.format", "[%4$-7s] [%1$tF %1$tT.%1$tN] [%3$s] %5$s%6$s%n");
 
     // Configure logging
     LogManager logManager = LogManager.getLogManager();
