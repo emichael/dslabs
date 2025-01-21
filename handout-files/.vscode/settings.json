@@ -13,5 +13,7 @@
     ],
     "java.project.referencedLibraries": [
         "jars/*.jar",
-    ]
+    ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "editor.defaultFormatter": "josevseb.google-java-format-for-vs-code",
 }

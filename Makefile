@@ -13,7 +13,7 @@ JAR_FILES = build/libs/framework.jar \
 						build/libs/grader-deps.jar \
 						build/libs/framework-deps-sources.jar
 LICENSE_NOTICE = build/reports/licenses/THIRD-PARTY-NOTICES.txt
-OTHER_FILES = build/doc/ lombok.config .settings
+OTHER_FILES = build/doc/ lombok.config
 
 
 ifeq ($(shell uname -s),Darwin)
