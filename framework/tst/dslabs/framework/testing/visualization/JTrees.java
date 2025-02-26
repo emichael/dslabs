@@ -704,21 +704,25 @@ class ObjectJTree extends BaseJTree {
           if (f.getAnnotation(VizIgnore.class) != null) {
             continue;
           }
-          // XXX: is canAccess instead of isAccessible correct?
-          if (!f.canAccess(valueObj)) {
-            f.setAccessible(true);
-          }
-          final Object fieldVal = f.get(valueObj);
+          try {
+            // XXX: is canAccess instead of isAccessible correct?
+            if (!f.canAccess(valueObj)) {
+              f.setAccessible(true);
+            }
+            final Object fieldVal = f.get(valueObj);
 
-          // TODO: move this check somewhere else...
-          if (valueObj instanceof Node
-              && f.getName().equals("subNodes")
-              && fieldVal != null
-              && ((HashMap<?, ?>) fieldVal).isEmpty()) {
-            continue;
-          }
+            // TODO: move this check somewhere else...
+            if (valueObj instanceof Node
+                    && f.getName().equals("subNodes")
+                    && fieldVal != null
+                    && ((HashMap<?, ?>) fieldVal).isEmpty()) {
+              continue;
+            }
 
-          childAdder.accept(new DefaultChildKey(f.getName()), createNode(f.getType(), fieldVal));
+            childAdder.accept(new DefaultChildKey(f.getName()), createNode(f.getType(), fieldVal));
+          }
+          catch (Exception e) {}
+          finally {}
         }
       }
     }
