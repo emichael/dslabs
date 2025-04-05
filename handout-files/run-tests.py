@@ -23,11 +23,12 @@ SEARCH_CATEGORY = 'dslabs.framework.testing.junit.SearchTests'
 
 BASE_COMMAND = (
     'java',
-    '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
     '--add-opens', 'java.base/java.lang=ALL-UNNAMED',
-    '--add-opens', 'java.base/java.util=ALL-UNNAMED',
-    '--add-opens', 'java.base/java.util.concurrent.atomic=ALL-UNNAMED',
+    '--add-opens', 'java.base/java.math=ALL-UNNAMED',
     '--add-opens', 'java.base/java.time=ALL-UNNAMED',
+    '--add-opens', 'java.base/java.util.concurrent.atomic=ALL-UNNAMED',
+    '--add-opens', 'java.base/java.util=ALL-UNNAMED',
+    '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
 )
 
 if platform.system() == 'Windows':

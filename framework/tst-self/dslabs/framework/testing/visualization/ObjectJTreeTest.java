@@ -31,6 +31,7 @@ import dslabs.framework.Address;
 import dslabs.framework.Node;
 import dslabs.framework.testing.LocalAddress;
 import java.lang.reflect.Method;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -114,6 +115,8 @@ public class ObjectJTreeTest {
     t.expandRow(v7Row);
     assertTrue(Pattern.matches(".*qwerty.*", rowText(t, v7Row + 1)));
     assertTrue(Pattern.matches(".*9876.*", rowText(t, v7Row + 2)));
+    // Check that we can show BigInteger values.
+    assertTrue(Pattern.matches(".*3405691582.*", rowText(t, findRowNumber(t, ".*v15.*"))));
   }
 
   private void expandAll(ObjectJTree t) {
@@ -213,6 +216,8 @@ class Foo extends Node {
   Map<String, Integer> v12 = null;
   Set<String> v13 = new HashSet<>();
   Set<String> v14 = null;
+
+  BigInteger v15 = new BigInteger("3405691582");
 
   {
     v07.add("qwerty");

@@ -51,6 +51,7 @@ import dslabs.framework.testing.search.SerializableTrace;
 import java.io.Serializable;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.Collection;
@@ -319,6 +320,20 @@ public class CloningTest {
     assertEquals(b, b2);
 
     b2.set(0);
+    assertNotEquals(b, b2);
+  }
+
+  @Test
+  public void bigInteger() throws NoSuchFieldException, IllegalAccessException {
+    BigInteger b = new BigInteger("42");
+    BigInteger b2 = Cloning.clone(b);
+    assertEquals(b, b2);
+    assertFastCloned();
+
+    b2 = b2.add(new BigInteger("100")).add(new BigInteger("-100"));
+    assertEquals(b, b2);
+
+    b2 = b2.add(new BigInteger("1"));
     assertNotEquals(b, b2);
   }
 
