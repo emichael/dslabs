@@ -139,17 +139,16 @@ public class RunState extends AbstractState {
         break;
       }
 
-      if (item.isMessage()) {
-        MessageEnvelope me = item.message();
-        if (settings.shouldDeliver(me)) {
-          node.handleMessage(me.message(), me.from(), me.to());
+      switch (item) {
+        case MessageEnvelope me -> {
+          if (settings.shouldDeliver(me)) {
+            node.handleMessage(me.message(), me.from(), me.to());
+          }
         }
-      }
-
-      if (item.isTimer()) {
-        TimerEnvelope te = item.timer();
-        if (settings.deliverTimers()) {
-          node.onTimer(te.timer(), te.to());
+        case TimerEnvelope te -> {
+          if (settings.deliverTimers()) {
+            node.onTimer(te.timer(), te.to());
+          }
         }
       }
 

@@ -25,10 +25,10 @@ package dslabs.framework.testing;
 import dslabs.framework.Address;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
-import java.io.Serializable;
 import java.util.Random;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.NonNull;
 
 /**
  * Stores a timer, its delivery address, its duration, and its creation time. Equality is based on
@@ -38,7 +38,7 @@ import lombok.EqualsAndHashCode;
  */
 @Data
 @EqualsAndHashCode(of = {"to", "timer", "minTimerLengthMillis", "maxTimerLengthMillis"})
-public final class TimerEnvelope implements Serializable, Comparable<TimerEnvelope> {
+public final class TimerEnvelope implements Event, Comparable<TimerEnvelope> {
   private static final Random rand = new Random();
 
   private final Address to;
@@ -69,6 +69,11 @@ public final class TimerEnvelope implements Serializable, Comparable<TimerEnvelo
     this.startTimeNanos = System.nanoTime();
   }
 
+  @Override
+  public Address locationRootAddress() {
+    return to.rootAddress();
+  }
+
   public long endTimeNanos() {
     return startTimeNanos + (((long) timerLengthMillis()) * 1000000);
   }
@@ -82,10 +87,7 @@ public final class TimerEnvelope implements Serializable, Comparable<TimerEnvelo
   }
 
   @Override
-  public int compareTo(TimerEnvelope o) {
-    if (o == null) {
-      return 1;
-    }
+  public int compareTo(@NonNull TimerEnvelope o) {
     return Long.compare(endTimeNanos(), o.endTimeNanos());
   }
 

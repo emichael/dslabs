@@ -24,8 +24,6 @@ package dslabs.framework.testing;
 
 import dslabs.framework.Address;
 import java.io.Serializable;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
 
 /**
  * Represents either a timer to fire or a message to deliver.
@@ -33,45 +31,14 @@ import lombok.Getter;
  * @see dslabs.framework.testing.search.SearchState
  * @see dslabs.framework.testing.runner.RunState
  */
-@Getter
-@EqualsAndHashCode
-public class Event implements Serializable {
-  // invariant: exactly one of the {message, timer} fields is null
-  private final MessageEnvelope message;
-  private final TimerEnvelope timer;
+public sealed interface Event extends Serializable permits MessageEnvelope, TimerEnvelope {
+  Address locationRootAddress();
 
-  public Event(MessageEnvelope messageEnvelope) {
-    this.message = messageEnvelope;
-    this.timer = null;
+  default boolean isMessage() {
+    return this instanceof MessageEnvelope;
   }
 
-  public Event(TimerEnvelope timer) {
-    this.message = null;
-    this.timer = timer;
-  }
-
-  public boolean isMessage() {
-    return message != null;
-  }
-
-  public boolean isTimer() {
-    return timer != null;
-  }
-
-  public Address locationRootAddress() {
-    if (isMessage()) {
-      return message.to().rootAddress();
-    } else {
-      return timer.to().rootAddress();
-    }
-  }
-
-  @Override
-  public String toString() {
-    if (isMessage()) {
-      return message.toString();
-    } else {
-      return timer.toString();
-    }
+  default boolean isTimer() {
+    return this instanceof TimerEnvelope;
   }
 }

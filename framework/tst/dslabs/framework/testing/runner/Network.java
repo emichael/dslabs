@@ -102,13 +102,13 @@ public class Network implements Iterable<MessageEnvelope> {
         newTimerEndTime.set(Long.MAX_VALUE);
         TimerEnvelope te = timers.peek();
         if (te != null && te.isDue()) {
-          return new Event(timers.poll());
+          return timers.poll();
         }
 
         newMessageAvailable = false;
         MessageEnvelope me = messages.poll();
         if (me != null) {
-          return new Event(me);
+          return me;
         }
 
         // Wait for new message or timer
@@ -129,7 +129,7 @@ public class Network implements Iterable<MessageEnvelope> {
           long endTime = te.endTimeNanos();
           long waitTime = endTime - System.nanoTime();
           if (waitTime <= MIN_WAIT_TIME_NANOS) {
-            return new Event(timers.poll());
+            return timers.poll();
           }
 
           synchronized (this) {
