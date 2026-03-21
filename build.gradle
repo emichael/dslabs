@@ -1,10 +1,10 @@
 plugins {
   id 'java'
-  id 'com.diffplug.spotless' version '6.25.0'
-  id 'com.github.ben-manes.versions' version '0.51.0'
-  id 'com.github.jk1.dependency-license-report' version '2.9'
+  id 'com.diffplug.spotless' version '8.4.0'
+  id 'com.github.ben-manes.versions' version '0.53.0'
+  id 'com.github.jk1.dependency-license-report' version '3.1.1'
   id 'com.github.johnrengelman.shadow' version '8.1.1'
-  id 'net.ltgt.errorprone' version '4.1.0'
+  id 'net.ltgt.errorprone' version '5.1.0'
 }
 
 import com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar
@@ -86,46 +86,46 @@ repositories {
 }
 
 dependencies {
-  implementation      group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
-  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.36'
-  sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.36', classifier: 'sources'
+  implementation      group: 'org.projectlombok', name: 'lombok', version: '1.18.44'
+  annotationProcessor group: 'org.projectlombok', name: 'lombok', version: '1.18.44'
+  sources             group: 'org.projectlombok', name: 'lombok', version: '1.18.44', classifier: 'sources'
 
-  implementation group: 'com.google.guava', name: 'guava', version: '33.3.1-jre'
-  sources        group: 'com.google.guava', name: 'guava', version: '33.3.1-jre', classifier: 'sources'
-  implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0'
-  sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0', classifier: 'sources'
+  implementation group: 'com.google.guava', name: 'guava', version: '33.4.2-jre'
+  sources        group: 'com.google.guava', name: 'guava', version: '33.4.2-jre', classifier: 'sources'
+  implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.20.0'
+  sources        group: 'org.apache.commons', name: 'commons-lang3', version: '3.20.0', classifier: 'sources'
 
   graderImplementation group: 'junit', name: 'junit', version: '4.13.2'
   graderSources        group: 'junit', name: 'junit', version: '4.13.2', classifier: 'sources'
-  graderImplementation group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3'
-  graderSources        group: 'io.github.kostaskougios', name: 'cloning', version: '1.10.3', classifier: 'sources'
+  graderImplementation group: 'io.github.kostaskougios', name: 'cloning', version: '1.12.0'
+  graderSources        group: 'io.github.kostaskougios', name: 'cloning', version: '1.12.0', classifier: 'sources'
 
-  graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.9.0'
-  graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.9.0', classifier: 'sources'
+  graderImplementation group: 'commons-cli', name: 'commons-cli', version: '1.11.0'
+  graderSources        group: 'commons-cli', name: 'commons-cli', version: '1.11.0', classifier: 'sources'
 
-  graderImplementation group: 'commons-io', name: 'commons-io', version: '2.18.0'
-  graderSources        group: 'commons-io', name: 'commons-io', version: '2.18.0', classifier: 'sources'
+  graderImplementation group: 'commons-io', name: 'commons-io', version: '2.21.0'
+  graderSources        group: 'commons-io', name: 'commons-io', version: '2.21.0', classifier: 'sources'
 
-  graderImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.1'
-  graderSources        group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.1', classifier: 'sources'
-  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.18.1'
-  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.18.1'
+  graderImplementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.21.2'
+  graderSources        group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.21.2', classifier: 'sources'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jsr310', version: '2.21.2'
+  graderImplementation group: 'com.fasterxml.jackson.datatype', name: 'jackson-datatype-jdk8', version: '2.21.2'
 
   // Swing stuff
-  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.5.2'
-  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.5.2', classifier: 'sources'
-  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '3.5.2'
-  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '3.5.2', classifier: 'sources'
+  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.7.1'
+  graderImplementation group: 'com.formdev', name: 'flatlaf', version: '3.7.1', classifier: 'sources'
+  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '3.7.1'
+  graderImplementation group: 'com.formdev', name: 'flatlaf-swingx', version: '3.7.1', classifier: 'sources'
   graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-font_awesome', version: '4.7.0.1'
   graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-font_awesome', version: '4.7.0.1', classifier: 'sources'
   graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.1'
   graderImplementation group: 'com.github.jiconfont', name: 'jiconfont-swing', version: '1.0.1', classifier: 'sources'
-  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.4.2'
-  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.4.2', classifier: 'sources'
+  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.4.3'
+  graderImplementation group: 'com.miglayout', name: 'miglayout-swing', version: '11.4.3', classifier: 'sources'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1', classifier: 'sources'
 
-  formatter group: 'com.google.googlejavaformat', name: 'google-java-format', version: '1.25.0'
+  formatter group: 'com.google.googlejavaformat', name: 'google-java-format', version: '1.35.0'
   errorprone group: 'com.google.errorprone', name: 'error_prone_core', version: '2.36.0'
 }
 
