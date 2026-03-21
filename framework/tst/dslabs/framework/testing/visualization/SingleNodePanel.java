@@ -27,7 +27,6 @@ import static javax.swing.JSplitPane.VERTICAL_SPLIT;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import dslabs.framework.Address;
-import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.search.SearchSettings;
@@ -325,7 +324,7 @@ class SingleNodePanel extends JPanel {
     JButton deliveryButton = new JButton(Utils.makeIcon(FontAwesome.DOWNLOAD));
     deliveryButton.setFocusable(false);
     mbox.add(deliveryButton, "pad 0 0");
-    deliveryButton.addActionListener(e -> parent.deliverEvent(new Event(message)));
+    deliveryButton.addActionListener(e -> parent.deliverEvent(message));
 
     setDeliverability(deliveryButton, pruned, prohibited, exception, "message");
     ObjectJTree tree = new ObjectJTree(message);
@@ -348,7 +347,7 @@ class SingleNodePanel extends JPanel {
 
     final JButton deliveryButton = new JButton(Utils.makeIcon(FontAwesome.DOWNLOAD));
     deliveryButton.setFocusable(false);
-    deliveryButton.addActionListener(e -> parent.deliverEvent(new Event(timer)));
+    deliveryButton.addActionListener(e -> parent.deliverEvent(timer));
     tbox.add(deliveryButton, "pad 0 0");
 
     if (!deliverable) {

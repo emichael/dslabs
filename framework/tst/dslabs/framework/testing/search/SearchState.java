@@ -235,7 +235,7 @@ public final class SearchState extends AbstractState implements Serializable, Cl
     // Deliver all possible messages
     for (MessageEnvelope message : network) {
       if (hasNode(message.to().rootAddress()) && settings.shouldDeliver(message)) {
-        events.add(new Event(message));
+        events.add(message);
       }
     }
 
@@ -243,7 +243,7 @@ public final class SearchState extends AbstractState implements Serializable, Cl
     for (Address address : addresses()) {
       if (settings.deliverTimers(address)) {
         for (TimerEnvelope timer : timers.get(address).deliverable()) {
-          events.add(new Event(timer));
+          events.add(timer);
         }
       }
     }
@@ -273,16 +273,10 @@ public final class SearchState extends AbstractState implements Serializable, Cl
   }
 
   public SearchState stepEvent(Event event, SearchSettings settings, boolean skipChecks) {
-    // TODO: use enum for event type
-
-    if (event.isMessage()) {
-      return stepMessage(event.message(), settings, skipChecks);
-    }
-    if (event.isTimer()) {
-      return stepTimer(event.timer(), settings, skipChecks);
-    }
-
-    return null;
+    return switch (event) {
+      case MessageEnvelope messageEnvelope -> stepMessage(messageEnvelope, settings, skipChecks);
+      case TimerEnvelope timerEnvelope -> stepTimer(timerEnvelope, settings, skipChecks);
+    };
   }
 
   public SearchState stepMessage(
@@ -299,7 +293,7 @@ public final class SearchState extends AbstractState implements Serializable, Cl
       return null;
     }
 
-    SearchState ns = new SearchState(this, toAddress, new Event(message));
+    SearchState ns = new SearchState(this, toAddress, message);
     Message nm = Cloning.clone(message.message());
     Node n = ns.node(toAddress);
 
@@ -355,7 +349,7 @@ public final class SearchState extends AbstractState implements Serializable, Cl
       return null;
     }
 
-    SearchState ns = new SearchState(this, toAddress, new Event(timer));
+    SearchState ns = new SearchState(this, toAddress, timer);
     Timer nt = Cloning.clone(timer.timer());
     Node n = ns.node(toAddress);
 
@@ -397,8 +391,7 @@ public final class SearchState extends AbstractState implements Serializable, Cl
       Event event = state.previousEvent;
       GraphNode node = new GraphNode(event);
 
-      if (event.isMessage()) {
-        MessageEnvelope me = event.message();
+      if (event instanceof MessageEnvelope me) {
         if (whenSent.containsKey(me)) {
           GraphNode p = whenSent.get(me);
           p.next.add(node);

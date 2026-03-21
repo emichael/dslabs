@@ -91,8 +91,8 @@ class EventTreeState implements Serializable {
       assert e != null;
       Set<MessageEnvelope> temp = new HashSet<>(parent.undeliveredMessages);
       // Remove this message from the message list
-      if (e.isMessage()) {
-        temp.remove(e.message());
+      if (e instanceof MessageEnvelope) {
+        temp.remove(e);
       }
       temp.addAll(state.newMessages());
       undeliveredMessages = ImmutableSet.copyOf(temp);
@@ -200,7 +200,7 @@ class EventTreeState implements Serializable {
         continue;
       }
       Event e = state.previousEvent();
-      if (e.isMessage() && !state.parent().undeliveredMessages().contains(e.message())) {
+      if (e instanceof MessageEnvelope && !state.parent().undeliveredMessages().contains(e)) {
         return true;
       }
     }

@@ -416,17 +416,13 @@ public class CloningTest {
       throws InvocationTargetException, InstantiationException, IllegalAccessException {
     List<Event> es = new ArrayList<>();
     es.add(
-        new Event(
-            new MessageEnvelope(
-                new LocalAddress("foo"),
-                new AddressExample("bar"),
-                new MessageExample("asdf", false))));
+        new MessageEnvelope(
+            new LocalAddress("foo"), new AddressExample("bar"), new MessageExample("asdf", false)));
     es.add(
-        new Event(
-            new MessageEnvelope(
-                new LocalAddress("asdf"),
-                new AddressExample("1234"),
-                new MessageExample("baz", false))));
+        new MessageEnvelope(
+            new LocalAddress("asdf"),
+            new AddressExample("1234"),
+            new MessageExample("baz", false)));
 
     var con = SerializableTrace.class.getDeclaredConstructors()[0];
     con.setAccessible(true);

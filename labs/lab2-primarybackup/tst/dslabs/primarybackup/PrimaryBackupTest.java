@@ -212,16 +212,15 @@ public class PrimaryBackupTest extends BaseJUnitTest {
       fail("Interrupted while waiting for view");
     }
 
-    MessageEnvelope me = e.message();
-    if (me == null) {
-      fail("Polled envelope is null (this should never happen)");
-    }
-    Message m = me.message();
-    if (!(m instanceof ViewReply)) {
-      fail("Got non-ViewReply message in response to GetView");
+    if (e instanceof MessageEnvelope me) {
+      if (me.message() instanceof ViewReply viewReply) {
+        return viewReply.view();
+      } else {
+        fail("Got non-ViewReply message in response to GetView");
+      }
     }
 
-    return ((ViewReply) m).view();
+    throw new AssertionError("Polled event is not a message (this should never happen)");
   }
 
   /**

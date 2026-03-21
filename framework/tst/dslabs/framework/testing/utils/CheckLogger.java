@@ -25,6 +25,8 @@ package dslabs.framework.testing.utils;
 import dslabs.framework.Node;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
+import dslabs.framework.testing.MessageEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.search.SearchState;
 import java.util.Map;
@@ -53,15 +55,13 @@ public final class CheckLogger {
   }
 
   private static String methodName(Event event, SearchState state) {
-    String methodName;
-    if (event.isMessage()) {
-      methodName = "handle" + event.message().message().getClass().getSimpleName();
-    } else if (event.isTimer()) {
-      methodName = "on" + event.timer().timer().getClass().getSimpleName();
-    } else {
-      // Don't handle other methods for now
-      return null;
-    }
+    String methodName =
+        switch (event) {
+          case MessageEnvelope messageEnvelope ->
+              "handle" + messageEnvelope.message().getClass().getSimpleName();
+          case TimerEnvelope timerEnvelope ->
+              "on" + timerEnvelope.timer().getClass().getSimpleName();
+        };
 
     Node n = state.node(event.locationRootAddress().rootAddress());
     if (n instanceof ClientWorker) {

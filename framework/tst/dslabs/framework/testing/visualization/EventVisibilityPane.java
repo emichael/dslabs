@@ -27,6 +27,8 @@ import com.google.errorprone.annotations.Immutable;
 import dslabs.framework.Message;
 import dslabs.framework.Timer;
 import dslabs.framework.testing.Event;
+import dslabs.framework.testing.MessageEnvelope;
+import dslabs.framework.testing.TimerEnvelope;
 import java.util.Comparator;
 import java.util.Map.Entry;
 import java.util.SortedMap;
@@ -150,7 +152,10 @@ final class EventVisibilityPane extends JXTaskPane {
     }
 
     boolean isHidden(Event e) {
-      return e.isMessage() ? isHidden(e.message().message()) : isHidden(e.timer().timer());
+      return switch (e) {
+        case MessageEnvelope messageEnvelope -> isHidden(messageEnvelope.message());
+        case TimerEnvelope timerEnvelope -> isHidden(timerEnvelope.timer());
+      };
     }
   }
 

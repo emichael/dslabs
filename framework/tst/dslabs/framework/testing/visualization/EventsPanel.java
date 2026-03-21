@@ -89,8 +89,7 @@ class EventsPanel extends JPanel {
       button.setToolTipText("Go to the state after this timer was delivered");
     }
 
-    Event e = s.previousEvent();
-    ObjectJTree tree = new ObjectJTree(e.isMessage() ? e.message() : e.timer());
+    ObjectJTree tree = new ObjectJTree(s.previousEvent());
 
     tree.collapseRow(0);
     box.add(tree);

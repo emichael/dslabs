@@ -24,22 +24,16 @@ package dslabs.framework.testing;
 
 import dslabs.framework.Address;
 import dslabs.framework.Message;
-import java.io.Serializable;
-import lombok.Data;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
-@Data
-public final class MessageEnvelope implements Serializable {
-  private final Address from, to;
-  private final Message message;
-
-  public MessageEnvelope(Address from, Address to, Message message) {
-    this.from = from;
-    this.to = to;
-    this.message = message;
+public record MessageEnvelope(Address from, Address to, Message message) implements Event {
+  @Override
+  public Address locationRootAddress() {
+    return to.rootAddress();
   }
 
   @Override
-  public String toString() {
+  public @NonNull String toString() {
     return String.format("Message(%s -> %s, %s)", from, to, message);
   }
 }
