@@ -451,9 +451,13 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
   /* Utils */
 
   protected final long nodesSize() {
-    int total = 0;
+    long total = 0;
     for (Node node : runState.nodes()) {
-      total += Cloning.size(node);
+      if (node instanceof ClientWorker clientWorker) {
+        total += Cloning.size(clientWorker.client());
+      } else {
+        total += Cloning.size(node);
+      }
       // TODO: consider including timers as below
       // for (TimerEnvelope te : runState.timers(node.address())) {
       //     total += Cloning.size(te.timer());

@@ -38,7 +38,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Consumer;
 import javax.annotation.Nullable;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
@@ -53,8 +52,7 @@ import org.apache.commons.lang3.tuple.Triple;
 @ToString(of = {"client", "results"})
 public final class ClientWorker extends Node {
 
-  @Data
-  private static class InterRequestTimer implements Timer {}
+  private record InterRequestTimer() implements Timer {}
 
   // Defaults
   private static final boolean DEFAULT_RECORD_COMMANDS_AND_RESULTS = true;
@@ -100,6 +98,11 @@ public final class ClientWorker extends Node {
 
   public <C extends Node & Client> ClientWorker(C client, Workload workload) {
     this(client, workload, DEFAULT_RECORD_COMMANDS_AND_RESULTS);
+  }
+
+  @SuppressWarnings("unchecked")
+  public <C extends Node & Client> C client() {
+    return (C) this.client;
   }
 
   public synchronized void addCommand(Command command) {
@@ -233,13 +236,12 @@ public final class ClientWorker extends Node {
 
   private void sendNextCommand() {
     if (workload.hasResults()) {
-      Pair<Command, Result> commandAndResult =
-          workload.nextCommandAndResult(clientNode().address());
+      Pair<Command, Result> commandAndResult = workload.nextCommandAndResult(client().address());
       lastCommand = commandAndResult.getLeft();
       expectedResult = commandAndResult.getRight();
       client.sendCommand(lastCommand);
     } else {
-      lastCommand = workload.nextCommand(clientNode().address());
+      lastCommand = workload.nextCommand(client().address());
       client.sendCommand(lastCommand);
     }
 
@@ -271,20 +273,16 @@ public final class ClientWorker extends Node {
     }
   }
 
-  private Node clientNode() {
-    return (Node) client;
-  }
-
   @Override
   public synchronized void init() {
     initialized = true;
-    clientNode().init();
+    client().init();
     sendNextCommandWhilePossible();
   }
 
   @Override
   public synchronized void handleMessage(Message message, Address sender, Address destination) {
-    clientNode().handleMessage(message, sender, destination);
+    client().handleMessage(message, sender, destination);
     sendNextCommandWhilePossible();
   }
 
@@ -293,7 +291,7 @@ public final class ClientWorker extends Node {
     if (timer instanceof InterRequestTimer) {
       sendNextCommand();
     } else {
-      clientNode().onTimer(timer, destination);
+      client().onTimer(timer, destination);
     }
     sendNextCommandWhilePossible();
   }
@@ -307,7 +305,6 @@ public final class ClientWorker extends Node {
       boolean logExceptions) {
     // TODO: make sure there's no overhead for having the config both places
     super.config(messageAdder, batchMessageAdder, timerAdder, throwableCatcher, logExceptions);
-    clientNode()
-        .config(messageAdder, batchMessageAdder, timerAdder, throwableCatcher, logExceptions);
+    client().config(messageAdder, batchMessageAdder, timerAdder, throwableCatcher, logExceptions);
   }
 }

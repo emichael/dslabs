@@ -170,7 +170,7 @@ public abstract class AbstractState implements Serializable {
   }
 
   public synchronized Iterable<Node> nodes() {
-    return Iterables.concat(servers.values(), clients.values());
+    return Iterables.concat(servers.values(), clientWorkers.values(), clients.values());
   }
 
   public synchronized int numNodes() {
