@@ -2,8 +2,8 @@ package dslabs.clientserver;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.runner.RunState;
 import dslabs.framework.testing.search.SearchState;
@@ -14,8 +14,8 @@ import java.util.Objects;
 abstract class ClientServerBaseTest extends BaseJUnitTest {
   static final Address SA = new LocalAddress("server");
 
-  static StateGeneratorBuilder builder() {
-    StateGeneratorBuilder builder = StateGenerator.builder();
+  static NodeGeneratorBuilder builder() {
+    NodeGeneratorBuilder builder = NodeGenerator.builder();
     builder.serverSupplier(
         a -> {
           if (!Objects.equals(a, SA)) {

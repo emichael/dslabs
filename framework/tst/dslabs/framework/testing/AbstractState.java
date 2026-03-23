@@ -52,7 +52,7 @@ public abstract class AbstractState implements Serializable {
   private final Map<Address, ClientWorker> clientWorkers;
   private final Map<Address, Node> clients;
 
-  protected final transient StateGenerator gen;
+  protected final transient NodeGenerator gen;
 
   public abstract Iterable<MessageEnvelope> network();
 
@@ -69,7 +69,7 @@ public abstract class AbstractState implements Serializable {
       Set<Address> servers,
       Set<Address> clientWorkers,
       Set<Address> clients,
-      StateGenerator stateGenerator) {
+      NodeGenerator nodeGenerator) {
     // Check that no server or client has the same address
     Multiset<Address> addresses = HashMultiset.create();
     addresses.addAll(servers);
@@ -82,10 +82,10 @@ public abstract class AbstractState implements Serializable {
       }
     }
 
-    this.servers = stateGenerator.servers(servers);
-    this.clientWorkers = stateGenerator.clientWorkers(clientWorkers);
-    this.clients = stateGenerator.clients(clients);
-    this.gen = stateGenerator;
+    this.servers = nodeGenerator.servers(servers);
+    this.clientWorkers = nodeGenerator.clientWorkers(clientWorkers);
+    this.clients = nodeGenerator.clients(clients);
+    this.gen = nodeGenerator;
 
     // Setup the nodes
     for (Address a : addresses()) {

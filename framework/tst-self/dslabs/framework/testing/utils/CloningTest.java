@@ -42,7 +42,7 @@ import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.StatePredicate.PredicateResult;
 import dslabs.framework.testing.Workload;
@@ -351,7 +351,7 @@ public class CloningTest {
     assertEquals(s1.name(), s2.name());
     var s =
         new RunState(
-            StateGenerator.builder()
+            NodeGenerator.builder()
                 .serverSupplier(a -> null)
                 .clientSupplier(ClientExample::new)
                 .workloadSupplier(
@@ -432,7 +432,7 @@ public class CloningTest {
             con.newInstance(
                 es,
                 List.of(StatePredicate.RESULTS_OK, StatePredicate.ALL_RESULTS_SAME),
-                StateGenerator.builder()
+                NodeGenerator.builder()
                     .serverSupplier(a -> null)
                     .clientSupplier(ClientExample::new)
                     .workloadSupplier(a -> null)
@@ -456,8 +456,8 @@ public class CloningTest {
     assertEquals(t1.testMethodName(), t2.testMethodName());
     assertEquals(t1.createdDate(), t2.createdDate());
     assertEquals(
-        t1.stateGenerator().client(new LocalAddress("foo")),
-        t2.stateGenerator().client(new LocalAddress("foo")));
+        t1.nodeGenerator().client(new LocalAddress("foo")),
+        t2.nodeGenerator().client(new LocalAddress("foo")));
   }
 }
 

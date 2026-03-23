@@ -24,7 +24,7 @@ package dslabs.framework.testing.visualization;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
 import java.util.Arrays;
@@ -104,7 +104,7 @@ public abstract class VizConfig {
       }
     }
 
-    SearchState searchState = new SearchState(stateGenerator(servers, clients, commands));
+    SearchState searchState = new SearchState(nodeGenerator(servers, clients, commands));
 
     for (Address server : servers) {
       searchState.addServer(server);
@@ -116,13 +116,13 @@ public abstract class VizConfig {
     return searchState;
   }
 
-  protected StateGenerator stateGenerator(
+  protected NodeGenerator nodeGenerator(
       List<Address> servers, List<Address> clients, List<List<String>> commands) {
-    return stateGenerator(commands);
+    return nodeGenerator(commands);
   }
 
-  protected StateGenerator stateGenerator(List<List<String>> commands) {
-    return stateGenerator(Collections.emptyList(), Collections.emptyList(), commands);
+  protected NodeGenerator nodeGenerator(List<List<String>> commands) {
+    return nodeGenerator(Collections.emptyList(), Collections.emptyList(), commands);
   }
 
   protected static List<String> commands(String commands) {

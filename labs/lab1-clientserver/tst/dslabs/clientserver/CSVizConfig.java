@@ -4,8 +4,8 @@ import static dslabs.clientserver.ClientServerBaseTest.SA;
 import static dslabs.clientserver.ClientServerBaseTest.builder;
 
 import dslabs.framework.Address;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.search.SearchState;
 import dslabs.framework.testing.visualization.VizConfig;
@@ -22,9 +22,9 @@ public class CSVizConfig extends VizConfig {
   }
 
   @Override
-  protected StateGenerator stateGenerator(
+  protected NodeGenerator nodeGenerator(
       List<Address> servers, List<Address> clients, List<List<String>> workload) {
-    StateGeneratorBuilder builder = builder();
+    NodeGeneratorBuilder builder = builder();
     builder.workloadSupplier(
         a -> KVStoreWorkload.builder().commandStrings(workload.get(clients.indexOf(a))).build());
     return builder.build();

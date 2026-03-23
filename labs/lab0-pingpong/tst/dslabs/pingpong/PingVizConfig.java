@@ -4,8 +4,8 @@ import static dslabs.pingpong.PingTest.builder;
 import static dslabs.pingpong.PingTest.sa;
 
 import dslabs.framework.Address;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.search.SearchState;
@@ -24,9 +24,9 @@ public class PingVizConfig extends VizConfig {
   }
 
   @Override
-  protected StateGenerator stateGenerator(
+  protected NodeGenerator nodeGenerator(
       List<Address> servers, List<Address> clients, List<List<String>> workload) {
-    StateGeneratorBuilder builder = builder();
+    NodeGeneratorBuilder builder = builder();
     builder.workloadSupplier(
         a ->
             Workload.workload(

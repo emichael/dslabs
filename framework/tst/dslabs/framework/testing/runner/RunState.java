@@ -32,7 +32,7 @@ import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.runner.Network.Inbox;
 import dslabs.framework.testing.utils.Cloning;
@@ -79,16 +79,16 @@ public class RunState extends AbstractState {
       Set<Address> servers,
       Set<Address> clientWorkers,
       Set<Address> clients,
-      StateGenerator stateGenerator) {
-    super(servers, clientWorkers, clients, stateGenerator);
+      NodeGenerator nodeGenerator) {
+    super(servers, clientWorkers, clients, nodeGenerator);
   }
 
-  public RunState(Set<Address> servers, Set<Address> clientWorkers, StateGenerator stateGenerator) {
-    this(servers, clientWorkers, Collections.emptySet(), stateGenerator);
+  public RunState(Set<Address> servers, Set<Address> clientWorkers, NodeGenerator nodeGenerator) {
+    this(servers, clientWorkers, Collections.emptySet(), nodeGenerator);
   }
 
-  public RunState(StateGenerator stateGenerator) {
-    this(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), stateGenerator);
+  public RunState(NodeGenerator nodeGenerator) {
+    this(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), nodeGenerator);
   }
 
   @Override

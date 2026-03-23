@@ -35,8 +35,8 @@ import dslabs.framework.Client;
 import dslabs.framework.Command;
 import dslabs.framework.Node;
 import dslabs.framework.testing.AbstractState;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
@@ -65,8 +65,8 @@ import org.junit.experimental.categories.Category;
 
 @Lab("3")
 public class PaxosTest extends BaseJUnitTest {
-  static StateGeneratorBuilder builder(Address[] servers) {
-    final StateGeneratorBuilder builder = StateGenerator.builder();
+  static NodeGeneratorBuilder builder(Address[] servers) {
+    final NodeGeneratorBuilder builder = NodeGenerator.builder();
     builder.serverSupplier(a -> new PaxosServer(a, servers.clone(), new KVStore()));
     builder.clientSupplier(a -> new PaxosClient(a, servers.clone()));
     builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
@@ -83,21 +83,21 @@ public class PaxosTest extends BaseJUnitTest {
 
   private void setupStates(int numServers, Workload workload) {
     Address[] servers = servers(numServers);
-    StateGeneratorBuilder builder = builder(servers);
+    NodeGeneratorBuilder builder = builder(servers);
     if (workload != null) {
       builder.workloadSupplier(workload);
     }
-    StateGenerator stateGenerator = builder.build();
+    NodeGenerator nodeGenerator = builder.build();
 
     if (isRunTest()) {
-      runState = new RunState(stateGenerator);
+      runState = new RunState(nodeGenerator);
       for (Address server : servers) {
         runState.addServer(server);
       }
     }
 
     if (isSearchTest()) {
-      initSearchState = new SearchState(stateGenerator);
+      initSearchState = new SearchState(nodeGenerator);
       for (Address server : servers) {
         initSearchState.addServer(server);
       }

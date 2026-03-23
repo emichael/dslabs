@@ -38,8 +38,8 @@ import dslabs.framework.Message;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
@@ -74,8 +74,8 @@ import org.junit.experimental.categories.Category;
 @Part(2)
 public class PrimaryBackupTest extends BaseJUnitTest {
 
-  static StateGeneratorBuilder builder() {
-    StateGeneratorBuilder builder = StateGenerator.builder();
+  static NodeGeneratorBuilder builder() {
+    NodeGeneratorBuilder builder = NodeGenerator.builder();
     builder.serverSupplier(
         a -> {
           if (a.equals(VSA)) {

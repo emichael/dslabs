@@ -6,7 +6,7 @@ import static dslabs.shardkv.ShardStoreBaseTest.servers;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.search.SearchState;
@@ -73,7 +73,7 @@ public class ShardStoreVizConfig extends VizConfig {
 
     int numShards = 10;
 
-    StateGeneratorBuilder builder =
+    NodeGeneratorBuilder builder =
         ShardStoreBaseTest.builder(numGroups, numServersPerGroup, numShardMasters, numShards);
 
     List<Address> clients = new LinkedList<>();

@@ -7,8 +7,8 @@ import dslabs.framework.Address;
 import dslabs.framework.Command;
 import dslabs.framework.Result;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.junit.Lab;
@@ -50,8 +50,8 @@ public final class PingTest extends BaseJUnitTest {
         .build();
   }
 
-  static StateGeneratorBuilder builder() {
-    StateGeneratorBuilder builder = StateGenerator.builder();
+  static NodeGeneratorBuilder builder() {
+    NodeGeneratorBuilder builder = NodeGenerator.builder();
     builder.serverSupplier(
         a -> {
           if (!Objects.equals(a, sa)) {

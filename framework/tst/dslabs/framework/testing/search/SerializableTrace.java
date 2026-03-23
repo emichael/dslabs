@@ -24,7 +24,7 @@ package dslabs.framework.testing.search;
 
 import dslabs.framework.Address;
 import dslabs.framework.testing.Event;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.utils.GlobalSettings;
@@ -64,7 +64,7 @@ public class SerializableTrace implements Serializable {
 
   private final List<Event> history;
   private final Collection<StatePredicate> invariants;
-  private final StateGenerator stateGenerator;
+  private final NodeGenerator nodeGenerator;
   private final Collection<Address> servers;
   private final Collection<Pair<Address, Workload>> clientWorkers;
 
@@ -126,7 +126,7 @@ public class SerializableTrace implements Serializable {
   }
 
   public SearchState initialState() {
-    SearchState ret = new SearchState(stateGenerator);
+    SearchState ret = new SearchState(nodeGenerator);
     for (Address a : servers) {
       ret.addServer(a);
     }

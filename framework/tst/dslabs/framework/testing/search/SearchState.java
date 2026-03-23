@@ -35,7 +35,7 @@ import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
 import dslabs.framework.testing.Event;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.TimerEnvelope;
 import dslabs.framework.testing.Workload;
@@ -88,8 +88,8 @@ public final class SearchState extends AbstractState implements Serializable, Cl
   @Getter private final transient Set<MessageEnvelope> newMessages;
   @Getter private final transient Set<TimerEnvelope> newTimers;
 
-  public SearchState(StateGenerator stateGenerator) {
-    super(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), stateGenerator);
+  public SearchState(NodeGenerator nodeGenerator) {
+    super(Collections.emptySet(), Collections.emptySet(), Collections.emptySet(), nodeGenerator);
 
     this.network = new HashSet<>();
     this.droppedNetwork = new HashSet<>();

@@ -37,7 +37,7 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class StateGenerator implements Serializable {
+public class NodeGenerator implements Serializable {
   @NonNull private final SerializableFunction<Address, Node> serverSupplier;
   @NonNull private final SerializableFunction<Address, Client> clientSupplier;
   @NonNull private final SerializableFunction<Address, Workload> workloadSupplier;
@@ -127,53 +127,52 @@ public class StateGenerator implements Serializable {
                         recordCommandsAndResults)));
   }
 
-  public static StateGeneratorBuilder builder() {
-    return new StateGeneratorBuilder();
+  public static NodeGeneratorBuilder builder() {
+    return new NodeGeneratorBuilder();
   }
 
-  public static class StateGeneratorBuilder {
+  public static class NodeGeneratorBuilder {
     private SerializableFunction<Address, Node> serverSupplier;
     private SerializableFunction<Address, Client> clientSupplier;
     private SerializableFunction<Address, Workload> workloadSupplier;
 
-    public StateGeneratorBuilder serverSupplier(
-        SerializableFunction<Address, Node> serverSupplier) {
+    public NodeGeneratorBuilder serverSupplier(SerializableFunction<Address, Node> serverSupplier) {
       this.serverSupplier = serverSupplier;
       return this;
     }
 
-    public StateGeneratorBuilder serverSupplier(SerializableSupplier<Node> serverSupplier) {
+    public NodeGeneratorBuilder serverSupplier(SerializableSupplier<Node> serverSupplier) {
       this.serverSupplier = __ -> serverSupplier.get();
       return this;
     }
 
-    public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
+    public <C extends Node & Client> NodeGeneratorBuilder clientSupplier(
         SerializableFunction<Address, C> clientSupplier) {
       this.clientSupplier = clientSupplier::apply;
       return this;
     }
 
-    public <C extends Node & Client> StateGeneratorBuilder clientSupplier(
+    public <C extends Node & Client> NodeGeneratorBuilder clientSupplier(
         SerializableSupplier<C> clientSupplier) {
       this.clientSupplier = __ -> clientSupplier.get();
       return this;
     }
 
-    public StateGeneratorBuilder workloadSupplier(
+    public NodeGeneratorBuilder workloadSupplier(
         SerializableFunction<Address, Workload> workloadSupplier) {
       this.workloadSupplier = workloadSupplier;
       return this;
     }
 
-    public StateGeneratorBuilder workloadSupplier(Workload workload) {
+    public NodeGeneratorBuilder workloadSupplier(Workload workload) {
       this.workloadSupplier = __ -> workload;
       return this;
     }
 
-    public StateGenerator build() {
-      return new StateGenerator(this.serverSupplier, this.clientSupplier, this.workloadSupplier);
+    public NodeGenerator build() {
+      return new NodeGenerator(this.serverSupplier, this.clientSupplier, this.workloadSupplier);
     }
 
-    private StateGeneratorBuilder() {}
+    private NodeGeneratorBuilder() {}
   }
 }

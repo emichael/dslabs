@@ -34,7 +34,7 @@ import dslabs.framework.Message;
 import dslabs.framework.Node;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.StatePredicate.PredicateResult;
 import dslabs.framework.testing.Workload;
@@ -56,8 +56,8 @@ import org.junit.Test;
 public class SearchAndTraceMinimizerTest {
   static final Address a = new LocalAddress("a"), b = new LocalAddress("b");
 
-  static final StateGenerator gen =
-      StateGenerator.builder()
+  static final NodeGenerator gen =
+      NodeGenerator.builder()
           .serverSupplier(address -> address.equals(a) ? new A() : new B())
           .clientSupplier(() -> null)
           .workloadSupplier((Workload) null)

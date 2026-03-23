@@ -29,7 +29,7 @@ import dslabs.framework.Node;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator;
+import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.StatePredicate;
 import dslabs.framework.testing.junit.Lab;
 import dslabs.framework.testing.search.SearchSettings;
@@ -94,8 +94,8 @@ public class SingleInstancePaxos extends VizConfig {
     for (Address a : acceptors) {
       nodes.put(a, acceptor(a));
     }
-    StateGenerator g =
-        StateGenerator.builder()
+    NodeGenerator g =
+        NodeGenerator.builder()
             .serverSupplier(nodes::get)
             .clientSupplier(a -> null)
             .workloadSupplier(a -> null)

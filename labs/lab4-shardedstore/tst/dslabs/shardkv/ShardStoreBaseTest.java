@@ -10,8 +10,8 @@ import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.LocalAddress;
-import dslabs.framework.testing.StateGenerator;
-import dslabs.framework.testing.StateGenerator.StateGeneratorBuilder;
+import dslabs.framework.testing.NodeGenerator;
+import dslabs.framework.testing.NodeGenerator.NodeGeneratorBuilder;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.junit.BaseJUnitTest;
 import dslabs.framework.testing.runner.RunState;
@@ -42,12 +42,12 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
 
   /* Setup and cleanup */
 
-  static StateGeneratorBuilder builder(
+  static NodeGeneratorBuilder builder(
       final int numGroups,
       final int numServersPerGroup,
       final int numShardMasters,
       final int numShards) {
-    final StateGeneratorBuilder builder = StateGenerator.builder();
+    final NodeGeneratorBuilder builder = NodeGenerator.builder();
     final Address[] shardMasters =
         IntStream.rangeClosed(1, numShardMasters)
             .mapToObj(ShardStoreBaseTest::shardMaster)
@@ -108,17 +108,17 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
   }
 
   void setupStates(int numGroups, int numServersPerGroup, int numShardMasters, int numShards) {
-    StateGenerator stateGenerator =
+    NodeGenerator nodeGenerator =
         builder(numGroups, numServersPerGroup, numShardMasters, numShards).build();
 
     if (isRunTest()) {
-      runState = new RunState(stateGenerator);
+      runState = new RunState(nodeGenerator);
       addServers(runState, numGroups, numServersPerGroup, numShardMasters);
       configController = runState.addClient(CCA);
     }
 
     if (isSearchTest()) {
-      initSearchState = new SearchState(stateGenerator);
+      initSearchState = new SearchState(nodeGenerator);
       addServers(initSearchState, numGroups, numServersPerGroup, numShardMasters);
     }
   }
