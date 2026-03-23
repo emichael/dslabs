@@ -58,7 +58,7 @@ import org.apache.commons.lang3.tuple.Pair;
 @Getter
 public class SerializableTrace implements Serializable {
   // Increment this when compatability is broken
-  @Serial private static final long serialVersionUID = 42L;
+  @Serial private static final long serialVersionUID = 43L;
 
   private static final String TRACE_DIR_NAME = "traces", TRACE_FILE_EXTENSION = ".trace";
 
