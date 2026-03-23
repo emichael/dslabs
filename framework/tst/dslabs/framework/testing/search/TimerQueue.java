@@ -69,7 +69,7 @@ class TimerQueue implements Serializable, Iterable<TimerEnvelope> {
       @Nonnull
       public Iterator<TimerEnvelope> iterator() {
         return new Iterator<>() {
-          Integer minMaxTime = null;
+          Long minMaxTime = null;
           int i = 0;
 
           private void skip() {
