@@ -85,7 +85,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     Map<String, String> kv = new HashMap<>();
     for (int i = 1; i <= 100; i++) {
       String key = "key-" + i;
-      String value = RandomStringUtils.randomAlphanumeric(8);
+      String value = RandomStringUtils.insecure().nextAlphanumeric(8);
       sendCommandAndCheck(client, put(key, value), putOk());
       kv.put(key, value);
     }
@@ -103,7 +103,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     // Replace keys
     for (int i = 1; i <= 100; i++) {
       String key = "key-" + i;
-      String value = RandomStringUtils.randomAlphanumeric(8);
+      String value = RandomStringUtils.insecure().nextAlphanumeric(8);
       sendCommandAndCheck(client, put(key, value), putOk());
       kv.put(key, value);
     }
@@ -138,7 +138,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
     for (int i = 1; i <= numShards; i++) {
       String key = keyForShard(i);
-      String value = RandomStringUtils.randomAlphanumeric(8);
+      String value = RandomStringUtils.insecure().nextAlphanumeric(8);
 
       sendCommandAndCheck(client, put(key, value), putOk());
       kv.put(key, value);
@@ -189,7 +189,7 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
 
     for (int i = 1; i <= numShards; i++) {
       String key = keyForShard(i);
-      String value = RandomStringUtils.randomAlphanumeric(32);
+      String value = RandomStringUtils.insecure().nextAlphanumeric(32);
       sendCommandAndCheck(client, put(key, value), putOk());
       kv.put(key, value);
     }

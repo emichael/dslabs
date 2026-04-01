@@ -117,7 +117,7 @@ public final class ClientServerPart2Test extends ClientServerBaseTest {
       for (int key = 0; key < items; key++) {
         for (int c = 1; c <= numClients; c++) {
           String k = String.format("client%s-key%s", c, key);
-          String v = RandomStringUtils.randomAscii(valueSize);
+          String v = RandomStringUtils.insecure().nextAscii(valueSize);
           String nv = kv.getOrDefault(k, "") + v;
           sendCommandAndCheck(runState.client(client(c)), append(k, v), appendResult(nv));
           kv.put(k, nv);

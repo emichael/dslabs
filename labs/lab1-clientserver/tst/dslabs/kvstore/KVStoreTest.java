@@ -48,7 +48,7 @@ public class KVStoreTest extends DSLabsJUnitTest {
     assertEquals(appendResult("BARBAZBAZ[c:1, v:2]"), kvStore.execute(append("FOO", "[c:1, v:2]")));
     assertEquals(getResult("BARBAZBAZ[c:1, v:2]"), kvStore.execute(get("FOO")));
 
-    String value = RandomStringUtils.randomAscii(1000);
+    String value = RandomStringUtils.insecure().nextAscii(1000);
     assertEquals(putOk(), kvStore.execute(put("key", value)));
     assertEquals(getResult(value), kvStore.execute(get("key")));
   }

@@ -614,7 +614,7 @@ public class PaxosTest extends BaseJUnitTest {
 
     for (int i = 0; i < iters; i++) {
       for (int key = 0; key < items; key++) {
-        sendCommandAndCheck(client, put(key, RandomStringUtils.randomAscii(valueSize)), putOk());
+        sendCommandAndCheck(client, put(key, RandomStringUtils.insecure().nextAscii(valueSize)), putOk());
       }
     }
 
