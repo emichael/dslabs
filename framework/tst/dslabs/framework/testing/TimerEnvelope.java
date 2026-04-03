@@ -25,6 +25,7 @@ package dslabs.framework.testing;
 import dslabs.framework.Address;
 import dslabs.framework.Timer;
 import dslabs.framework.VizIgnore;
+import java.time.Duration;
 import java.util.Random;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -44,12 +45,11 @@ public final class TimerEnvelope implements Event, Comparable<TimerEnvelope> {
   private final Address to;
   private final Timer timer;
 
-  @VizIgnore private final int minTimerLengthMillis, maxTimerLengthMillis, timerLengthMillis;
-
-  @VizIgnore private final long startTimeNanos;
+  @VizIgnore
+  private final long minTimerLengthMillis, maxTimerLengthMillis, timerLengthMillis, startTimeNanos;
 
   public TimerEnvelope(
-      Address to, Timer timer, int minTimerLengthMillis, int maxTimerLengthMillis) {
+      Address to, Timer timer, long minTimerLengthMillis, long maxTimerLengthMillis) {
     this.to = to;
     this.timer = timer;
     this.minTimerLengthMillis = minTimerLengthMillis;
@@ -63,10 +63,15 @@ public final class TimerEnvelope implements Event, Comparable<TimerEnvelope> {
       this.timerLengthMillis = minTimerLengthMillis;
     } else {
       this.timerLengthMillis =
-          minTimerLengthMillis + rand.nextInt(1 + maxTimerLengthMillis - minTimerLengthMillis);
+          minTimerLengthMillis + rand.nextLong(1 + maxTimerLengthMillis - minTimerLengthMillis);
     }
 
     this.startTimeNanos = System.nanoTime();
+  }
+
+  public TimerEnvelope(Address to, Timer timer, Duration minTimerLength, Duration maxTimerLength) {
+    this(to, timer, minTimerLength.toMillis(), maxTimerLength.toMillis());
+    // TODO: Make this the canonical constructor, store Duration/Instant in TimerEnvelope.
   }
 
   @Override
@@ -75,7 +80,7 @@ public final class TimerEnvelope implements Event, Comparable<TimerEnvelope> {
   }
 
   public long endTimeNanos() {
-    return startTimeNanos + (((long) timerLengthMillis()) * 1000000);
+    return startTimeNanos + (timerLengthMillis() * 1000000);
   }
 
   public long timeRemainingNanos() {

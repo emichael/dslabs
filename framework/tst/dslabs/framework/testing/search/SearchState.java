@@ -30,6 +30,8 @@ import com.google.common.collect.Streams;
 import dslabs.framework.Address;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
+import dslabs.framework.Node.Environment;
+import dslabs.framework.Node.Settings;
 import dslabs.framework.Timer;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
@@ -42,6 +44,7 @@ import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.utils.Cloning;
 import java.io.PrintStream;
 import java.io.Serializable;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -189,38 +192,49 @@ public final class SearchState extends AbstractState implements Serializable, Cl
   private void configNode(final Address address) {
     node(address)
         .config(
-            me -> {
-              // Clone on message send
-              Message m = Cloning.clone(me.getRight());
-              MessageEnvelope messageEnvelope =
-                  new MessageEnvelope(me.getLeft(), me.getMiddle(), m);
-              network.add(messageEnvelope);
-              newMessages.add(messageEnvelope);
-            },
-            me -> {
-              // Clone on message send
-              Message m = Cloning.clone(me.getRight());
-              for (Address to : me.getMiddle()) {
-                MessageEnvelope messageEnvelope = new MessageEnvelope(me.getLeft(), to, m);
+            new Environment() {
+              @Override
+              public void send(Message message, Address from, Address to) {
+                // Clone on message send.
+                message = Cloning.clone(message);
+                MessageEnvelope messageEnvelope = new MessageEnvelope(from, to, message);
                 network.add(messageEnvelope);
                 newMessages.add(messageEnvelope);
               }
+
+              @Override
+              public void broadcast(Message message, Address from, ImmutableList<Address> to) {
+                // Clone message on send, but only clone it once to save resources. References will
+                // be re-cloned before delivery.
+                message = Cloning.clone(message);
+                for (Address destination : to) {
+                  MessageEnvelope messageEnvelope = new MessageEnvelope(from, destination, message);
+                  network.add(messageEnvelope);
+                  newMessages.add(messageEnvelope);
+                }
+              }
+
+              @Override
+              public void set(
+                  Timer timer, Address destination, Duration minDuration, Duration maxDuration) {
+                // Clone on timer set.
+                timer = Cloning.clone(timer);
+                TimerEnvelope timerEnvelope =
+                    new TimerEnvelope(destination, timer, minDuration, maxDuration);
+                timers.get(timerEnvelope.to().rootAddress()).add(timerEnvelope);
+                newTimers.add(timerEnvelope);
+              }
+
+              @Override
+              public boolean handleThrowable(Throwable throwable) {
+                // Store the exception without logging it.
+                assert throwable != null;
+                assert thrownException == null;
+                thrownException = throwable;
+                return true;
+              }
             },
-            te -> {
-              // Clone on timer set
-              Timer t = Cloning.clone(te.getMiddle());
-              Pair<Integer, Integer> bounds = te.getRight();
-              TimerEnvelope timerEnvelope =
-                  new TimerEnvelope(te.getLeft(), t, bounds.getLeft(), bounds.getRight());
-              timers.get(timerEnvelope.to().rootAddress()).add(timerEnvelope);
-              newTimers.add(timerEnvelope);
-            },
-            t -> {
-              assert t != null;
-              assert thrownException == null;
-              thrownException = t;
-            },
-            false);
+            new Settings(false));
   }
 
   Collection<Event> events(SearchSettings settings) {
@@ -584,10 +598,9 @@ public final class SearchState extends AbstractState implements Serializable, Cl
       if (o == this) {
         return true;
       }
-      if (!(o instanceof SearchEquivalenceWrappedSearchState)) {
+      if (!(o instanceof SearchEquivalenceWrappedSearchState other)) {
         return false;
       }
-      final SearchEquivalenceWrappedSearchState other = (SearchEquivalenceWrappedSearchState) o;
       if (!Objects.equals(state, other.state)) {
         return false;
       }

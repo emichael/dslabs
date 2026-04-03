@@ -7,6 +7,9 @@ import static org.junit.Assert.assertTrue;
 
 import dslabs.framework.Address;
 import dslabs.framework.Message;
+import dslabs.framework.Node.Environment;
+import dslabs.framework.Node.Settings;
+import dslabs.framework.Timer;
 import dslabs.framework.testing.LocalAddress;
 import dslabs.framework.testing.MessageEnvelope;
 import dslabs.framework.testing.TimerEnvelope;
@@ -17,6 +20,7 @@ import dslabs.framework.testing.junit.TestDescription;
 import dslabs.framework.testing.junit.TestPointValue;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.time.Duration;
 import java.util.LinkedList;
 import java.util.Objects;
 import org.junit.Before;
@@ -54,17 +58,19 @@ public class ViewServerTest extends DSLabsJUnitTest {
     // TODO: clone messages and timers!!!
 
     vs.config(
-        me -> messages.add(new MessageEnvelope(me.getLeft(), me.getMiddle(), me.getRight())),
-        null,
-        te ->
-            timers.add(
-                new TimerEnvelope(
-                    te.getLeft(),
-                    te.getMiddle(),
-                    te.getRight().getLeft(),
-                    te.getRight().getRight())),
-        null,
-        true);
+        new Environment() {
+          @Override
+          public void send(Message message, Address from, Address to) {
+            messages.add(new MessageEnvelope(from, to, message));
+          }
+
+          @Override
+          public void set(
+              Timer timer, Address destination, Duration minDuration, Duration maxDuration) {
+            timers.add(new TimerEnvelope(destination, timer, minDuration, maxDuration));
+          }
+        },
+        new Settings(true));
 
     vs.init();
   }
