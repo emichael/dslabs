@@ -226,6 +226,12 @@ test.jvmArgs(['-ea',
               '--add-opens', 'java.base/java.util=ALL-UNNAMED',
               '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED'])
 
+// Tell Java 23+ not to warn about use of sun.misc.Unsafe (in cloning library).
+// On older versions of Java, this option causes an error, so we omit it there.
+if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_23)) {
+  test.jvmArgs('--sun-misc-unsafe-memory-access=allow')
+}
+
 licenseReport {
   configurations = ALL
   outputDir = "${project.buildDir}/reports/licenses"
