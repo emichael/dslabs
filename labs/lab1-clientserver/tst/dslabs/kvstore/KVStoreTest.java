@@ -40,6 +40,7 @@ public class KVStoreTest extends DSLabsJUnitTest {
     assertEquals(appendResult("BARBAZ"), kvStore.execute(append("FOO", "BAZ")));
     assertEquals(appendResult("BARBAZBAZ"), kvStore.execute(append("FOO", "BAZ")));
     assertEquals(appendResult("BAR2"), kvStore.execute(append("FOO2", "BAR2")));
+    assertEquals(getResult("BAR2"), kvStore.execute(get("FOO2")));
     assertEquals(putOk(), kvStore.execute(put("FOO2", "BAZ2")));
     assertEquals(getResult("BAZ2"), kvStore.execute(get("FOO2")));
     assertEquals(putOk(), kvStore.execute(put("fizz", "buzz")));
