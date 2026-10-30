@@ -5,6 +5,7 @@
 
 import argparse
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -30,6 +31,24 @@ BASE_COMMAND = (
     '--add-opens', 'java.base/java.util=ALL-UNNAMED',
     '--add-opens', 'java.base/jdk.internal.reflect=ALL-UNNAMED',
 )
+
+
+def java_feature_version():
+    try:
+        result = subprocess.run(['java', '-version'], capture_output=True,
+                                text=True, check=False)
+    except OSError:
+        return None
+    # 'version "25.0.3"' -> 25; 'version "1.8.0"' -> 8
+    # see https://openjdk.org/jeps/223 for version string docs
+    match = re.search(r'version "(?:1\.)?(\d+)', result.stderr)
+    return int(match.group(1)) if match else None
+
+
+# Tell Java 23+ not to warn about use of sun.misc.Unsafe (in cloning library).
+# On older versions of Java, this option causes an error, so we omit it there.
+if (java_feature_version() or 0) >= 23:
+    BASE_COMMAND += ('--sun-misc-unsafe-memory-access=allow',)
 
 if platform.system() == 'Windows':
     CP_SEP = ';'
