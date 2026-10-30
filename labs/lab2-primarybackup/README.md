@@ -113,8 +113,8 @@ primary-backup-like protocol, see [Chain
 Replication](http://www.cs.cornell.edu/home/rvr/papers/osdi04.pdf). Chain
 Replication has higher performance than this lab's design, though it assumes
 that the `ViewServer` never declares a server dead when it is merely
-partitioned. See [Harp](http://www.pmg.csail.mit.edu/papers/harp.pdf) and
-[Viewstamped Replication](http://pmg.csail.mit.edu/papers/vr-revisited.pdf) for
+partitioned. See [Harp](https://dl.acm.org/doi/10.1145/121132.121169) and
+[Viewstamped Replication](https://dspace.mit.edu/handle/1721.1/71763) for
 a detailed treatment of high-performance primary/backup and reconstruction of
 system state after various kinds of failures.
 
