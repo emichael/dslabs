@@ -100,6 +100,11 @@ public class DebuggerWindow extends JFrame {
     setProperty("sun.java2d.win.uiScaleX", "1.0");
     setProperty("sun.java2d.win.uiScaleY", "1.0");
 
+    // On MacOS, use the system menu bar and name the app in it. Ignored on other platforms.
+    setProperty("apple.laf.useScreenMenuBar", "true");
+    // The java launcher on MacOS presets this to the main class's name, so override it.
+    System.setProperty("apple.awt.application.name", DebuggerWindow.WINDOW_TITLE);
+
     /*
      * MigLayout thinks it's so smart and wants to use different spacing on different platforms. We
      * just want consistent behaviour. Therefore, we standardize on Gnome.
