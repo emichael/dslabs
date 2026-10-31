@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" inherit-compiler-output="true">
+    <exclude-output />
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab0-pingpong/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab0-pingpong/tst" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab1-clientserver/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab1-clientserver/tst" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab2-primarybackup/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab2-primarybackup/tst" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab3-paxos/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab3-paxos/tst" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab4-shardedstore/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/labs/lab4-shardedstore/tst" isTestSource="true" />
+      <excludeFolder url="file://$MODULE_DIR$/doc" />
+      <excludeFolder url="file://$MODULE_DIR$/img" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jars/framework.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/jars/framework-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jars/framework-deps.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/jars/framework-deps-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" scope="TEST">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jars/grader.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES>
+          <root url="jar://$MODULE_DIR$/jars/grader-sources.jar!/" />
+        </SOURCES>
+      </library>
+    </orderEntry>
+    <orderEntry type="module-library" scope="TEST">
+      <library>
+        <CLASSES>
+          <root url="jar://$MODULE_DIR$/jars/grader-deps.jar!/" />
+        </CLASSES>
+        <JAVADOC />
+        <SOURCES />
+      </library>
+    </orderEntry>
+  </component>
+</module>
