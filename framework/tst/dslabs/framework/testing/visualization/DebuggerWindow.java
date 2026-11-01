@@ -363,7 +363,7 @@ public class DebuggerWindow extends JFrame {
      *  SETUP KEYBOARD SHORTCUTS
      * -------------------------------------------------------------------------------------------*/
     {
-      InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_FOCUSED);
+      InputMap inputMap = getRootPane().getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
       inputMap.put(KeyStroke.getKeyStroke('p'), "PREVIOUS_EVENT");
       inputMap.put(KeyStroke.getKeyStroke('n'), "NEXT_EVENT");
       inputMap.put(KeyStroke.getKeyStroke('k'), "PREVIOUS_EVENT");
