@@ -1,0 +1,19 @@
+{
+    "java.project.sourcePaths": [
+        "labs/lab0-pingpong/src",
+        "labs/lab0-pingpong/tst",
+        "labs/lab1-clientserver/src",
+        "labs/lab1-clientserver/tst",
+        "labs/lab2-primarybackup/src",
+        "labs/lab2-primarybackup/tst",
+        "labs/lab3-paxos/src",
+        "labs/lab3-paxos/tst",
+        "labs/lab4-shardedstore/src",
+        "labs/lab4-shardedstore/tst",
+    ],
+    "java.project.referencedLibraries": [
+        "jars/*.jar",
+    ],
+    "java.compile.nullAnalysis.mode": "automatic",
+    "editor.defaultFormatter": "josevseb.google-java-format-for-vs-code",
+}
