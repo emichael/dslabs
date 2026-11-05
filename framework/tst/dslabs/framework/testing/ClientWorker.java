@@ -36,7 +36,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.function.Consumer;
 import javax.annotation.Nullable;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
@@ -44,7 +43,6 @@ import lombok.NonNull;
 import lombok.ToString;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.apache.commons.lang3.tuple.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 
 @EqualsAndHashCode(
     of = {"client", "results"},
@@ -297,14 +295,9 @@ public final class ClientWorker extends Node {
   }
 
   @Override
-  public void config(
-      Consumer<Triple<Address, Address, Message>> messageAdder,
-      Consumer<Triple<Address, Address[], Message>> batchMessageAdder,
-      Consumer<Triple<Address, Timer, Pair<Integer, Integer>>> timerAdder,
-      Consumer<Throwable> throwableCatcher,
-      boolean logExceptions) {
+  public void config(Environment environment, Settings settings) {
     // TODO: make sure there's no overhead for having the config both places
-    super.config(messageAdder, batchMessageAdder, timerAdder, throwableCatcher, logExceptions);
-    client().config(messageAdder, batchMessageAdder, timerAdder, throwableCatcher, logExceptions);
+    super.config(environment, settings);
+    client().config(environment, settings);
   }
 }

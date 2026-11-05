@@ -27,6 +27,8 @@ import dslabs.framework.Address;
 import dslabs.framework.Client;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
+import dslabs.framework.Node.Environment;
+import dslabs.framework.Node.Settings;
 import dslabs.framework.Timer;
 import dslabs.framework.testing.AbstractState;
 import dslabs.framework.testing.ClientWorker;
@@ -46,7 +48,6 @@ import javax.annotation.Nullable;
 import lombok.Getter;
 import lombok.ToString;
 import lombok.extern.java.Log;
-import org.apache.commons.lang3.tuple.Pair;
 
 @Log
 @ToString(callSuper = true)
@@ -97,22 +98,30 @@ public class RunState extends AbstractState {
     final Inbox inbox = network.inbox(address);
 
     node.config(
-        me -> {
-          // Clone on message send
-          Message m = Cloning.clone(me.getRight());
-          network.send(new MessageEnvelope(me.getLeft(), me.getMiddle(), m));
+        new Environment() {
+          @Override
+          public void send(Message message, Address from, Address to) {
+            // Clone on message send
+            Message m = Cloning.clone(message);
+            network.send(new MessageEnvelope(from, to, message));
+          }
+
+          @Override
+          public void set(
+              Timer timer, Address destination, Duration minDuration, Duration maxDuration) {
+            // Clone timer on set
+            Timer t = Cloning.clone(timer);
+            inbox.set(new TimerEnvelope(destination, t, minDuration, maxDuration));
+          }
+
+          @Override
+          public boolean handleThrowable(Throwable throwable) {
+            // Log exceptions but ignore them during execution.
+            exceptionThrown = true;
+            return true;
+          }
         },
-        null,
-        te -> {
-          // Clone timer on set
-          Timer t = Cloning.clone(te.getMiddle());
-          Pair<Integer, Integer> bounds = te.getRight();
-          inbox.set(new TimerEnvelope(te.getLeft(), t, bounds.getLeft(), bounds.getRight()));
-        },
-        e -> {
-          exceptionThrown = true;
-        },
-        true);
+        new Settings(true));
     node.init();
 
     // If we're already running in multi-threaded mode start the new node
