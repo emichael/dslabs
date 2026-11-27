@@ -70,7 +70,7 @@ public class ViewServerTest extends DSLabsJUnitTest {
             timers.add(new TimerEnvelope(destination, timer, minDuration, maxDuration));
           }
         },
-        new Settings(true));
+        Settings.builder().logExceptions(true).build());
 
     vs.init();
   }

@@ -103,7 +103,7 @@ public class RunState extends AbstractState {
           public void send(Message message, Address from, Address to) {
             // Clone on message send
             Message m = Cloning.clone(message);
-            network.send(new MessageEnvelope(from, to, message));
+            network.send(new MessageEnvelope(from, to, m));
           }
 
           @Override
@@ -121,7 +121,7 @@ public class RunState extends AbstractState {
             return true;
           }
         },
-        new Settings(true));
+        Settings.builder().logExceptions(true).build());
     node.init();
 
     // If we're already running in multi-threaded mode start the new node

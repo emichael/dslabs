@@ -38,6 +38,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
+import lombok.Builder;
 import lombok.EqualsAndHashCode;
 import lombok.NonNull;
 import lombok.SneakyThrows;
@@ -141,9 +142,17 @@ public abstract class Node implements Serializable {
    *     handling, in addition to sending them to {@link Environment#handleThrowable}.
    * @hidden
    */
+  @Builder
   public record Settings(boolean logExceptions) {
     Settings() {
-      this(true);
+      this(/* logExceptions= */ true);
+    }
+
+    // Provide a skeleton builder class with default values, as records do not support Lombok's
+    // @Builder.Default.
+    @SuppressWarnings({"unused", "FieldMayBeFinal"})
+    public static final class SettingsBuilder {
+      private boolean logExceptions = true;
     }
   }
 
@@ -156,7 +165,7 @@ public abstract class Node implements Serializable {
   /*
    * INVARIANT: (environment == null && settings == null) || parentNode == null
    *
-   * We do not store these as a sealed type, as environment and settings must be transient, while
+   * We do not store these as a sum type, as environment and settings must be transient, while
    * parentNode must not be transient.
    */
 
@@ -231,7 +240,7 @@ public abstract class Node implements Serializable {
 
     if (subNode.environment != null) {
       throw new IllegalArgumentException(
-          "Cannot configure node; already configured as stand-alone.");
+          "Cannot configure node as sub-node; already configured as root node.");
     }
 
     SubAddress subAddress = (SubAddress) subNode.address;

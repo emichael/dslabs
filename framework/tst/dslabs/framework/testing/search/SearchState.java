@@ -234,7 +234,7 @@ public final class SearchState extends AbstractState implements Serializable, Cl
                 return true;
               }
             },
-            new Settings(false));
+            Settings.builder().logExceptions(false).build());
   }
 
   Collection<Event> events(SearchSettings settings) {
