@@ -105,7 +105,7 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 public abstract class Node implements Serializable {
 
   /**
-   * An {@code Environment} is how a {@link Node} sends messages to other nodes and sets timers. It
+   * An {@code Environment} is how a {@link Node} sends messages to other Nodes and sets timers. It
    * also can handle exceptions which are thrown during the handling of events.
    *
    * @hidden
@@ -138,7 +138,7 @@ public abstract class Node implements Serializable {
   }
 
   /**
-   * @param logExceptions Whether to log exceptions thrown by the node during message and timer
+   * @param logExceptions Whether to log exceptions thrown by the Node during message and timer
    *     handling, in addition to sending them to {@link Environment#handleThrowable}.
    * @hidden
    */
@@ -150,6 +150,11 @@ public abstract class Node implements Serializable {
 
     // Provide a skeleton builder class with default values, as records do not support Lombok's
     // @Builder.Default.
+    /**
+     * Builder for {@link Settings}.
+     *
+     * @hidden
+     */
     @SuppressWarnings({"unused", "FieldMayBeFinal"})
     public static final class SettingsBuilder {
       private boolean logExceptions = true;
@@ -170,22 +175,22 @@ public abstract class Node implements Serializable {
    */
 
   /**
-   * This node's {@link Environment}, if this node is a root node (i.e., not a sub-node). If this
-   * node is a sub-node, this must be {@code null}.
+   * This Node's {@link Environment}, if this Node is a root Node (i.e., not a sub-Node). If this
+   * Node is a sub-Node, this must be {@code null}.
    */
   private transient @Nullable Environment environment;
 
   /**
-   * This node's current {@link Settings}, if this node is a root node (i.e., not a sub-node). If
-   * this node is a sub-node, this must be {@code null}.
+   * This Node's current {@link Settings}, if this Node is a root Node (i.e., not a sub-Node). If
+   * this Node is a sub-Node, this must be {@code null}.
    */
   private transient @Nullable Settings settings;
 
-  /** The Node's parent (or {@code null} if this Node is a root node). */
+  /** The Node's parent (or {@code null} if this Node is a root Node). */
   @VizIgnore private @Nullable Node parentNode;
 
   /**
-   * This Node's sub-Nodes, indexed by their ID. Sub-Nodes must have a {@link SubAddress} composed
+   * This Node's sub-Nodes, indexed by their ID. sub-Nodes must have a {@link SubAddress} composed
    * of this Node's address and their ID.
    */
   private final Map<String, Node> subNodes = new HashMap<>();
@@ -240,7 +245,7 @@ public abstract class Node implements Serializable {
 
     if (subNode.environment != null) {
       throw new IllegalArgumentException(
-          "Cannot configure node as sub-node; already configured as root node.");
+          "Cannot configure node as sub-Node; already configured as root node.");
     }
 
     SubAddress subAddress = (SubAddress) subNode.address;
@@ -630,11 +635,11 @@ public abstract class Node implements Serializable {
   /**
    * <b>Do not use.</b> Only used by testing framework.
    *
-   * <p>Configures the node to allow it to send messages and set timers. Should only be set on a
+   * <p>Configures the Node to allow it to send messages and set timers. Should only be set on a
    * root Node.
    *
-   * @param environment The environment this node should use.
-   * @param settings The settings for this node.
+   * @param environment The environment this Node should use.
+   * @param settings The settings for this Node.
    * @hidden
    */
   public void config(Environment environment, Settings settings) {
