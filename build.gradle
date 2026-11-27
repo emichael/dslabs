@@ -125,6 +125,10 @@ dependencies {
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1'
   graderImplementation group: 'org.swinglabs.swingx', name: 'swingx-core', version: '1.6.5-1', classifier: 'sources'
 
+  // Benchmarks
+  testImplementation      group: 'org.openjdk.jmh', name: 'jmh-core',                 version:'1.37'
+  testAnnotationProcessor group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version:'1.37'
+
   formatter group: 'com.google.googlejavaformat', name: 'google-java-format', version: '1.35.0'
   errorprone group: 'com.google.errorprone', name: 'error_prone_core', version: '2.36.0'
 }
@@ -206,7 +210,9 @@ task copyDependencies {
     }
     copy {
       from configurations.graderRuntimeClasspath,
-           configurations.graderSources
+           configurations.graderSources,
+           configurations.testRuntimeClasspath,
+           configurations.testAnnotationProcessor
       into 'deps/test'
     }
   }
@@ -230,6 +236,17 @@ test.jvmArgs(['-ea',
 // On older versions of Java, this option causes an error, so we omit it there.
 if (JavaVersion.current().isCompatibleWith(JavaVersion.VERSION_23)) {
   test.jvmArgs('--sun-misc-unsafe-memory-access=allow')
+}
+
+tasks.register('benchmark', JavaExec) {
+    group = 'verification'
+    description = 'Runs JMH benchmarks'
+    dependsOn 'testClasses'
+    classpath = sourceSets.test.runtimeClasspath
+    mainClass = 'org.openjdk.jmh.Main'
+    jvmArgs test.jvmArgs
+    // Forward to the forked benchmark worker processes.
+    args '-jvmArgsAppend', test.jvmArgs.join(' ')
 }
 
 licenseReport {

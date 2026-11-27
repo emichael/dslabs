@@ -1,0 +1,61 @@
+package dslabs.framework.benchmarks;
+
+import dslabs.framework.Address;
+import dslabs.framework.Message;
+import dslabs.framework.Node;
+import dslabs.framework.testing.LocalAddress;
+import java.util.concurrent.TimeUnit;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.NonNull;
+import org.openjdk.jmh.annotations.*;
+
+@BenchmarkMode(Mode.Throughput)
+@OutputTimeUnit(TimeUnit.SECONDS)
+@State(Scope.Benchmark)
+@Fork(value = 1, warmups = 1)
+@Warmup(iterations = 3)
+@Measurement(iterations = 5, time = 5, timeUnit = TimeUnit.SECONDS)
+public class NodeBenchmark {
+
+  @Data
+  private static final class IncrementCount implements Message {}
+
+  @EqualsAndHashCode(callSuper = true)
+  private static final class CounterNode extends Node {
+    int messagesReceived = 0;
+
+    CounterNode(@NonNull Address address) {
+      super(address);
+    }
+
+    @Override
+    public void init() {}
+
+    private void handleIncrementCount(IncrementCount message, Address sender) {
+      messagesReceived++;
+    }
+  }
+
+  private Address nodeAddress, otherAddress;
+  private CounterNode node;
+
+  @Setup(Level.Trial)
+  public void setup() {
+    nodeAddress = new LocalAddress("test-node");
+    node = new CounterNode(nodeAddress);
+    node.init();
+    otherAddress = new LocalAddress("other");
+  }
+
+  @Benchmark
+  @OperationsPerInvocation(1_000)
+  public int messageDelivery() {
+    IncrementCount message = new IncrementCount();
+    for (int i = 0; i <= 1_000; i++) {
+      node.handleMessage(message, otherAddress, nodeAddress);
+    }
+    return node.messagesReceived;
+  }
+}

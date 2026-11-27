@@ -1,4 +1,4 @@
-.PHONY: all test format check-format dependencies serve clean clean-all
+.PHONY: all test benchmark format check-format dependencies serve clean clean-all
 .FORCE:
 
 FRAMEWORK_FILES = $(shell find framework -type f | sed 's/ /\\ /g')
@@ -66,6 +66,9 @@ build/handout.tar.gz: build/handout/
 
 test:
 	./gradlew test
+
+benchmark:
+	./gradlew benchmark
 
 check-format:
 	./gradlew spotlessCheck
