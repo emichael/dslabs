@@ -3,6 +3,7 @@ package dslabs.framework.benchmarks;
 import dslabs.framework.Address;
 import dslabs.framework.Message;
 import dslabs.framework.Node;
+import dslabs.framework.Timer;
 import dslabs.framework.testing.LocalAddress;
 import java.util.concurrent.TimeUnit;
 import lombok.Data;
@@ -19,11 +20,15 @@ import org.openjdk.jmh.annotations.*;
 public class NodeBenchmark {
 
   @Data
-  private static final class IncrementCount implements Message {}
+  private static final class IncrementMessageCount implements Message {}
+
+  @Data
+  private static final class IncrementTimerCount implements Timer {}
 
   @EqualsAndHashCode(callSuper = true)
   private static final class CounterNode extends Node {
     int messagesReceived = 0;
+    int timersReceived = 0;
 
     CounterNode(@NonNull Address address) {
       super(address);
@@ -32,8 +37,12 @@ public class NodeBenchmark {
     @Override
     public void init() {}
 
-    private void handleIncrementCount(IncrementCount message, Address sender) {
+    private void handleIncrementMessageCount(IncrementMessageCount message, Address sender) {
       messagesReceived++;
+    }
+
+    private void onIncrementTimerCount(IncrementTimerCount timer) {
+      timersReceived++;
     }
   }
 
@@ -51,9 +60,19 @@ public class NodeBenchmark {
   @Benchmark
   @OperationsPerInvocation(1_000)
   public int messageDelivery() {
-    IncrementCount message = new IncrementCount();
+    IncrementMessageCount message = new IncrementMessageCount();
     for (int i = 0; i <= 1_000; i++) {
       node.handleMessage(message, otherAddress, nodeAddress);
+    }
+    return node.messagesReceived;
+  }
+
+  @Benchmark
+  @OperationsPerInvocation(1_000)
+  public int timerDelivery() {
+    IncrementTimerCount timer = new IncrementTimerCount();
+    for (int i = 0; i <= 1_000; i++) {
+      node.onTimer(timer, nodeAddress);
     }
     return node.messagesReceived;
   }
