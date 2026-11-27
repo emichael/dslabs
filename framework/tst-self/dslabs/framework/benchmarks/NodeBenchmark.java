@@ -7,7 +7,6 @@ import dslabs.framework.testing.LocalAddress;
 import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import lombok.Getter;
 import lombok.NonNull;
 import org.openjdk.jmh.annotations.*;
 
