@@ -27,11 +27,11 @@ import java.io.Serializable;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -549,27 +549,29 @@ public abstract class Node implements Serializable {
   @SneakyThrows
   private Object callMethod(
       Address destination, String methodName, boolean handleExceptions, Object... args) {
-    // Grab a reference to the root node in this hierarchy
+    // Grab a reference to the root node in this hierarchy.
     Node n = this;
     while (n.parentNode != null) {
       n = n.parentNode;
     }
 
-    // Get the full sub-Node path
-    List<String> path = new LinkedList<>();
-    while (destination instanceof SubAddress) {
-      path.add(((SubAddress) destination).id());
-      destination = ((SubAddress) destination).parentAddress();
-    }
-    Collections.reverse(path);
+    if (destination instanceof SubAddress) {
+      // Get the full sub-Node path.
+      List<String> path = new ArrayList<>();
+      do {
+        path.add(((SubAddress) destination).id());
+        destination = ((SubAddress) destination).parentAddress();
+      } while (destination instanceof SubAddress);
+      Collections.reverse(path);
 
-    // Traverse from the root node to the sub-Node
-    for (String id : path) {
-      if (!n.subNodes.containsKey(id)) {
-        LOG.severe(String.format("Could not find subNode %s of %s", id, n.address));
-        return null;
+      // Traverse from the root node to the sub-Node
+      for (String id : path) {
+        if (!n.subNodes.containsKey(id)) {
+          LOG.severe(String.format("Could not find subNode %s of %s", id, n.address));
+          return null;
+        }
+        n = n.subNodes.get(id);
       }
-      n = n.subNodes.get(id);
     }
 
     final Class<? extends Node> c = n.getClass();
