@@ -84,10 +84,11 @@ public class RunStateBenchmark {
     state =
         new RunState(
             NodeGenerator.builder()
-                .serverSupplier(a -> {
-                  Address peer = a.equals(a1) ? a2 : a1;
-                  return new BenchmarkNode(a, peer);
-                })
+                .serverSupplier(
+                    a -> {
+                      Address peer = a.equals(a1) ? a2 : a1;
+                      return new BenchmarkNode(a, peer);
+                    })
                 .clientSupplier(() -> null)
                 .workloadSupplier(Workload.emptyWorkload())
                 .build());
