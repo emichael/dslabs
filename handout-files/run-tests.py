@@ -4,6 +4,7 @@
 
 
 import argparse
+import os
 import platform
 import re
 import shutil
@@ -63,6 +64,126 @@ RUNTIME_CLASSPATH = CP_SEP.join((
     'out/src/',
     'out/tst/'
 ))
+
+NONREPARENTING_WM_ENV_VAR = '_JAVA_AWT_WM_NONREPARENTING'
+WM_LOOKUP_TIMEOUT_SECONDS = 1.0
+INCONCLUSIVE_SESSION_NAMES = frozenset({
+    'custom',
+    'default',
+    'lightdm-xsession',
+    'none',
+    'user',
+    'xinitrc',
+    'xsession',
+})
+
+
+def _session_desktop_names(env):
+    """Return normalized desktop/session tokens from session env vars."""
+    names = []
+    for var in ('XDG_CURRENT_DESKTOP', 'DESKTOP_SESSION'):
+        raw = env.get(var, '')
+        if not raw:
+            continue
+        for entry in raw.split(':'):
+            entry = entry.strip()
+            if not entry:
+                continue
+            entry = entry.rsplit('/', 1)[-1]
+            if entry.lower().endswith('.desktop'):
+                entry = entry[:-len('.desktop')]
+            for token in entry.split('+'):
+                token = token.strip().lower()
+                if token:
+                    names.append(token)
+    return names
+
+
+def _x11_window_manager_name(env):
+    """Return the active X11 window manager name, or None if unavailable."""
+    try:
+        wm_check = subprocess.run(
+            ['xprop', '-root', '-notype', '_NET_SUPPORTING_WM_CHECK'],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=WM_LOOKUP_TIMEOUT_SECONDS,
+            env=env,
+        )
+    except FileNotFoundError:
+        try:
+            wmctrl = subprocess.run(
+                ['wmctrl', '-m'],
+                capture_output=True,
+                text=True,
+                check=False,
+                timeout=WM_LOOKUP_TIMEOUT_SECONDS,
+                env=env,
+            )
+        except (OSError, subprocess.TimeoutExpired):
+            return None
+        if wmctrl.returncode != 0:
+            return None
+        match = re.search(r'^Name:\s*(.+)$', wmctrl.stdout, re.MULTILINE)
+        return match.group(1).strip() if match else None
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+    if wm_check.returncode != 0:
+        return None
+
+    id_match = re.search(r'0x[0-9a-fA-F]+', wm_check.stdout)
+    if not id_match or int(id_match.group(0), 16) == 0:
+        return None
+
+    try:
+        wm_name = subprocess.run(
+            ['xprop', '-id', id_match.group(0), '-notype', '_NET_WM_NAME'],
+            capture_output=True,
+            text=True,
+            check=False,
+            timeout=WM_LOOKUP_TIMEOUT_SECONDS,
+            env=env,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return None
+
+    if wm_name.returncode != 0:
+        return None
+
+    name_match = re.search(r'=\s*"([^"]+)"', wm_name.stdout)
+    return name_match.group(1).strip() if name_match else None
+
+
+def _is_xmonad_session(env):
+    """Return True if the current Linux session is positively identified as XMonad."""
+    if platform.system() != 'Linux':
+        return False
+
+    session_names = _session_desktop_names(env)
+    if 'xmonad' in session_names:
+        return True
+    if any(name not in INCONCLUSIVE_SESSION_NAMES for name in session_names):
+        return False
+
+    session_type = env.get('XDG_SESSION_TYPE', '').strip().lower()
+    if session_type and session_type != 'x11':
+        return False
+    if not env.get('DISPLAY'):
+        return False
+
+    wm_name = _x11_window_manager_name(env)
+    return wm_name is not None and wm_name.lower() == 'xmonad'
+
+
+def _java_env(use_viz=False, env=None):
+    """Build the environment dictionary for a Java child process."""
+    child_env = dict(os.environ if env is None else env)
+    if (use_viz and NONREPARENTING_WM_ENV_VAR not in child_env
+            and _is_xmonad_session(child_env)):
+        child_env[NONREPARENTING_WM_ENV_VAR] = '1'
+    return child_env
+
 
 def make():
     """Compile the source files, exit script if unsuccessful."""
@@ -129,7 +250,7 @@ def run_tests(lab, part=None, no_run=False, no_search=False,
     if test_num:
         command += ['--test-num', str(test_num)]
 
-    returncode = subprocess.call(command)
+    returncode = subprocess.call(command, env=_java_env(use_viz=start_viz))
     sys.exit(returncode)
 
 
@@ -156,7 +277,7 @@ def run_viz_debugger(lab, args, assertions=False, jvm_properties=None):
     command += ['--lab', str(lab)]
     command += args
 
-    returncode = subprocess.call(command)
+    returncode = subprocess.call(command, env=_java_env(use_viz=True))
     sys.exit(returncode)
 
 
@@ -181,7 +302,7 @@ def visualize_trace(trace_name, assertions=False, jvm_properties=None):
         trace_name
     ]
 
-    returncode = subprocess.call(command)
+    returncode = subprocess.call(command, env=_java_env(use_viz=True))
     sys.exit(returncode)
 
 
@@ -225,7 +346,7 @@ def replay_traces(trace_names=None, lab=None, part=None, log_level=None,
     if trace_names:
         command += trace_names
 
-    returncode = subprocess.call(command)
+    returncode = subprocess.call(command, env=_java_env(use_viz=start_viz))
     sys.exit(returncode)
 
 
