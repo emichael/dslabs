@@ -27,8 +27,6 @@ import org.openjdk.jmh.annotations.*;
 @Warmup(iterations = 1)
 @Measurement(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 public class SearchStateBenchmark {
-
-  private static final Duration ITERATION_DURATION = Duration.ofSeconds(5);
   private static final int TIMER_DURATION_MILLIS = 5;
 
   @Param({"2", "8", "128"})
@@ -109,7 +107,7 @@ public class SearchStateBenchmark {
       state.addServer(a);
     }
     settings = new SearchSettings();
-    settings.maxTimeSecs((int) ITERATION_DURATION.toSeconds());
+    settings.maxTimeSecs((int) BenchmarkUtils.benchmarkDuration(getClass()).toSeconds());
     settings.outputFreqSecs(-1);
     tracker = new SearchCountersTracker();
   }

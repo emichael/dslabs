@@ -9,7 +9,6 @@ import dslabs.framework.testing.NodeGenerator;
 import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,7 +32,6 @@ import org.openjdk.jmh.annotations.*;
 public class RunStateBenchmark {
 
   private static final int TIMER_DURATION_MILLIS = 5;
-  private static final Duration ITERATION_DURATION = Duration.ofSeconds(5);
 
   @Param({"2", "8", "128"})
   private int numNodes;
@@ -104,7 +102,7 @@ public class RunStateBenchmark {
       state.addServer(a);
     }
     settings = new RunSettings();
-    settings.maxTimeSecs((int) ITERATION_DURATION.toSeconds());
+    settings.maxTimeSecs((int) BenchmarkUtils.benchmarkDuration(getClass()).toSeconds());
   }
 
   private void runBenchmark(EventDeliveryCounters counters) throws InterruptedException {
