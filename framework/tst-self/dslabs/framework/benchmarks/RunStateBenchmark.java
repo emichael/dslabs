@@ -21,15 +21,15 @@ import org.openjdk.jmh.annotations.*;
 
 /**
  * A benchmark that runs N nodes, constantly sending messages to each other while timers are firing.
- * The important output metrics is {@link EventDeliveryCounters#messagesDelivered}, as the timers
+ * The important output metric is {@link EventDeliveryCounters#messagesDelivered}, as the timers
  * fire at a fixed rate.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 @State(Scope.Benchmark)
-@Fork(value = 1, warmups = 1)
-@Warmup(iterations = 2)
-@Measurement(iterations = 3, batchSize = 1)
+@Fork(value = 1, warmups = 0)
+@Warmup(iterations = 1)
+@Measurement(iterations = 3, time = 5, timeUnit = TimeUnit.SECONDS)
 public class RunStateBenchmark {
 
   private static final int TIMER_DURATION_MILLIS = 5;
