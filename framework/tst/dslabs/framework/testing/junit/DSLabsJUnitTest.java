@@ -90,19 +90,18 @@ public abstract class DSLabsJUnitTest {
    */
   @Rule
   public final TestRule enableChecks() {
-    return testRule(
-        (base, description) -> {
-          if (description.getAnnotation(ChecksEnabled.class) != null) {
-            GlobalSettings.errorChecksTemporarilyEnabled(true);
-            try {
-              base.evaluate();
-            } finally {
-              GlobalSettings.errorChecksTemporarilyEnabled(false);
-            }
-          } else {
-            base.evaluate();
-          }
-        });
+    return testRule((base, description) -> {
+      if (description.getAnnotation(ChecksEnabled.class) != null) {
+        GlobalSettings.errorChecksTemporarilyEnabled(true);
+        try {
+          base.evaluate();
+        } finally {
+          GlobalSettings.errorChecksTemporarilyEnabled(false);
+        }
+      } else {
+        base.evaluate();
+      }
+    });
   }
 
   private List<Throwable> testFailures;

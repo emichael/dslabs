@@ -53,38 +53,35 @@ public abstract class ShardStoreBaseTest extends BaseJUnitTest {
             .mapToObj(ShardStoreBaseTest::shardMaster)
             .toArray(Address[]::new);
 
-    builder.serverSupplier(
-        a -> {
-          if (Arrays.asList(shardMasters).contains(a)) {
-            return new PaxosServer(a, shardMasters.clone(), new ShardMaster(numShards));
+    builder.serverSupplier(a -> {
+      if (Arrays.asList(shardMasters).contains(a)) {
+        return new PaxosServer(a, shardMasters.clone(), new ShardMaster(numShards));
 
-          } else {
-            Matcher m = Pattern.compile("server(\\d+)-(\\d+)").matcher(a.toString());
+      } else {
+        Matcher m = Pattern.compile("server(\\d+)-(\\d+)").matcher(a.toString());
 
-            if (m.find()) {
-              int groupId = Integer.parseInt(m.group(1));
+        if (m.find()) {
+          int groupId = Integer.parseInt(m.group(1));
 
-              Address[] group =
-                  IntStream.rangeClosed(1, numServersPerGroup)
-                      .mapToObj(i -> server(groupId, i))
-                      .toArray(Address[]::new);
+          Address[] group =
+              IntStream.rangeClosed(1, numServersPerGroup)
+                  .mapToObj(i -> server(groupId, i))
+                  .toArray(Address[]::new);
 
-              return new ShardStoreServer(
-                  a, shardMasters.clone(), numShards, group.clone(), groupId);
-            }
+          return new ShardStoreServer(a, shardMasters.clone(), numShards, group.clone(), groupId);
+        }
 
-            throw new RuntimeException("Can't create server for given address.");
-          }
-        });
+        throw new RuntimeException("Can't create server for given address.");
+      }
+    });
 
-    builder.clientSupplier(
-        a -> {
-          if (a.equals(CCA)) {
-            return new PaxosClient(a, shardMasters.clone());
-          }
+    builder.clientSupplier(a -> {
+      if (a.equals(CCA)) {
+        return new PaxosClient(a, shardMasters.clone());
+      }
 
-          return new ShardStoreClient(a, shardMasters.clone(), numShards);
-        });
+      return new ShardStoreClient(a, shardMasters.clone(), numShards);
+    });
     builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
     return builder;
   }

@@ -166,10 +166,9 @@ public final class CheckLogger {
   }
 
   private static void printMethods(Map<String, Pair<SearchState, Event>> m) {
-    m.forEach(
-        (methodName, info) ->
-            System.err.printf(
-                "- %s\n  See: %s\n       %s%n", methodName, info.getLeft(), info.getRight()));
+    m.forEach((methodName, info) ->
+        System.err.printf(
+            "- %s\n  See: %s\n       %s%n", methodName, info.getLeft(), info.getRight()));
     System.err.println();
   }
 

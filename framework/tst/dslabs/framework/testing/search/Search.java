@@ -244,36 +244,35 @@ public abstract class Search {
       // Start all of the worker threads
       for (int i = 0; i < settings.numThreads(); i++) {
         Thread t =
-            new Thread(
-                () -> {
-                  while (!Thread.interrupted()) {
-                    Runnable worker;
-                    lock.lock();
-                    try {
-                      while ((worker = getWorker()) == null) {
-                        workerFinished.await();
-                      }
-                      numActiveWorkers++;
-                    } catch (InterruptedException e) {
-                      return;
-                    } finally {
-                      lock.unlock();
-                    }
-
-                    worker.run();
-
-                    lock.lock();
-                    try {
-                      numActiveWorkers--;
-                      workerFinished.signal();
-                      if (searchFinished()) {
-                        searchFinished.signal();
-                      }
-                    } finally {
-                      lock.unlock();
-                    }
+            new Thread(() -> {
+              while (!Thread.interrupted()) {
+                Runnable worker;
+                lock.lock();
+                try {
+                  while ((worker = getWorker()) == null) {
+                    workerFinished.await();
                   }
-                });
+                  numActiveWorkers++;
+                } catch (InterruptedException e) {
+                  return;
+                } finally {
+                  lock.unlock();
+                }
+
+                worker.run();
+
+                lock.lock();
+                try {
+                  numActiveWorkers--;
+                  workerFinished.signal();
+                  if (searchFinished()) {
+                    searchFinished.signal();
+                  }
+                } finally {
+                  lock.unlock();
+                }
+              }
+            });
         workerThreads.add(t);
         t.start();
       }
@@ -282,26 +281,25 @@ public abstract class Search {
       Thread statusThread = null;
       if (settings.shouldOutputStatus()) {
         statusThread =
-            new Thread(
-                () -> {
-                  long lastLoggedMillis = 0;
+            new Thread(() -> {
+              long lastLoggedMillis = 0;
 
-                  while (!Thread.interrupted()) {
-                    long waitTime =
-                        settings.outputFreqSecs() * 1000L
-                            + lastLoggedMillis
-                            - System.currentTimeMillis();
-                    if (waitTime > 0) {
-                      try {
-                        Thread.sleep(waitTime);
-                      } catch (InterruptedException e) {
-                        break;
-                      }
-                    }
-                    lastLoggedMillis = System.currentTimeMillis();
-                    printStatus();
+              while (!Thread.interrupted()) {
+                long waitTime =
+                    settings.outputFreqSecs() * 1000L
+                        + lastLoggedMillis
+                        - System.currentTimeMillis();
+                if (waitTime > 0) {
+                  try {
+                    Thread.sleep(waitTime);
+                  } catch (InterruptedException e) {
+                    break;
                   }
-                });
+                }
+                lastLoggedMillis = System.currentTimeMillis();
+                printStatus();
+              }
+            });
         statusThread.start();
       }
 

@@ -16,13 +16,12 @@ abstract class ClientServerBaseTest extends BaseJUnitTest {
 
   static NodeGeneratorBuilder builder() {
     NodeGeneratorBuilder builder = NodeGenerator.builder();
-    builder.serverSupplier(
-        a -> {
-          if (!Objects.equals(a, SA)) {
-            throw new IllegalArgumentException();
-          }
-          return new SimpleServer(SA, new KVStore());
-        });
+    builder.serverSupplier(a -> {
+      if (!Objects.equals(a, SA)) {
+        throw new IllegalArgumentException();
+      }
+      return new SimpleServer(SA, new KVStore());
+    });
     builder.clientSupplier(a -> new SimpleClient(a, SA));
     builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
     return builder;

@@ -150,14 +150,13 @@ public class ShardMasterTest extends DSLabsJUnitTest {
 
     int numMoved =
         previous.groupInfo().keySet().stream()
-            .mapToInt(
-                gid -> {
-                  Set<Integer> p = new HashSet<>(previous.groupInfo().get(gid).getRight());
-                  if (current.groupInfo().containsKey(gid)) {
-                    p.removeAll(current.groupInfo().get(gid).getRight());
-                  }
-                  return p.size();
-                })
+            .mapToInt(gid -> {
+              Set<Integer> p = new HashSet<>(previous.groupInfo().get(gid).getRight());
+              if (current.groupInfo().containsKey(gid)) {
+                p.removeAll(current.groupInfo().get(gid).getRight());
+              }
+              return p.size();
+            })
             .sum();
 
     int previousNumGroups = previous.groupInfo().size(),

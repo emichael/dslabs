@@ -207,14 +207,13 @@ public class DebuggerWindow extends JFrame {
       JCheckBoxMenuItem viewDeliveredMessagesMenuItem =
           new JCheckBoxMenuItem("Show delivered messages", viewDeliveredMessages);
       settingsMenu.add(viewDeliveredMessagesMenuItem);
-      viewDeliveredMessagesMenuItem.addActionListener(
-          e -> {
-            boolean old = viewDeliveredMessages;
-            viewDeliveredMessages = viewDeliveredMessagesMenuItem.getState();
-            if (old != viewDeliveredMessages) {
-              setState(currentState);
-            }
-          });
+      viewDeliveredMessagesMenuItem.addActionListener(e -> {
+        boolean old = viewDeliveredMessages;
+        viewDeliveredMessages = viewDeliveredMessagesMenuItem.getState();
+        if (old != viewDeliveredMessages) {
+          setState(currentState);
+        }
+      });
 
       // TODO: only add menu item if searchSettings actually restricts events (has prunes or
       //  prevents message/timer delivery)
@@ -222,14 +221,13 @@ public class DebuggerWindow extends JFrame {
         JCheckBoxMenuItem ignoreSearchSettingsMenuItem =
             new JCheckBoxMenuItem("Ignore search event delivery restrictions", false);
         settingsMenu.add(ignoreSearchSettingsMenuItem);
-        ignoreSearchSettingsMenuItem.addActionListener(
-            e -> {
-              boolean old = ignoreSearchSettings;
-              ignoreSearchSettings = ignoreSearchSettingsMenuItem.getState();
-              if (old != ignoreSearchSettings) {
-                setState(currentState);
-              }
-            });
+        ignoreSearchSettingsMenuItem.addActionListener(e -> {
+          boolean old = ignoreSearchSettings;
+          ignoreSearchSettings = ignoreSearchSettingsMenuItem.getState();
+          if (old != ignoreSearchSettings) {
+            setState(currentState);
+          }
+        });
       }
 
       settingsMenu.addSeparator();
@@ -251,10 +249,9 @@ public class DebuggerWindow extends JFrame {
       JCheckBoxMenuItem gpuAcceleration =
           new JCheckBoxMenuItem("GPU Acceleration", Utils.gpuAccelerationEnabled());
       settingsMenu.add(gpuAcceleration);
-      gpuAcceleration.addActionListener(
-          e -> {
-            Utils.setGpuAccelerationEnabled(gpuAcceleration.getState());
-          });
+      gpuAcceleration.addActionListener(e -> {
+        Utils.setGpuAccelerationEnabled(gpuAcceleration.getState());
+      });
       gpuAcceleration.setToolTipText("Requires restart");
     }
     setJMenuBar(menuBar);

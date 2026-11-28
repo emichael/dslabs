@@ -81,54 +81,51 @@ public class WorkloadReplacementTest {
     assertReplacements("foo%i+1", "bar%i-1", "baz", 15, "foo16", "bar14");
     assertReplacements("foo%i/+1", "bar%i+-1", "baz", 15, "foo15/+1", "bar15+-1");
 
-    runRepeatedly(
-        () -> {
-          Pair<String, String> r;
+    runRepeatedly(() -> {
+      Pair<String, String> r;
 
-          assertReplacements("foo%n1z", "bar%n1z", "baz", 15, "foo1z", "bar1z");
+      assertReplacements("foo%n1z", "bar%n1z", "baz", 15, "foo1z", "bar1z");
 
-          r = Workload.doReplacements("foo%n5", "foo%n5", a("baz"), 15);
-          assertEquals(r.getLeft(), r.getRight());
+      r = Workload.doReplacements("foo%n5", "foo%n5", a("baz"), 15);
+      assertEquals(r.getLeft(), r.getRight());
 
-          r = Workload.doReplacements("foo%n100", "bar%n100", a("baz"), 15);
-          assertNotEquals(r.getLeft(), r.getRight());
+      r = Workload.doReplacements("foo%n100", "bar%n100", a("baz"), 15);
+      assertNotEquals(r.getLeft(), r.getRight());
 
-          r = Workload.doReplacements("%n5", null, a("baz"), 15);
-          int i = Integer.parseInt(r.getLeft());
-          assertTrue(i >= 1 && i <= 5);
+      r = Workload.doReplacements("%n5", null, a("baz"), 15);
+      int i = Integer.parseInt(r.getLeft());
+      assertTrue(i >= 1 && i <= 5);
 
-          r = Workload.doReplacements("%n", null, a("baz"), 15);
-          i = Integer.parseInt(r.getLeft());
-          assertTrue(i >= 1 && i <= 100);
-        });
+      r = Workload.doReplacements("%n", null, a("baz"), 15);
+      i = Integer.parseInt(r.getLeft());
+      assertTrue(i >= 1 && i <= 100);
+    });
 
-    runRepeatedly(
-        () -> {
-          Pair<String, String> r;
+    runRepeatedly(() -> {
+      Pair<String, String> r;
 
-          r = Workload.doReplacements("foo%r", "foo%r", a("baz"), 15);
-          assertEquals(r.getLeft(), r.getRight());
-          assertEquals(11, r.getLeft().length());
+      r = Workload.doReplacements("foo%r", "foo%r", a("baz"), 15);
+      assertEquals(r.getLeft(), r.getRight());
+      assertEquals(11, r.getLeft().length());
 
-          r = Workload.doReplacements("foo%r100", "bar%r100", a("baz"), 15);
-          assertNotEquals(r.getLeft(), r.getRight());
-          assertEquals(103, r.getLeft().length());
+      r = Workload.doReplacements("foo%r100", "bar%r100", a("baz"), 15);
+      assertNotEquals(r.getLeft(), r.getRight());
+      assertEquals(103, r.getLeft().length());
 
-          r = Workload.doReplacements("%r100", "%r101", a("baz"), 15);
-          assertNotEquals(r.getLeft(), r.getRight());
-        });
+      r = Workload.doReplacements("%r100", "%r101", a("baz"), 15);
+      assertNotEquals(r.getLeft(), r.getRight());
+    });
 
-    runRepeatedly(
-        () -> {
-          Pair<String, String> r;
+    runRepeatedly(() -> {
+      Pair<String, String> r;
 
-          r = Workload.doReplacements("%r%n9%i%i+1%i-1%a", "%r%n9%i%i+1%i-1%a", a("baz"), 15);
-          assertEquals(r.getLeft(), r.getRight());
-          assertEquals(18, r.getLeft().length());
-          assertEquals("151614baz", r.getLeft().substring(9));
+      r = Workload.doReplacements("%r%n9%i%i+1%i-1%a", "%r%n9%i%i+1%i-1%a", a("baz"), 15);
+      assertEquals(r.getLeft(), r.getRight());
+      assertEquals(18, r.getLeft().length());
+      assertEquals("151614baz", r.getLeft().substring(9));
 
-          r = Workload.doReplacements("%i%r%n9", "%r%n9%i", a("baz"), 15);
-          assertEquals(r.getLeft().substring(2), r.getRight().substring(0, 9));
-        });
+      r = Workload.doReplacements("%i%r%n9", "%r%n9%i", a("baz"), 15);
+      assertEquals(r.getLeft().substring(2), r.getRight().substring(0, 9));
+    });
   }
 }

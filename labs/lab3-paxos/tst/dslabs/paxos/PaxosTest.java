@@ -355,16 +355,15 @@ public class PaxosTest extends BaseJUnitTest {
     setupStates(3);
     final Thread mainThread = Thread.currentThread();
     Client client = runState.addClient(client(1));
-    startThread(
-        () -> {
-          try {
-            Thread.sleep(500);
-          } catch (InterruptedException e) {
-            return;
-          }
+    startThread(() -> {
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
+        return;
+      }
 
-          mainThread.interrupt();
-        });
+      mainThread.interrupt();
+    });
     client.sendCommand(get("foo"));
     // Should never return since the runState wasn't started
     client.getResult();
@@ -741,39 +740,38 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     // Re-partition -> 2s -> re-partition -> 2s -> heal -> 2s
-    startThread(
-        () -> {
-          List<Address> clients = new ArrayList<>();
-          for (int i = 1; i <= nClients; i++) {
-            clients.add(client(i));
-          }
+    startThread(() -> {
+      List<Address> clients = new ArrayList<>();
+      for (int i = 1; i <= nClients; i++) {
+        clients.add(client(i));
+      }
 
-          List<Address> servers = new ArrayList<>();
-          for (Address server : runState.serverAddresses()) {
-            servers.add(server);
-          }
+      List<Address> servers = new ArrayList<>();
+      for (Address server : runState.serverAddresses()) {
+        servers.add(server);
+      }
 
-          try {
-            while (!Thread.interrupted()) {
-              for (int i = 0; i < 2; i++) {
-                List<Address> newPartition = new LinkedList<>(clients);
-                Collections.shuffle(servers);
+      try {
+        while (!Thread.interrupted()) {
+          for (int i = 0; i < 2; i++) {
+            List<Address> newPartition = new LinkedList<>(clients);
+            Collections.shuffle(servers);
 
-                // Grab a majority
-                for (int j = 0; j * 2 <= nServers; j++) {
-                  newPartition.add(servers.get(j));
-                }
-
-                runSettings.reconnect().partition(newPartition);
-                Thread.sleep(2000);
-              }
-
-              runSettings.reconnect();
-              Thread.sleep(2000);
+            // Grab a majority
+            for (int j = 0; j * 2 <= nServers; j++) {
+              newPartition.add(servers.get(j));
             }
-          } catch (InterruptedException ignored) {
+
+            runSettings.reconnect().partition(newPartition);
+            Thread.sleep(2000);
           }
-        });
+
+          runSettings.reconnect();
+          Thread.sleep(2000);
+        }
+      } catch (InterruptedException ignored) {
+      }
+    });
 
     // Let the clients run
     runState.start(runSettings);
@@ -816,44 +814,43 @@ public class PaxosTest extends BaseJUnitTest {
     }
 
     // Re-partition -> 5s -> re-partition -> 1s -> heal -> 5s
-    startThread(
-        () -> {
-          List<Address> clients = new ArrayList<>();
-          for (int i = 1; i <= nClients; i++) {
-            clients.add(client(i));
-          }
+    startThread(() -> {
+      List<Address> clients = new ArrayList<>();
+      for (int i = 1; i <= nClients; i++) {
+        clients.add(client(i));
+      }
 
-          List<Address> servers = new ArrayList<>();
-          for (Address server : runState.serverAddresses()) {
-            servers.add(server);
-          }
+      List<Address> servers = new ArrayList<>();
+      for (Address server : runState.serverAddresses()) {
+        servers.add(server);
+      }
 
-          try {
-            while (!Thread.interrupted()) {
-              for (int i = 0; i < 2; i++) {
-                List<Address> newPartition = new LinkedList<>(clients);
-                Collections.shuffle(servers);
+      try {
+        while (!Thread.interrupted()) {
+          for (int i = 0; i < 2; i++) {
+            List<Address> newPartition = new LinkedList<>(clients);
+            Collections.shuffle(servers);
 
-                // Grab a majority
-                for (int j = 0; j * 2 <= nServers; j++) {
-                  newPartition.add(servers.get(j));
-                }
-
-                runSettings.reconnect().partition(newPartition);
-
-                if (i == 0) {
-                  Thread.sleep(5000);
-                } else {
-                  Thread.sleep(1000);
-                }
-              }
-
-              runSettings.reconnect();
-              Thread.sleep(5000);
+            // Grab a majority
+            for (int j = 0; j * 2 <= nServers; j++) {
+              newPartition.add(servers.get(j));
             }
-          } catch (InterruptedException ignored) {
+
+            runSettings.reconnect().partition(newPartition);
+
+            if (i == 0) {
+              Thread.sleep(5000);
+            } else {
+              Thread.sleep(1000);
+            }
           }
-        });
+
+          runSettings.reconnect();
+          Thread.sleep(5000);
+        }
+      } catch (InterruptedException ignored) {
+      }
+    });
 
     // Let the clients run
     runState.start(runSettings);

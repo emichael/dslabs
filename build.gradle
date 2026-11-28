@@ -1,6 +1,6 @@
 plugins {
   id 'java'
-  id 'com.diffplug.spotless' version '8.4.0'
+  id 'com.diffplug.spotless' version '8.12.0'
   id 'com.github.ben-manes.versions' version '0.53.0'
   id 'com.github.jk1.dependency-license-report' version '3.1.1'
   id 'com.github.johnrengelman.shadow' version '8.1.1'
@@ -129,7 +129,7 @@ dependencies {
   testImplementation      group: 'org.openjdk.jmh', name: 'jmh-core',                 version:'1.37'
   testAnnotationProcessor group: 'org.openjdk.jmh', name: 'jmh-generator-annprocess', version:'1.37'
 
-  formatter group: 'com.google.googlejavaformat', name: 'google-java-format', version: '1.35.0'
+  formatter group: 'com.google.googlejavaformat', name: 'google-java-format', version: '2.0.0'
   errorprone group: 'com.google.errorprone', name: 'error_prone_core', version: '2.36.0'
 }
 

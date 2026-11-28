@@ -62,17 +62,16 @@ final class EventVisibilityPane extends JXTaskPane {
       add(new JLabel("<html><h3>" + eventTypePlural + "</h3></html>"));
 
       toggle = new JButton(HIDE_ALL);
-      toggle.addActionListener(
-          __ -> {
-            if (allCheckBoxesSelected()) {
-              checkBoxes.values().forEach(c -> c.setSelected(false));
-              toggle.setText(SHOW_ALL);
-            } else {
-              checkBoxes.values().forEach(c -> c.setSelected(true));
-              toggle.setText(HIDE_ALL);
-            }
-            onUpdate.run();
-          });
+      toggle.addActionListener(__ -> {
+        if (allCheckBoxesSelected()) {
+          checkBoxes.values().forEach(c -> c.setSelected(false));
+          toggle.setText(SHOW_ALL);
+        } else {
+          checkBoxes.values().forEach(c -> c.setSelected(true));
+          toggle.setText(HIDE_ALL);
+        }
+        onUpdate.run();
+      });
       add(toggle);
     }
 
@@ -89,11 +88,10 @@ final class EventVisibilityPane extends JXTaskPane {
         JCheckBox checkBox = new JCheckBox(eventType.getSimpleName());
         checkBox.setToolTipText(eventType.getName());
         checkBox.setSelected(true);
-        checkBox.addActionListener(
-            __ -> {
-              toggle.setText(allCheckBoxesSelected() ? HIDE_ALL : SHOW_ALL);
-              onUpdate.run();
-            });
+        checkBox.addActionListener(__ -> {
+          toggle.setText(allCheckBoxesSelected() ? HIDE_ALL : SHOW_ALL);
+          onUpdate.run();
+        });
         add(checkBox, position);
         checkBoxes.put(eventType, checkBox);
       }

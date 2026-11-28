@@ -92,12 +92,11 @@ public class RunStateBenchmark {
     state =
         new RunState(
             NodeGenerator.builder()
-                .serverSupplier(
-                    a -> {
-                      List<Address> peers = new LinkedList<>(addresses);
-                      peers.remove(a);
-                      return new BenchmarkNode(a, peers.toArray(new Address[0]));
-                    })
+                .serverSupplier(a -> {
+                  List<Address> peers = new LinkedList<>(addresses);
+                  peers.remove(a);
+                  return new BenchmarkNode(a, peers.toArray(new Address[0]));
+                })
                 .clientSupplier(() -> null)
                 .workloadSupplier(Workload.emptyWorkload())
                 .build());

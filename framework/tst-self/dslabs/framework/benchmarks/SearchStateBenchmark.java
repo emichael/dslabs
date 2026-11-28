@@ -98,11 +98,10 @@ public class SearchStateBenchmark {
     state =
         new SearchState(
             NodeGenerator.builder()
-                .serverSupplier(
-                    a -> {
-                      Address peer = addresses.get((addresses.indexOf(a) + 1) % addresses.size());
-                      return new BenchmarkNode(a, peer);
-                    })
+                .serverSupplier(a -> {
+                  Address peer = addresses.get((addresses.indexOf(a) + 1) % addresses.size());
+                  return new BenchmarkNode(a, peer);
+                })
                 .clientSupplier(() -> null)
                 .workloadSupplier(Workload.emptyWorkload())
                 .build());

@@ -315,34 +315,33 @@ public final class ShardStorePart1Test extends ShardStoreBaseTest {
     }
 
     // Re-partition -> 2s -> unpartition -> 2s
-    startThread(
-        () -> {
-          try {
-            while (!Thread.interrupted()) {
-              runSettings.reconnect();
+    startThread(() -> {
+      try {
+        while (!Thread.interrupted()) {
+          runSettings.reconnect();
 
-              // For each group, turn a minority of servers off
-              for (int g = 1; g <= numGroups; g++) {
-                final int groupNum = g;
+          // For each group, turn a minority of servers off
+          for (int g = 1; g <= numGroups; g++) {
+            final int groupNum = g;
 
-                List<Address> servers =
-                    IntStream.rangeClosed(1, numServersPerGroup)
-                        .mapToObj(j -> server(groupNum, j))
-                        .collect(Collectors.toList());
-                Collections.shuffle(servers);
+            List<Address> servers =
+                IntStream.rangeClosed(1, numServersPerGroup)
+                    .mapToObj(j -> server(groupNum, j))
+                    .collect(Collectors.toList());
+            Collections.shuffle(servers);
 
-                for (int j = 0; (j + 1) * 2 < numServersPerGroup; j++) {
-                  runSettings.nodeActive(servers.get(j), false);
-                }
-              }
-              Thread.sleep(2000);
-
-              runSettings.reconnect();
-              Thread.sleep(2000);
+            for (int j = 0; (j + 1) * 2 < numServersPerGroup; j++) {
+              runSettings.nodeActive(servers.get(j), false);
             }
-          } catch (InterruptedException ignored) {
           }
-        });
+          Thread.sleep(2000);
+
+          runSettings.reconnect();
+          Thread.sleep(2000);
+        }
+      } catch (InterruptedException ignored) {
+      }
+    });
 
     // Let the clients run
     Thread.sleep(testLengthSecs * 1000);

@@ -489,11 +489,10 @@ class ObjectJTree extends BaseJTree {
         return Collections.emptyList();
       }
       return children.stream()
-          .map(
-              t -> {
-                assert t instanceof ObjectTreeNode;
-                return (ObjectTreeNode) t;
-              })
+          .map(t -> {
+            assert t instanceof ObjectTreeNode;
+            return (ObjectTreeNode) t;
+          })
           .collect(Collectors.toList());
     }
 
@@ -610,26 +609,25 @@ class ObjectJTree extends BaseJTree {
       }
 
       final Map<ChildKey, Integer> keyOccurrences = new HashMap<>();
-      expand(
-          (key, child) -> {
-            assert allowsChildren;
-            assert child != null;
-            assert child.getParent() == null;
-            assert child.keyInstance == null;
+      expand((key, child) -> {
+        assert allowsChildren;
+        assert child != null;
+        assert child.getParent() == null;
+        assert child.keyInstance == null;
 
-            // First setup the child's key
-            int i = keyOccurrences.getOrDefault(key, 0);
-            child.keyInstance = new KeyInstance(key, i);
-            child.setUserObject(key);
-            keyOccurrences.put(key, i + 1);
+        // First setup the child's key
+        int i = keyOccurrences.getOrDefault(key, 0);
+        child.keyInstance = new KeyInstance(key, i);
+        child.setUserObject(key);
+        keyOccurrences.put(key, i + 1);
 
-            // Take care of the super class
-            child.setParent(this);
-            if (children == null) {
-              children = new Vector<>();
-            }
-            children.add(child);
-          });
+        // Take care of the super class
+        child.setParent(this);
+        if (children == null) {
+          children = new Vector<>();
+        }
+        children.add(child);
+      });
       hasExpanded = true;
 
       // TODO: kind of hacky

@@ -110,62 +110,61 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
    */
   @Rule(order = Rule.DEFAULT_ORDER)
   public final TestRule runTest() {
-    return testRule(
-        (base, description) -> {
-          try {
-            testDescription = description;
-            startedThreads = new HashSet<>();
-            failedSearchTest = false;
+    return testRule((base, description) -> {
+      try {
+        testDescription = description;
+        startedThreads = new HashSet<>();
+        failedSearchTest = false;
 
-            setupTest();
-            if (isRunTest()) {
-              runSettings = new RunSettings();
-              setupRunTest();
-            }
-            if (isSearchTest()) {
-              searchSettings = new SearchSettings();
-              setupSearchTest();
-            }
+        setupTest();
+        if (isRunTest()) {
+          runSettings = new RunSettings();
+          setupRunTest();
+        }
+        if (isSearchTest()) {
+          searchSettings = new SearchSettings();
+          setupSearchTest();
+        }
 
-            try {
-              base.evaluate();
-            } finally {
-              shutdownTest();
-              shutdownStartedThreads();
+        try {
+          base.evaluate();
+        } finally {
+          shutdownTest();
+          shutdownStartedThreads();
 
-              if (runState != null) {
-                runState.stop();
-              }
-            }
-
-            verifyTest();
-            if (runState != null) {
-              if (runState.exceptionThrown()) {
-                fail("Exception(s) thrown by running nodes.");
-              }
-
-              assertRunInvariantsHold();
-            }
-
-            if (failedSearchTest) {
-              fail("Search test failed.");
-            }
-          } finally {
-            try {
-              cleanupTest();
-            } finally {
-              runSettings = null;
-              searchSettings = null;
-              lastSearchSettings = null;
-              runState = null;
-              initSearchState = null;
-              bfsStartState = null;
-              startedThreads = null;
-              searchResults = null;
-              testDescription = null;
-            }
+          if (runState != null) {
+            runState.stop();
           }
-        });
+        }
+
+        verifyTest();
+        if (runState != null) {
+          if (runState.exceptionThrown()) {
+            fail("Exception(s) thrown by running nodes.");
+          }
+
+          assertRunInvariantsHold();
+        }
+
+        if (failedSearchTest) {
+          fail("Search test failed.");
+        }
+      } finally {
+        try {
+          cleanupTest();
+        } finally {
+          runSettings = null;
+          searchSettings = null;
+          lastSearchSettings = null;
+          runState = null;
+          initSearchState = null;
+          bfsStartState = null;
+          startedThreads = null;
+          searchResults = null;
+          testDescription = null;
+        }
+      }
+    });
   }
 
   /**
@@ -175,19 +174,18 @@ public abstract class BaseJUnitTest extends DSLabsJUnitTest {
   // MIN_VALUE ensures that this is run at the outermost level.
   @Rule(order = Integer.MIN_VALUE)
   public final TestRule gcAndSleep() {
-    return testRule(
-        (base, description) -> {
-          try {
-            base.evaluate();
-          } finally {
-            System.gc();
-            try {
-              Thread.sleep(50);
-            } catch (InterruptedException e) {
-              Thread.currentThread().interrupt();
-            }
-          }
-        });
+    return testRule((base, description) -> {
+      try {
+        base.evaluate();
+      } finally {
+        System.gc();
+        try {
+          Thread.sleep(50);
+        } catch (InterruptedException e) {
+          Thread.currentThread().interrupt();
+        }
+      }
+    });
   }
 
   protected void shutdownStartedThreads() throws InterruptedException {

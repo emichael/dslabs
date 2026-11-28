@@ -27,12 +27,9 @@ public class PingVizConfig extends VizConfig {
   protected NodeGenerator nodeGenerator(
       List<Address> servers, List<Address> clients, List<List<String>> workload) {
     NodeGeneratorBuilder builder = builder();
-    builder.workloadSupplier(
-        a ->
-            Workload.workload(
-                workload.get(clients.indexOf(a)).stream()
-                    .map(Ping::new)
-                    .collect(Collectors.toList())));
+    builder.workloadSupplier(a ->
+        Workload.workload(
+            workload.get(clients.indexOf(a)).stream().map(Ping::new).collect(Collectors.toList())));
     return builder.build();
   }
 }

@@ -52,13 +52,12 @@ public final class PingTest extends BaseJUnitTest {
 
   static NodeGeneratorBuilder builder() {
     NodeGeneratorBuilder builder = NodeGenerator.builder();
-    builder.serverSupplier(
-        a -> {
-          if (!Objects.equals(a, sa)) {
-            throw new IllegalArgumentException();
-          }
-          return new PingServer(sa);
-        });
+    builder.serverSupplier(a -> {
+      if (!Objects.equals(a, sa)) {
+        throw new IllegalArgumentException();
+      }
+      return new PingServer(sa);
+    });
     builder.clientSupplier(a -> new PingClient(a, sa));
     builder.workloadSupplier(Workload.emptyWorkload());
     return builder;

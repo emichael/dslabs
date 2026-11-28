@@ -69,28 +69,27 @@ abstract class ZoomableCanvas extends JPanel {
     this.minScale = minScale;
     this.maxScale = maxScale;
 
-    addMouseWheelListener(
-        e -> {
-          double x = e.getX(), y = e.getY();
+    addMouseWheelListener(e -> {
+      double x = e.getX(), y = e.getY();
 
-          AffineTransform temp = new AffineTransform();
-          temp.translate(x, y);
+      AffineTransform temp = new AffineTransform();
+      temp.translate(x, y);
 
-          double scaleFactor = Math.pow(SCALE_AMOUNT, -e.getPreciseWheelRotation());
-          temp.scale(scaleFactor, scaleFactor);
+      double scaleFactor = Math.pow(SCALE_AMOUNT, -e.getPreciseWheelRotation());
+      temp.scale(scaleFactor, scaleFactor);
 
-          temp.translate(-x, -y);
+      temp.translate(-x, -y);
 
-          double newScaleAmount = transform.getScaleX() * temp.getScaleX();
-          if (newScaleAmount > maxScale || newScaleAmount < minScale) {
-            return;
-          }
+      double newScaleAmount = transform.getScaleX() * temp.getScaleX();
+      if (newScaleAmount > maxScale || newScaleAmount < minScale) {
+        return;
+      }
 
-          transform.preConcatenate(temp);
+      transform.preConcatenate(temp);
 
-          revalidate();
-          repaint();
-        });
+      revalidate();
+      repaint();
+    });
 
     addMouseListener(
         new MouseListener() {
@@ -101,12 +100,11 @@ abstract class ZoomableCanvas extends JPanel {
               var menu = new JPopupMenu();
               var reset = new JMenuItem("Reset zoom");
               reset.setToolTipText("Reset the state tree's zoom and pan amount to the default");
-              reset.addActionListener(
-                  __ -> {
-                    transform = new AffineTransform();
-                    revalidate();
-                    repaint();
-                  });
+              reset.addActionListener(__ -> {
+                transform = new AffineTransform();
+                revalidate();
+                repaint();
+              });
               menu.add(reset);
               menu.show(ZoomableCanvas.this, e.getX(), e.getY());
               e.consume();

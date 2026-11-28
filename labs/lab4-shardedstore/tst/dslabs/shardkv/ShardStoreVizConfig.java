@@ -85,11 +85,10 @@ public class ShardStoreVizConfig extends VizConfig {
       builder.workloadSupplier(
           TransactionalKVStoreWorkload.builder().commandStrings(commands.get(0)).build());
     } else {
-      builder.workloadSupplier(
-          a ->
-              TransactionalKVStoreWorkload.builder()
-                  .commandStrings(commands.get(clients.indexOf(a)))
-                  .build());
+      builder.workloadSupplier(a ->
+          TransactionalKVStoreWorkload.builder()
+              .commandStrings(commands.get(clients.indexOf(a)))
+              .build());
     }
 
     SearchState state = new SearchState(builder.build());

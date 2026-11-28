@@ -76,14 +76,13 @@ public class PrimaryBackupTest extends BaseJUnitTest {
 
   static NodeGeneratorBuilder builder() {
     NodeGeneratorBuilder builder = NodeGenerator.builder();
-    builder.serverSupplier(
-        a -> {
-          if (a.equals(VSA)) {
-            return new ViewServer(a);
-          } else {
-            return new PBServer(a, VSA, new KVStore());
-          }
-        });
+    builder.serverSupplier(a -> {
+      if (a.equals(VSA)) {
+        return new ViewServer(a);
+      } else {
+        return new PBServer(a, VSA, new KVStore());
+      }
+    });
     builder.clientSupplier(a -> new PBClient(a, VSA));
     builder.workloadSupplier(KVStoreWorkload.emptyWorkload());
     return builder;
@@ -274,16 +273,15 @@ public class PrimaryBackupTest extends BaseJUnitTest {
   public void test01ThrowsException() throws InterruptedException {
     final Thread mainThread = Thread.currentThread();
     Client client = runState.addClient(client(1));
-    startThread(
-        () -> {
-          try {
-            Thread.sleep(500);
-          } catch (InterruptedException e) {
-            return;
-          }
+    startThread(() -> {
+      try {
+        Thread.sleep(500);
+      } catch (InterruptedException e) {
+        return;
+      }
 
-          mainThread.interrupt();
-        });
+      mainThread.interrupt();
+    });
     client.sendCommand(get("foo"));
     // Should never return since the runState wasn't started
     client.getResult();
@@ -601,31 +599,30 @@ public class PrimaryBackupTest extends BaseJUnitTest {
     runState.start(runSettings);
 
     // Randomly crash and restart servers
-    startThread(
-        () -> {
-          Random rand = new Random();
-          int totalServers = nServers;
+    startThread(() -> {
+      Random rand = new Random();
+      int totalServers = nServers;
 
-          try {
-            Thread.sleep(PING_CHECK_MILLIS * 10);
+      try {
+        Thread.sleep(PING_CHECK_MILLIS * 10);
 
-            while (!Thread.interrupted()) {
-              Thread.sleep(PING_CHECK_MILLIS * 10);
+        while (!Thread.interrupted()) {
+          Thread.sleep(PING_CHECK_MILLIS * 10);
 
-              Address toKill = servers.get(rand.nextInt(servers.size()));
+          Address toKill = servers.get(rand.nextInt(servers.size()));
 
-              // Add a new server with a new name
-              Address toAdd = server(++totalServers);
-              servers.add(toAdd);
-              runState.addServer(toAdd);
+          // Add a new server with a new name
+          Address toAdd = server(++totalServers);
+          servers.add(toAdd);
+          runState.addServer(toAdd);
 
-              // Kill the old server
-              servers.remove(toKill);
-              runState.removeNode(toKill);
-            }
-          } catch (InterruptedException ignored) {
-          }
-        });
+          // Kill the old server
+          servers.remove(toKill);
+          runState.removeNode(toKill);
+        }
+      } catch (InterruptedException ignored) {
+      }
+    });
 
     for (int i = 0; i < nClients; i++) {
       runState.addClientWorker(client(i), differentKeysInfiniteWorkload, false);
