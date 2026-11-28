@@ -10,7 +10,6 @@ import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.search.Search;
 import dslabs.framework.testing.search.SearchSettings;
 import dslabs.framework.testing.search.SearchState;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
