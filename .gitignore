@@ -1,0 +1,24 @@
+# Compiled Java
+out/
+
+# Saved traces
+traces/
+*.trace
+
+# IntelliJ
+.idea/workspace.xml
+.idea/tasks.xml
+.idea-out
+
+submit.tar.gz
+
+# Common OS/Editor files
+*~
+._*
+
+.DS_Store
+.DS_Store?
+
+Thumbs.db
+ehthumbs.db
+Desktop.ini
