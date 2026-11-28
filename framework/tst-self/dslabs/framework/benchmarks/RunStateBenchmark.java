@@ -10,6 +10,9 @@ import dslabs.framework.testing.Workload;
 import dslabs.framework.testing.runner.RunSettings;
 import dslabs.framework.testing.runner.RunState;
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -17,9 +20,9 @@ import lombok.NonNull;
 import org.openjdk.jmh.annotations.*;
 
 /**
- * A benchmark that runs two nodes, constantly sending messages to each other while timers are
- * firing. The important output metrics is {@link EventDeliveryCounters#messagesDelivered}, as the
- * timers fire at a fixed rate.
+ * A benchmark that runs N nodes, constantly sending messages to each other while timers are firing.
+ * The important output metrics is {@link EventDeliveryCounters#messagesDelivered}, as the timers
+ * fire at a fixed rate.
  */
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
@@ -31,6 +34,9 @@ public class RunStateBenchmark {
 
   private static final int TIMER_DURATION_MILLIS = 5;
   private static final Duration ITERATION_DURATION = Duration.ofSeconds(5);
+
+  @Param({"2", "8", "128"})
+  private int numNodes;
 
   @State(Scope.Thread)
   @AuxCounters(AuxCounters.Type.OPERATIONS)
@@ -47,19 +53,19 @@ public class RunStateBenchmark {
 
   @EqualsAndHashCode(callSuper = true)
   private static final class BenchmarkNode extends Node {
-    private final Address peer;
+    private final Address[] peers;
 
     private long messageDelivered;
     private long timersFired;
 
-    BenchmarkNode(@NonNull Address address, Address peer) {
+    BenchmarkNode(@NonNull Address address, Address[] peers) {
       super(address);
-      this.peer = peer;
+      this.peers = peers;
     }
 
     @Override
     public void init() {
-      send(new M(), peer);
+      broadcast(new M(), peers);
       set(new T(), TIMER_DURATION_MILLIS);
     }
 
@@ -79,21 +85,25 @@ public class RunStateBenchmark {
 
   @Setup(Level.Invocation)
   public void setup() {
-    LocalAddress a1 = new LocalAddress("node-1");
-    LocalAddress a2 = new LocalAddress("node-2");
+    List<Address> addresses = new ArrayList<>();
+    for (int i = 1; i <= numNodes; i++) {
+      addresses.add(new LocalAddress("node-" + i));
+    }
     state =
         new RunState(
             NodeGenerator.builder()
                 .serverSupplier(
                     a -> {
-                      Address peer = a.equals(a1) ? a2 : a1;
-                      return new BenchmarkNode(a, peer);
+                      List<Address> peers = new LinkedList<>(addresses);
+                      peers.remove(a);
+                      return new BenchmarkNode(a, peers.toArray(new Address[0]));
                     })
                 .clientSupplier(() -> null)
                 .workloadSupplier(Workload.emptyWorkload())
                 .build());
-    state.addServer(a1);
-    state.addServer(a2);
+    for (Address a : addresses) {
+      state.addServer(a);
+    }
     settings = new RunSettings();
     settings.maxTimeSecs((int) ITERATION_DURATION.toSeconds());
   }
